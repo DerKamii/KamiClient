@@ -52,11 +52,6 @@ public class LoginScreen extends Widget {
 	return(Utils.getpref(name + "@" + hostname, def));
     }
     
-    public void CloseLogin()
-    {
-	destroy();
-    }
-    
     public LoginScreen(String hostname) {
 	super(bg.sz());
 	this.hostname = hostname;

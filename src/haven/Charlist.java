@@ -40,6 +40,7 @@ public class Charlist extends Widget {
     public final Boxlist list;
     public Avaview avalink;
     public Button logout;
+    public Button logout2;
 
     @RName("charlist")
     public static class $_ implements Factory {
@@ -139,7 +140,7 @@ public class Charlist extends Widget {
 
     protected void added() {
 	parent.setfocus(this);
-	logout = parent.add(new Button(UI.scale(90), "Log out") {
+	logout = parent.add(new Button(UI.scale(110), "Log out") {
 	    @Override
 	    public void click() {
 		RemoteUI rui = (RemoteUI) ui.rcvr;
@@ -147,7 +148,17 @@ public class Charlist extends Widget {
 		    rui.sess.close();
 		}
 	    }
-	}, UI.scale(100, 553));
+	}, UI.scale(80, 553));
+	logout2 = parent.add(new Button(UI.scale(110), "switch to " + (LoginScreen.authmech.get() == "steam" ? "native" : "steam")) {
+	    @Override
+	    public void click() {
+		LoginScreen.authmech = Config.Variable.prop("nothing", (LoginScreen.authmech.get() == "steam" ? "native" : "steam"));
+		RemoteUI rui = (RemoteUI) ui.rcvr;
+		synchronized (rui.sess) {
+		    rui.sess.close();
+		}
+	    }
+	}, UI.scale(200, 553));
     }
 
     @Override

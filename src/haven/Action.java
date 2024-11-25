@@ -39,6 +39,9 @@ public enum Action {
     AGGRO_ONE_PVE(Actions::aggroOnePVE, "Aggro closest non-player to cursor", "Will try to aggro (or switch target to) one non-player target closest to cursor"),
     AGGRO_ONE_PVP(Actions::aggroOnePVP, "Aggro closest player to cursor", "Will try to aggro (or switch target to) one player closest to cursor"),
     AGGRO_ALL(Actions::aggroAll, "Aggro all creatures near player", "Will try to aggro all creatures near player that are not in party"),
+    LOGOUT(gui -> {
+        gui.act("lo");
+    }),
     
     //Camera controls
     CAM_ZOOM_IN(gui -> gui.map.zoomCamera(-1), "Camera zoom in"),

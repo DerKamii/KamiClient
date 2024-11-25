@@ -809,6 +809,15 @@ public class OptWnd extends WindowX {
 	addPanelButton("Camera settings", 'c', camera, colum, row++);
 	addPanelButton("Widget shortcuts", 'k', keybind, colum, row++);
 	addPanelButton("Global shortcuts", 's', shortcuts, colum, row++);
+	//addPanelButton("",'l', Action.);
+	if (LoginScreen.authmech.get() == "steam") {
+	    LoginScreen.authmech = Config.Variable.prop("nothing", "native");
+	    addPanelButton("Log out to native", 'q', Action.LOGOUT, colum, row++);
+	}
+	if (LoginScreen.authmech.get() == "native") {
+	    LoginScreen.authmech = Config.Variable.prop("nothing", "steam");
+	    addPanelButton("log out to steam", 'q', Action.LOGOUT, colum, row++);
+	}
     
 	colum++;
 	mrow = Math.max(mrow, row);

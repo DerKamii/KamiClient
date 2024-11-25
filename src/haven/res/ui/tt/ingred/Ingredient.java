@@ -6,7 +6,7 @@ import java.util.*;
 import java.awt.image.BufferedImage;
 
 /* >tt: Ingredient */
-@FromResource(name = "ui/tt/ingred", version = 25)
+@haven.FromResource(name = "ui/tt/ingred", version = 26)
 public class Ingredient extends ItemInfo.Tip {
     public final String name;
     public final Double val;
@@ -25,7 +25,7 @@ public class Ingredient extends ItemInfo.Tip {
 	int a = 1;
 	String name;
 	if(args[a] instanceof String) {
-	    name = L10N.ingredient((String)args[a++]);
+	    name = (String)args[a++];
 	} else if(args[1] instanceof Integer) {
 	    Indir<Resource> res = owner.context(Resource.Resolver.class).getres((Integer)args[a++]);
 	    Message sdt = Message.nil;
@@ -50,7 +50,7 @@ public class Ingredient extends ItemInfo.Tip {
 	public BufferedImage tipimg() {
 	    StringBuilder buf = new StringBuilder();
 	    Collections.sort(all, (a, b) -> a.name.compareTo(b.name));
-	    buf.append(L10N.tooltip("Made from "));
+	    buf.append("Made with ");
 	    buf.append(all.get(0).descr());
 	    if(all.size() > 2) {
 		for(int i = 1; i < all.size() - 1; i++) {
@@ -59,7 +59,7 @@ public class Ingredient extends ItemInfo.Tip {
 		}
 	    }
 	    if(all.size() > 1) {
-		buf.append(L10N.tooltip(" and "));
+		buf.append(" and ");
 		buf.append(all.get(all.size() - 1).descr());
 	    }
 	    return(RichText.render(buf.toString(), UI.scale(250)).img);
@@ -73,7 +73,7 @@ public class Ingredient extends ItemInfo.Tip {
 
     public String descr() {
 	if(val == null)
-	    return L10N.ingredient(name);
+	    return(name);
 	return(String.format("%s (%d%%)", name, (int)Math.floor(val * 100.0)));
     }
 }

@@ -213,6 +213,10 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	}
 	add(pp);
 	pp.setSize(sz.x, sz.y);
+	GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+	int width = gd.getDisplayMode().getWidth();
+	int height = gd.getDisplayMode().getHeight();
+	pp.getParent().setLocation((width / 2) - (sz.x / 2), (height / 2) - (sz.y / 2));
 	pack();
 	setResizable(!Utils.getprefb("wndlock", false));
 	pp.requestFocus();

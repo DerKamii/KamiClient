@@ -27,6 +27,7 @@
 package haven;
 
 import auto.BotUtil;
+import haven.bot.AutoDrink;
 import haven.render.*;
 import haven.res.gfx.fx.msrad.MSRad;
 import integrations.mapv4.MappingClient;
@@ -577,6 +578,8 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    status.update(StatusType.map_marker);
 	}
 	updateState();
+	if (is(GobTag.ME))
+	    botActions();
     }
     
     public void gtick(Render g) {
@@ -1611,6 +1614,14 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	}
     }
     
+    /*
+    Triggers on every logic tick for player (self) object only
+     */
+    private void botActions() {
+	// AutoDrink bot
+	AutoDrink.getInstance().tick(this);
+    }
+
     private void updateColor() {
 	Color c = null;
 	if(CFG.SHOW_PROGRESS_COLOR.get() && is(GobTag.PROGRESSING)) {

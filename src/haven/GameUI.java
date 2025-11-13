@@ -386,7 +386,8 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
 	placemmap();
 	timewdg = add(new TimeWdg(), new Coord(umpanel.c.x - UI.scale(200), 0));
 	CFG.ALWAYS_SHOW_DEWY_TIME.observe(cfg -> timewdg.updateTime());
-	statuswdg = add(new StatusWdg());
+	if(HttpStatus.mond.get() != null)
+		statuswdg = add(new StatusWdg());
 	CFG.Observer<Boolean> change = cfg -> {
 	    synchronized (this) {
 		if (!blpanel.tvis && CFG.VANILLA_CHAT.get()) {

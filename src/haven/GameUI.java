@@ -27,6 +27,7 @@
 package haven;
 
 import haven.Equipory.SLOTS;
+import haven.bot.AutoDrink;
 import haven.res.ui.locptr.Pointer;
 import haven.rx.BuffToggles;
 import haven.rx.Reactor;
@@ -573,6 +574,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
     public void bound() {
         super.bound();
 	BuffToggles.init(this);
+	AutoDrink.getInstance().init(this);
     }
 
     protected void added() {

@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.List;
 
+
 import static haven.MapFile.*;
 
 public class Minesweeper {

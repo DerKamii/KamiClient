@@ -97,7 +97,7 @@ public class Minesweeper {
 		ms.storeGrid(id, values);
 	    }
 	}
-	gui.minesweeper.generateOutlineMap(id);
+	ms.generateOutlineMap(id);
     }
     
     public static void markFlagAtPoint(Coord2d rc, byte flags, GameUI gui) {
@@ -451,6 +451,7 @@ public class Minesweeper {
 	byte[] v = doLoadGrid(data, id);
 	if(v == null) {return false;}
 	values.put(id, v);
+	generateOutlineMap(id);
 	return true;
     }
     

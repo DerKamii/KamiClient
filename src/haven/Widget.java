@@ -1804,6 +1804,25 @@ public class Widget {
 	});
     }
     
+    public Resource getcurss(Coord c) {
+	Resource ret;
+	
+	for (Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
+	    if (!wdg.visible())
+		continue;
+	    Coord cc = xlate(wdg.c, true);
+	    if (c.isect(cc, wdg.sz)) {
+		if ((ret = wdg.getcurss(c.add(cc.inv()))) != null)
+		    return (ret);
+	    }
+	}
+	try {
+	    return ((cursor == null) ? null : cursor.get());
+	} catch (Loading l) {
+	    return (null);
+	}
+    }
+    
     public static class PaginaTip implements Indir<Tex> {
 	public final String title;
 	public final Indir<Resource> res;

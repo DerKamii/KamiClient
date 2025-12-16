@@ -109,6 +109,9 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
     public StudyWnd studywnd;
     private Widget questPanel;
     
+    public static boolean verifiedAccount = false;
+    public static boolean subscribedAccount = false;
+    
     public static abstract class BeltSlot {
 	public final int idx;
 

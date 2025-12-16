@@ -171,6 +171,19 @@ public class WItem extends Widget implements DTarget {
 	return (() -> color);
     });
     
+    public final AttrCache<Tex> fepnum = new AttrCache<>(this::info, AttrCache.cache(info -> {
+	try {
+	    for (haven.resutil.FoodInfo food : ItemInfo.findall(haven.resutil.FoodInfo.class, info)) {
+		Pair<Double, Color> evt = food.fepnum(this);
+		return Text.renderstroked(Utils.odformat2(evt.a, 0), evt.b, Color.BLACK).tex();
+	    }
+	    return null;
+	} catch (Exception e) {
+	    new Warning(e).issue();
+	}
+	return null;
+    }));
+    
     public final AttrCache<GItem.InfoOverlay<?>[]> itemols = new AttrCache<>(this::info, info -> {
 	ArrayList<GItem.InfoOverlay<?>> buf = new ArrayList<>();
 	for(ItemInfo inf : info) {
@@ -377,7 +390,7 @@ public class WItem extends Widget implements DTarget {
 	if(item.num >= 0) {
 	    tex = Text.render(Integer.toString(item.num)).tex();
 	} else {
-	    tex = chainattr(/*itemnum, */heurnum, armor, durability);
+	    tex = chainattr(/*itemnum, */heurnum, armor, durability, fepnum);
 	}
 	
 	if(tex != null) {

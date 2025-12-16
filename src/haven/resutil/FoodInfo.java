@@ -30,7 +30,10 @@ import haven.*;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class FoodInfo extends ItemInfo.Tip {
     public static int PAD = UI.scale(5);
@@ -38,6 +41,19 @@ public class FoodInfo extends ItemInfo.Tip {
     public final Event[] evs;
     public final Effect[] efs;
     public final int[] types;
+    
+    private static BAttrWnd.Constipations constipation;
+    private static BAttrWnd.GlutMeter glutmeter;
+    private static BAttrWnd.FoodMeter feps;
+    private static List<BAttrWnd.Attr> attr;
+    
+    public static int tablefep = 0;
+    
+    public static final Set<WItem> witems = Collections.newSetFromMap(new ConcurrentHashMap<WItem, Boolean>());
+    
+    public static final Color LITE_GREN = new Color(176, 255, 64);
+    public static final Color LITER_GREN = new Color(255, 240, 96);
+    public double fepHungerEfficiency;
     
     public FoodInfo(Owner owner, double end, double glut, double cons, double sev, Event[] evs, Effect[] efs, int[] types) {
 	super(owner);
@@ -108,5 +124,106 @@ public class FoodInfo extends ItemInfo.Tip {
 	    l.cmp.add(efi, Coord.of(UI.scale(5), l.cmp.sz.y));
 	}
 	ItemData.modifyFoodTooltip(owner, l.cmp, types, glut, fepSum);
+    }
+    
+    private boolean getcw() {
+	try {
+	    CharWnd cw = owner.context(Session.class).ui.gui.chrwdg;
+	    if (cw.battr != null) {
+		FoodInfo.glutmeter = cw.battr.glut;
+		FoodInfo.feps = cw.battr.feps;
+		FoodInfo.attr = cw.battr.attrs;
+		return true;
+	    }
+	} catch (NullPointerException | OwnerContext.NoContext ignore) {
+	    return false;
+	}
+	return false;
+    }
+    
+    public Pair<Double, Color> fepnum(WItem item) {
+	if (attr == null && !getcw())
+	    return new Pair<>(-1d, Color.WHITE);
+	
+	if (item != null)
+	    witems.add(item);
+	
+	boolean feast = false;
+	try {
+	    UI ui = owner.context(Session.class).ui;
+	    Resource curs = ui.root.getcurss(ui.mc);
+	    if ("gfx/hud/curs/eat".equals(curs.name))
+		feast = true;
+	} catch (NullPointerException | OwnerContext.NoContext | Loading ignore) {
+	}
+	
+	double evs_total = 0;
+	for (int i = 0; i < evs.length; i++) {
+	    double fep = evs[i].a;
+	    if (feast)
+		fep += fep * (double) tablefep / 100.0;
+	    evs_total += fep;
+	}
+	
+	double bonusmul = 1;
+	if (GameUI.subscribedAccount)
+	    bonusmul += 0.3;
+	if (GameUI.verifiedAccount)
+	    bonusmul += 0.2;
+	
+	double effective = 1;
+	for (int type : types) {
+	    if (type >= 0 && constipation != null && type < constipation.els.size()) {
+		BAttrWnd.Constipations.El c = constipation.els.get(type);
+		if (c != null)
+		    effective = Math.min(effective, c.a);
+	    }
+	}
+	
+	int maxattr = 1;
+	for (BAttrWnd.Attr a : attr)
+	    if (a.attr.base > maxattr)
+		maxattr = a.attr.base;
+	
+	double curfep = 0;
+	double effmod = glutmeter.gmod * effective * bonusmul;
+	double effep = evs_total * effmod;
+	double resfep;
+	Color col;
+	
+	if (feps.els.size() == 0) {
+	    double rescap = feps.cap - Math.sqrt((double) maxattr * 2 * glutmeter.gmod / 5);
+	    resfep = effep;
+	    col = (rescap <= resfep) ? LITE_GREN : Color.WHITE;
+	} else {
+	    for (BAttrWnd.FoodMeter.El el : feps.els)
+		curfep += el.a;
+	    
+	    resfep = effep + curfep;
+	    double curcap = feps.cap;
+	    double fep = maxattr;
+	    double fepnext = maxattr;
+	    int n = 0;
+	    while (fepnext > curcap) {
+		fep = fepnext;
+		fepnext = fep - Math.sqrt((double) maxattr * 2 * glutmeter.gmod / 5 / (double) ++n);
+	    }
+	    if (fep - curcap > curcap - fepnext)
+		++n;
+	    double rescap = curcap - Math.sqrt((double) maxattr * 2 * glutmeter.gmod / 5 / (double) n);
+	    
+	    if (curcap <= resfep)
+		col = LITE_GREN;
+	    else if (rescap <= resfep)
+		col = LITER_GREN;
+	    else
+		col = Color.WHITE;
+	    
+	    if (effective > 0)
+		fepHungerEfficiency = effep / (effective * 100.0);
+	    else
+		fepHungerEfficiency = Double.POSITIVE_INFINITY;
+	}
+	return new Pair<>(effep, col);
     }
 }

@@ -254,6 +254,7 @@ public class BAttrWnd extends Widget {
 		}
 		els.add(new El(t, a));
 	    }
+	    FoodInfo.resettts();
 	    oels.update();
 	}
     }

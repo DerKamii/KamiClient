@@ -30,6 +30,7 @@ import haven.*;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -49,6 +50,7 @@ public class FoodInfo extends ItemInfo.Tip {
     
     public static int tablefep = 0;
     
+    public static final Set<GItem> gitems = Collections.newSetFromMap(new ConcurrentHashMap<GItem, Boolean>());
     public static final Set<WItem> witems = Collections.newSetFromMap(new ConcurrentHashMap<WItem, Boolean>());
     
     public static final Color LITE_GREN = new Color(176, 255, 64);
@@ -64,6 +66,28 @@ public class FoodInfo extends ItemInfo.Tip {
 	this.evs = evs;
 	this.efs = efs;
 	this.types = types;
+	
+	try {
+	    CharWnd cw = owner.context(Session.class).ui.gui.chrwdg;
+	    if (cw != null && cw.battr != null) {
+		constipation = cw.battr.cons;
+	    }
+	} catch (NullPointerException | OwnerContext.NoContext ignore) {
+	}
+    }
+    
+    private double calculateSatiation() {
+	double effective = 1;
+	if (constipation != null && types.length > 0) {
+	    for (int type : types) {
+		if (type >= 0 && type < constipation.els.size()) {
+		    BAttrWnd.Constipations.El c = constipation.els.get(type);
+		    if (c != null)
+			effective = Math.min(effective, c.a);
+		}
+	    }
+	}
+	return effective;
     }
     
     public FoodInfo(Owner owner, double end, double glut, double cons, Event[] evs, Effect[] efs, int[] types) {
@@ -225,5 +249,28 @@ public class FoodInfo extends ItemInfo.Tip {
 		fepHungerEfficiency = Double.POSITIVE_INFINITY;
 	}
 	return new Pair<>(effep, col);
+    }
+    
+    public static void resettts() {
+	new Thread(() -> {
+	    int delay = 200;
+	    try {
+		Thread.sleep(delay);
+	    } catch (InterruptedException e) {
+		e.printStackTrace();
+	    }
+	    
+	    for (GItem i : new ArrayList<>(gitems)) {
+		if (i != null)
+		    i.resettt = true;
+	    }
+	    for (WItem i : new ArrayList<>(witems)) {
+		if (i != null && i.fepnum != null) {
+		    i.fepnum.reset();
+		}
+	    }
+	    gitems.clear();
+	    witems.clear();
+	}, "FoodInfo-resettts").start();
     }
 }

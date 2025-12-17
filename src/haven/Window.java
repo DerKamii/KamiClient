@@ -26,6 +26,7 @@
 
 package haven;
 
+import haven.resutil.FoodInfo;
 import haven.rx.Reactor;
 import me.ender.WindowDetector;
 
@@ -34,6 +35,8 @@ import haven.render.*;
 import java.util.function.*;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static haven.PUtils.*;
 
@@ -408,6 +411,32 @@ public class Window extends Widget {
 	public boolean checkhit(Coord c) {
 	    Coord cpc = c.sub(cptl);
 	    return(ca.contains(c) || (c.isect(cptl, cpsz) && (cm.back.getRaster().getSample(cpc.x % cm.back.getWidth(), cpc.y, 3) >= 128)));
+	}
+    }
+    
+    private static Pattern febre = Pattern.compile("Food event bonus: (\\d+)%");
+    protected void CheckForDinnerTable() {
+	int tablefep = -1;
+	boolean feast = false;
+	for (Widget w = this.lchild; w != null; w = w.prev) {
+	    if(w instanceof Label) {
+		Label l = (Label) w;
+		try {
+		    Matcher m = febre.matcher(l.texts);
+		    if(m.find())
+			tablefep = Integer.parseInt(m.group(1));
+		} catch (Exception e) {
+		    new Warning(e).issue();
+		}
+	    }
+	    if(w instanceof Button) {
+		if(((Button) w).text.text.equals("Feast!")) {
+		    feast = true;
+		}
+	    }
+	}
+	if(feast) {
+	    FoodInfo.tablefep = Math.max(tablefep, 0);
 	}
     }
 

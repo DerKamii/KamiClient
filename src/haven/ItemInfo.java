@@ -685,6 +685,10 @@ public abstract class ItemInfo {
 	    }
 	}
 	
+	public void reset() {
+	    forinfo = null;
+	}
+	
 	public static <I, R> Function<List<ItemInfo>, Supplier<R>> map1(Class<I> icl, Function<I, Supplier<R>> data) {
 	    return(info -> {
 		I inf = find(icl, info);

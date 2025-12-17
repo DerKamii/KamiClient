@@ -65,6 +65,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     private long filtered = 0;
     private boolean infoDirty = false;
     private final List<Action0> matchListeners = new ArrayList<>();
+    public boolean resettt = false;
     
     public static void setFilter(ItemFilter filter) {
 	GItem.filter = filter;

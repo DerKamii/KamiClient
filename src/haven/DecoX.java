@@ -99,6 +99,8 @@ public class DecoX extends Window.DefaultDeco {
 	} else {
 	    theme.drawframe(g, this);
 	}
+	Window wnd = (Window) parent;
+	wnd.CheckForDinnerTable();
     }
     
     @Override

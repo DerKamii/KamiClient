@@ -134,6 +134,7 @@ public class CharacterInfo {
 		}
 		els.add(new Data(t, a));
 	    }
+	    FoodInfo.resettts();
 	    order();
 	}
 	

@@ -26,6 +26,7 @@
 
 package haven;
 
+import haven.resutil.FoodInfo;
 import haven.rx.Reactor;
 import me.ender.Reflect;
 import rx.Subscription;
@@ -730,6 +731,21 @@ public class Widget {
 	} else if(msg == "show") {
 	    show(Utils.bv(args[0]));
 	} else if(msg == "curs") {
+	    try {
+		final String EAT = "gfx/hud/curs/eat";
+		boolean newIsEat = (args[0] instanceof String) && EAT.equals((String) args[0]);
+		if (newIsEat) {
+		    FoodInfo.resettts();
+		} else {
+		    try {
+			if (cursor != null && cursor.get() != null && EAT.equals(cursor.get().name)) {
+			    FoodInfo.resettts();
+			}
+		    } catch (NullPointerException | Loading ignore) {
+		    }
+		}
+	    } catch (Exception ex) {}
+	    
 	    if(args.length == 0)
 		cursor = null;
 	    else if(args[0] instanceof String)

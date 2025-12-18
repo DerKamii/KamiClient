@@ -253,17 +253,13 @@ public class FoodInfo extends ItemInfo.Tip {
     
     public static void resettts() {
 	new Thread(() -> {
-	    int delay = 200;
+	    int delay = 100;
 	    try {
 		Thread.sleep(delay);
 	    } catch (InterruptedException e) {
 		e.printStackTrace();
 	    }
 	    
-	    for (GItem i : new ArrayList<>(gitems)) {
-		if (i != null)
-		    i.resettt = true;
-	    }
 	    for (WItem i : new ArrayList<>(witems)) {
 		if (i != null && i.fepnum != null) {
 		    i.fepnum.reset();

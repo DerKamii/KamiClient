@@ -253,7 +253,7 @@ public class FoodInfo extends ItemInfo.Tip {
     
     public static void resettts() {
 	new Thread(() -> {
-	    int delay = 100;
+	    int delay = 200;
 	    try {
 		Thread.sleep(delay);
 	    } catch (InterruptedException e) {

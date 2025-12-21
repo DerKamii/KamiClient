@@ -1,3 +1,14 @@
+$size[14]{$u{update on 21.12.2025:}
+* Added a way to import multiple hearthsecrets from clipboard.
+* You can also set a color if you put any of the following inside the list:
+* white, gree, blue, yellow, red, purple, orange, cyan
+* Added a colored fep counter to foods. If you sit down on a table and observe the numbers on the food,
+* you should be able to tell if it will one shot your stats or not.
+* Added a bandaid for christmas crash. I hope it will actually work, it's hard to produce.
+
+$size[14]{$u{update on 15.12.2025:}
+* added loftar's update. New Slots.
+
 $size[14]{$u{update on 13.12.2025:}
 * Synced Alchemy stuff fixes
 * Synced Loftar code.

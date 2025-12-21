@@ -28,6 +28,8 @@ package haven.render;
 
 import java.util.*;
 import java.util.function.*;
+
+import haven.CFG;
 import haven.Config;
 
 public class TickList implements RenderList<TickList.TickNode> {
@@ -131,9 +133,11 @@ public class TickList implements RenderList<TickList.TickNode> {
 	    if(ent.mon == null) {
 		ent.tick.autotick(dt);
 	    } else {
-		synchronized(ent.mon) {
-		    ent.tick.autotick(dt);
-		}
+		// christmas bandaid...
+		if (!ent.tick.getClass().getName().contains("AnimFlare") || !CFG.HIDE_TREES.get())
+		    synchronized(ent.mon) {
+			ent.tick.autotick(dt);
+		    }
 	    }
 	};
 	if(!Config.par.get())

@@ -198,6 +198,7 @@ public class CFG<T> {
     public static final CFG<Integer> AUTO_DRINK_THRESHOLD = new CFG<>("automation.autodrink.threshold", 74);
     public static final CFG<Integer> AUTO_DRINK_DELAY = new CFG<>("automation.autodrink.delay", 250);
     public static final CFG<Boolean> ENABLE_PURGE_BUTTON_IN_KIN_LIST = new CFG<>("ui.enable_purge_button_kin_list", false);
+    public static final CFG<Boolean> SHOW_FEP_NUMBERS_ON_FOOD = new CFG<>("ui.show_fep_numbers_on_food", false);
     
     private static final String CONFIG_JSON = "config.json";
     private static final Map<Object, Object> cfg;

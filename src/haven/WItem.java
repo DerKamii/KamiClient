@@ -390,7 +390,15 @@ public class WItem extends Widget implements DTarget {
 	if(item.num >= 0) {
 	    tex = Text.render(Integer.toString(item.num)).tex();
 	} else {
-	    tex = chainattr(/*itemnum, */heurnum, armor, durability, fepnum);
+	    tex = chainattr(/*itemnum, */heurnum, armor, durability);
+	}
+	
+	if (CFG.SHOW_FEP_NUMBERS_ON_FOOD.get()) {
+	    try {
+		Tex fepTex = fepnum.get();
+		if (fepTex != null)
+		    g.aimage(fepTex, new Coord(0, (CFG.SWAP_NUM_AND_Q.get() ? 0 : 20)),0 , 0);
+	    } catch (Exception ignore) {}
 	}
 	
 	if(tex != null) {

@@ -1392,6 +1392,9 @@ public class OptWnd extends WindowX {
     
 	y += 2*STEP;
 	panel.add(new CFGBox("Show item quality", CFG.Q_SHOW_SINGLE), x, y);
+	
+	y += STEP;
+	panel.add(new CFGBox("Show fep numbers on food.", CFG.SHOW_FEP_NUMBERS_ON_FOOD), x, y);
     
 	y += STEP;
 	panel.add(new CFGBox("Swap item quality and number", CFG.SWAP_NUM_AND_Q), x, y);

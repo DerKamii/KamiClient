@@ -35,7 +35,6 @@ import me.ender.*;
 import me.ender.gob.KinInfo;
 import me.ender.gob.GobCombatInfo;
 import me.ender.minimap.AutoMarkers;
-
 import java.awt.*;
 import java.util.*;
 import java.util.function.Consumer;
@@ -1070,9 +1069,12 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     
     public void added(RenderTree.Slot slot) {
 	slot.ostate(curstate());
-	for(Overlay ol : ols) {
-	    if(ol.slots != null)
-		slot.add(ol);
+	synchronized (ols)
+	{
+	    for(Overlay ol : ols) {
+		if(ol.slots != null)
+		    slot.add(ol);
+	    }
 	}
 	Map<Class<? extends GAttrib>, GAttrib> attr = cloneattrs();
 	for(GAttrib a : attr.values()) {
@@ -1401,6 +1403,21 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    }
 	    return changed;
 	}
+	// Tests for later usage
+//	String resName = resid();
+//	if (resName != null)
+//	{
+//	    if (resName.equals("gfx/terobjs/items/soils"))
+//	    {
+//		tag(GobTag.HIDDEN);
+//		Drawable d = drawable;
+//		if(d.slots != null) {
+//		    ArrayList<RenderTree.Slot> tmpSlots = new ArrayList<>(d.slots);
+//		    glob.loader.defer(() -> RUtils.multiremSafe(tmpSlots), null);
+//		}
+//	    }
+//	}
+	
 	return false;
     }
     

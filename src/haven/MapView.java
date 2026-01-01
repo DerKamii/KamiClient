@@ -580,7 +580,8 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	
 	protected void chfield(float nf) {
 	    tfield = nf;
-	    tfield = Math.max(Math.min(tfield, sz.x * (float)Math.sqrt(2) / 8f), 50);
+	    float maxZoom = (CFG.EXTEND_ZOOM_ON_ORTHO.get() ? 4f : 8f);
+	    tfield = Math.max(Math.min(tfield, sz.x * (float)Math.sqrt(2) / maxZoom), 50);
 	    if(tfield > 100)
 		release();
 	}

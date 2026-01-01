@@ -947,6 +947,9 @@ public class OptWnd extends WindowX {
     
 	y += STEP;
 	camera.add(new CFGBox("Invert vertical camera rotation", CFG.CAMERA_INVERT_Y), x, y);
+	
+	y += STEP;
+	camera.add(new CFGBox("Extend zoom for ortho", CFG.EXTEND_ZOOM_ON_ORTHO), x, y);
     
 	y += BIG_STEP;
 	my = Math.max(my, y);

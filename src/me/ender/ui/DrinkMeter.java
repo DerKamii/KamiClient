@@ -2,6 +2,7 @@ package me.ender.ui;
 
 import auto.InvHelper;
 import haven.*;
+import haven.bot.AutoDrink;
 
 import java.awt.*;
 import java.util.List;
@@ -109,6 +110,10 @@ public class DrinkMeter extends Widget {
 	    max += ItemData.getMaxCapacity(item) / 100f;
 	}
 	
+	// a bit hacky but I wanted to avoid repeated inventory inspection
+	// TODO: make option to drink tea (will require flower menu which interferes with controls)
+	AutoDrink.getInstance().carried_drinks = water;
+
 	return true;
     }
     

@@ -197,6 +197,7 @@ public class CFG<T> {
     public static final CFG<Boolean> AUTO_DRINK_ENABLED = new CFG<>("automation.autodrink.enabled", false);
     public static final CFG<Integer> AUTO_DRINK_THRESHOLD = new CFG<>("automation.autodrink.threshold", 74);
     public static final CFG<Integer> AUTO_DRINK_DELAY = new CFG<>("automation.autodrink.delay", 250);
+    public static final CFG<Integer> AUTO_DRINK_FORCED_INTERVAL = new CFG<>("automation.autodrink.forced_interval", 15000);
     public static final CFG<Boolean> ENABLE_PURGE_BUTTON_IN_KIN_LIST = new CFG<>("ui.enable_purge_button_kin_list", false);
     public static final CFG<Boolean> SHOW_FEP_NUMBERS_ON_FOOD = new CFG<>("ui.show_fep_numbers_on_food", false);
     public static final CFG<Boolean> EXTEND_ZOOM_ON_ORTHO = new CFG<>("cam.extend_zoom_on_ortho", false);

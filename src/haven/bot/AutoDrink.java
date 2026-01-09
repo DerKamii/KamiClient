@@ -11,6 +11,7 @@ public class AutoDrink {
     
     GameUI gui = null;
     long lastDrinkTime = 0;
+    public float carried_drinks = 0;
     
     private AutoDrink(){}
     
@@ -49,8 +50,10 @@ public class AutoDrink {
             if (meter != null) {
                 double currentStamina = meter.meter(0);
                 if (currentStamina >= 0 && currentStamina < (autoDrinkThreshold / 100f)) {
-                    lastDrinkTime = currentTime;
-                    gui.wdgmsg("act", "drink");
+                    if (carried_drinks > 0 || currentTime - lastDrinkTime > CFG.AUTO_DRINK_FORCED_INTERVAL.get()) {
+                        lastDrinkTime = currentTime;
+                        gui.wdgmsg("act", "drink");
+                    }
                 }
             }
         }

@@ -188,6 +188,7 @@ public class CFG<T> {
     public static final CFG<Coord> OFFSET_OPENINGS = new CFG<>("combat.offset_openings", new Coord(0,0));
     public static final CFG<Coord> OFFSET_ACTIONS = new CFG<>("combat.offset_actions", new Coord(0,0));
     public static final CFG<Boolean> IGNORE_CERTAIN_REMOTE_UI = new CFG("display.ignore_certain_remote_ui", false);
+    public static final CFG<Boolean> IGNORE_EXCEPTIONS = new CFG("experimental.ignore_exceptions", false);
     public static final CFG<Boolean> DISABLE_WINDOW_ANIMATION = new CFG("ui.disable_window_animation", false);
     public static final CFG<Boolean> REMOVE_BIOME_BORDER_FROM_MINIMAP = new CFG("map.remove_biome_border", false);
     public static final CFG<Boolean> DRAW_OPENINGS_OVER_GOBS = new CFG<>("combat.draw_openings_over_gobs", false);

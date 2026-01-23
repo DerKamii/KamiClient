@@ -68,6 +68,9 @@ public interface KamiOptPanels {
 		y = START;
 		//first row
 		panel.add(new CFGBox("Disable certain remote UI calls", CFG.IGNORE_CERTAIN_REMOTE_UI, "RemoteUI's of the type 'ui/rinit:3' are ignored if the first parameter matches the character name. Prevents the display of Realm invites. Might prevent other things too."), x, y);
+	    
+	    	y += STEP;
+	    	panel.add(new CFGBox("Ignore exceptions", CFG.IGNORE_EXCEPTIONS, "The client contains a couple of porpusefully crafted exceptions that will crash the client. Some of them can be ignored with this enabled."), x, y);
 
 		//second row
 		my = Math.max(my, y);

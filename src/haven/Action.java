@@ -81,8 +81,12 @@ public enum Action {
         LoginScreen.authmech = Config.Variable.prop("nothing", (LoginScreen.authmech.get() == "steam" ? "native" : "steam"));
         gui.act("lo");
     }),
-    TOGGLE_FLAT_TERRAIN(CFG.FLAT_TERRAIN, "Flat terrain", "Toggles terrain flattening on and off.");
-    
+    TOGGLE_FLAT_TERRAIN(CFG.FLAT_TERRAIN, "Flat terrain", "Toggles terrain flattening on and off."),
+    SELECT_DECK_1(FightWndEx.selectDeck(0), "Select deck 1"),
+    SELECT_DECK_2(FightWndEx.selectDeck(1), "Select deck 2"),
+    SELECT_DECK_3(FightWndEx.selectDeck(2), "Select deck 3"),
+    SELECT_DECK_4(FightWndEx.selectDeck(3), "Select deck 4"),
+    SELECT_DECK_5(FightWndEx.selectDeck(4), "Select deck 5");
     
     public final String name;
     private final Do action;

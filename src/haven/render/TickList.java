@@ -125,25 +125,33 @@ public class TickList implements RenderList<TickList.TickNode> {
     public void update(Pipe group, int[] statemask) {}
 
     public void tick(double dt) {
-	List<Entry> copy;
-	synchronized(cur) {
-	    copy = new ArrayList<>(cur.values());
-	}
-	Consumer<Entry> task = ent -> {
-	    if(ent.mon == null) {
-		ent.tick.autotick(dt);
-	    } else {
-		// christmas bandaid...
-		if (!ent.tick.getClass().getName().contains("AnimFlare") || !CFG.HIDE_TREES.get())
-		    synchronized(ent.mon) {
-			ent.tick.autotick(dt);
-		    }
+	try {
+	    
+	    
+	    List<Entry> copy;
+	    synchronized (cur) {
+		copy = new ArrayList<>(cur.values());
 	    }
-	};
-	if(!Config.par.get())
-	    copy.forEach(task);
-	else
-	    copy.parallelStream().forEach(task);
+	    Consumer<Entry> task = ent -> {
+		if(ent.mon == null) {
+		    ent.tick.autotick(dt);
+		} else {
+		    // christmas bandaid...
+		    if(!ent.tick.getClass().getName().contains("AnimFlare") || !CFG.HIDE_TREES.get())
+			synchronized (ent.mon) {
+			    ent.tick.autotick(dt);
+			}
+		}
+	    };
+	    if(!Config.par.get())
+		copy.forEach(task);
+	    else
+		copy.parallelStream().forEach(task);
+	}
+	catch (Exception ignore)
+	{
+	    // What happens inside a tick, stays inside the tick.
+	}
     }
 
     public void gtick(Render g) {

@@ -250,6 +250,7 @@ public class Resource implements Serializable {
 	this.pool = pool;
 	this.name = name;
 	this.ver = ver;
+	//System.out.println(name);
     }
 
     public static class Virtual extends Resource {

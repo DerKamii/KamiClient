@@ -59,6 +59,7 @@ public class FightWndEx extends Widget {
     private final Label count;
     private final Map<Indir<Resource>, Object[]> actrawinfo = new HashMap<>();
     private boolean needFilter = false;
+    public static FightWndEx instance;
     
     private static final OwnerContext.ClassResolver<FightWndEx> actxr = new OwnerContext.ClassResolver<FightWndEx>()
 	.add(Glob.class, wdg -> wdg.ui.sess.glob)
@@ -698,6 +699,7 @@ public class FightWndEx extends Widget {
     private static final Coord INFO_SZ = UI.scale(223, 0);
     public FightWndEx(int nsave, int nact, int max) {
 	super(Coord.z);
+	instance = this;
 	this.nsave = nsave;
 	this.maxact = max;
 	this.order = new Action[nact];
@@ -991,5 +993,27 @@ public class FightWndEx extends Widget {
 	    this.list = null;
 	    inverted = true;
 	}
+    }
+    
+    public static haven.Action.Do selectDeck(int num) {
+	return gui -> {
+	    if (instance != null) {
+		instance.load(num);
+		instance.use(num);
+		
+		String deckName = instance.saves[num].text;
+		
+		gui.ui.message("Deck: " + deckName, GameUI.MsgType.INFO);
+	    }
+	};
+    }
+    
+    public static Boolean isCurrentDeck(int num) {
+	if (instance != null) {
+	    if (instance.usesave == num)
+		return true;
+	}
+	
+	return false;
     }
 }

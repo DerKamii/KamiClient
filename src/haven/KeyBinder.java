@@ -122,6 +122,12 @@ public class KeyBinder {
 	add(KeyEvent.VK_UP, CTRL, CAM_SNAP_NORTH);
 	add(KeyEvent.VK_DOWN, CTRL, CAM_SNAP_SOUTH);
 	add(KeyEvent.VK_HOME, NONE, CAM_RESET);
+	
+	add(SELECT_DECK_1);
+	add(SELECT_DECK_2);
+	add(SELECT_DECK_3);
+	add(SELECT_DECK_4);
+	add(SELECT_DECK_5);
     }
     
     private static synchronized void store() {

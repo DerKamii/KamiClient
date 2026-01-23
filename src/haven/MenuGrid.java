@@ -918,6 +918,12 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	makeLocal("paginae/add/equip/sword-n-board", Action.EQUIP_SWORD_N_BOARD);
 	makeLocal("paginae/add/equip/bow", Action.EQUIP_BOW);
 	makeLocal("paginae/add/equip/spear", Action.EQUIP_SPEAR);
+	
+	makeLocal("paginae/add/decks/deck1", Action.SELECT_DECK_1, () -> FightWndEx.isCurrentDeck(0));
+	makeLocal("paginae/add/decks/deck2", Action.SELECT_DECK_2, () -> FightWndEx.isCurrentDeck(1));
+	makeLocal("paginae/add/decks/deck3", Action.SELECT_DECK_3, () -> FightWndEx.isCurrentDeck(2));
+	makeLocal("paginae/add/decks/deck4", Action.SELECT_DECK_4, () -> FightWndEx.isCurrentDeck(3));
+	makeLocal("paginae/add/decks/deck5", Action.SELECT_DECK_5, () -> FightWndEx.isCurrentDeck(4));
     }
     
     private void makeLocal(String path, CustomPaginaAction action, Supplier<Boolean> toggleState) {

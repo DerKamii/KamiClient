@@ -1,0 +1,13 @@
+#ABUTTON LAYER FOR RES qwe//\res\paginae\act\deckselection.res
+#String pr
+paginae/act/add
+#uint16 pver
+2
+#String name
+Select combat deck
+#String preq
+
+#uint16 hk
+100
+#uint16 ad length
+0

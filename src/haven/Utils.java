@@ -150,7 +150,11 @@ public class Utils {
 	    throw(lerr);
 	throw(new UnknownHostException(host));
     }
-    
+
+    public static SocketChannel connect(NamedSocketAddress addr) throws IOException {
+	return(connect(addr.host, addr.port));
+    }
+
     public static int drawtext(Graphics g, String text, Coord c) {
 	java.awt.FontMetrics m = g.getFontMetrics();
 	g.drawString(text, c.x, c.y + m.getAscent());
@@ -479,7 +483,7 @@ public class Utils {
 	    try {
 		got = String.valueOf(this.got);
 	    } catch(Throwable t) {
-		got = "!formatting error (" + t + ")";
+		got = "!formatting error (" + this.got.getClass() + ", " + t + ")";
 	    }
 	    return(String.format("expected %s, got %s", expected, got));
 	}
@@ -506,7 +510,15 @@ public class Utils {
 	    return((List<?>)arg);
 	throw(new ArgumentFormatException("object-list", arg));
     }
-    
+
+    public static Object[] oav(Object arg) {
+	if(arg instanceof Object[])
+	    return((Object[])arg);
+	if(arg instanceof List)
+	    return(((List<?>)arg).toArray(new Object[0]));
+	throw(new ArgumentFormatException("object-array", arg));
+    }
+
     public static int iv(Object arg) {
 	return(ArgumentFormatException.check(arg, Number.class, "int").intValue());
     }

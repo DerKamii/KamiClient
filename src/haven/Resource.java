@@ -193,14 +193,14 @@ public class Resource implements Serializable {
 		@SuppressWarnings("unchecked") Indir<Resource> ret = (Indir<Resource>)desc;
 		return(ret);
 	    }
-	    throw(new Utils.ArgumentFormatException("res-desc: ", desc));
+	    throw(new Utils.ArgumentFormatException("res-desc", desc));
 	}
 
 	public class ResourceMap implements Resource.Resolver {
 	    public final Resource.Resolver bk;
-	    public final Map<Integer, Integer> map;
+	    public final Map<Integer, ? extends Object> map;
 
-	    public ResourceMap(Resource.Resolver bk, Map<Integer, Integer> map) {
+	    public ResourceMap(Resource.Resolver bk, Map<Integer, ? extends Object> map) {
 		this.bk = bk;
 		this.map = map;
 	    }
@@ -223,17 +223,17 @@ public class Resource implements Serializable {
 		return(ret);
 	    }
 
-	    public static Map<Integer, Integer> decode(Object[] args) {
+	    public static Map<Integer, ? extends Object> decode(Object[] args) {
 		if(args.length == 0)
 		    return(Collections.emptyMap());
-		Map<Integer, Integer> ret = new HashMap<>();
+		Map<Integer, Object> ret = new HashMap<>();
 		for(int a = 0; a < args.length; a += 2)
-		    ret.put(Utils.iv(args[a]), Utils.iv(args[a + 1]));
+		    ret.put(Utils.iv(args[a]), args[a + 1]);
 		return(ret);
 	    }
 
 	    public Indir<Resource> getres(int id) {
-		return(bk.getres(map.get(id)));
+		return(bk.getresv(map.get(id)));
 	    }
 
 	    public Indir<Resource> dynres(UID uid) {
@@ -1069,6 +1069,10 @@ public class Resource implements Serializable {
 	}
     }
 
+    public interface Metadata {
+	public Map<?, ?> info();
+    }
+
     public interface IDLayer<T> {
 	public T layerid();
     }
@@ -1089,7 +1093,7 @@ public class Resource implements Serializable {
     }
 
     @LayerName("image")
-    public class Image extends Layer implements IDLayer<Integer> {
+    public class Image extends Layer implements IDLayer<Integer>, Metadata {
 	public transient BufferedImage img;
 	private transient BufferedImage scaled;
 	private transient Tex tex, rawtex;
@@ -1229,9 +1233,8 @@ public class Resource implements Serializable {
 	    return(tex);
 	}
 
-	public Integer layerid() {
-	    return(id);
-	}
+	public Integer layerid() {return(id);}
+	public Map<String, Object> info() {return(info);}
 		
 	public void init() {}
     }
@@ -1859,21 +1862,34 @@ public class Resource implements Serializable {
     }
 
     @LayerName("audio2")
-    public class Audio extends Layer implements haven.Audio.Clip {
+    public class Audio extends Layer implements haven.Audio.Clip, Metadata {
 	transient public byte[] coded;
 	public final String id;
+	public final Map<String, Object> info;
 	public double bvol = 1.0;
 
 	public Audio(Message buf) {
 	    int ver = buf.uint8();
-	    if((ver >= 1) && (ver <= 2)) {
+	    Map<String, Object> info = new HashMap<>();
+	    if((ver >= 1) && (ver <= 3)) {
 		this.id = buf.string();
-		if(ver >= 2)
+		if(ver == 2)
 		    bvol = buf.uint16() * 0.001;
+		if(ver >= 3) {
+		    while(true) {
+			String key = buf.string();
+			if(key.equals(""))
+			    break;
+			Object val = buf.tto(resmapper());
+			info.put(key, val);
+		    }
+		    bvol = Utils.dv(Utils.pop(info, "vol", 1.0));
+		}
 		this.coded = buf.bytes();
 	    } else {
 		throw(new UnknownFormatException(getres(), "audio layer version", ver));
 	    }
+	    this.info = info.isEmpty() ? Collections.emptyMap() : info;
 	}
 
 	public void init() {}
@@ -1887,6 +1903,7 @@ public class Resource implements Serializable {
 	}
 
 	public String layerid() {return(id);}
+	public Map<String, Object> info() {return(info);}
 	public double bvol() {return(bvol);}
     }
 

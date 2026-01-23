@@ -16,7 +16,7 @@ import static haven.OCache.*;
 import static java.lang.Math.*;
 
 /* >wdg: Pointer */
-@FromResource(name = "ui/locptr", version = 22)
+@FromResource(name = "ui/locptr", version = 23)
 public class Pointer extends Widget implements MiniMap.IPointer, DTarget {
     private static final Color TRIANGULATION_COLOR = new Color(100, 100, 100);
     public static final BaseColor[] colors = new BaseColor[]{

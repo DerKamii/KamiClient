@@ -1,3 +1,10 @@
+$size[14]{$u{update on 23.01.2026:}
+* Merged with newest updates.
+* Added higher zoom out for ortho cam.
+* Added hotkeys and icons for deck switching.
+* Started to ignore certain throws, which can be enabled under experimental features.
+* Keksdose.
+`
 $size[14]{$u{update on 23.12.2025:}
 * Fep number on food must be enabled in ui options now.
 * Position for that has changed to the left.

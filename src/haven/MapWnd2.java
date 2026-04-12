@@ -60,24 +60,15 @@ public class MapWnd2 extends MapWnd {
 	super.setCfg();
 	cfg.sz = sz;
     }
-
-    public void addMarker(Gob gob) {
-	addMarker(gob.rc.floor(tilesz), gob.tooltip());
-    }
-
-    public void addMarker(Coord at) {
-	addMarker(at, "New marker");
-    }
-
+    
     public void addMarker(Coord at, String name) {
 	at = at.add(view.sessloc.tc);
-	Marker nm = new PMarker(view.sessloc.seg.id, at, name, BuddyWnd.gc[new Random().nextInt(BuddyWnd.gc.length)]);
+	Marker nm = new PMarker(view.sessloc.seg.id, at, name, BuddyWnd.gc[new Random().nextInt(BuddyWnd.gc.length)], false);
 	file.add(nm);
 	focus(nm);
 	if(ui.modctrl) {
 	    ui.gui.track(nm);
 	}
-	domark = false;
     }
 
     public void removeMarker(Marker marker) {
@@ -110,7 +101,6 @@ public class MapWnd2 extends MapWnd {
 	    }
 	}
 	ui.gui.track(marker);
-	domark = false;
     }
 
     public void untrack(long gobid) {

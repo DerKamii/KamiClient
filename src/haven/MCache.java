@@ -42,9 +42,8 @@ public class MCache implements MapSource {
     public static final Coord cutn = cmaps.div(cutsz);
     public static final Coord sgridsz = new Coord(100, 100);
     private final Object setmon = new Object();
-    public Resource.Spec[] nsets = new Resource.Spec[16];
     @SuppressWarnings("unchecked")
-    private Reference<Resource>[] sets = new Reference[16];
+    private Indir<Resource>[] sets = new Indir[16];
     @SuppressWarnings("unchecked")
     private Reference<Tileset>[] csets = new Reference[16];
     @SuppressWarnings("unchecked")
@@ -53,10 +52,10 @@ public class MCache implements MapSource {
     Map<Coord, Request> req = new HashMap<Coord, Request>();
     Map<Coord, Grid> grids = new HashMap<Coord, Grid>();
     Session sess;
-    final Set<Overlay> ols = new HashSet<Overlay>();
-    public int olseq = 0, chseq = 0;
-    public long lastupdate = 0;
+    Set<LocalOverlay> ols = new HashSet<>();
+    public volatile int olseq = 0, chseq = 0;
     Map<Integer, Defrag> fragbufs = new TreeMap<Integer, Defrag>();
+    public long lastupdate = 0;
     
     public static class LoadingMap extends Loading {
 	public final Coord gc;
@@ -232,53 +231,119 @@ public class MCache implements MapSource {
 	    return(String.format("#<res-overlay %s %d>", getres().name, matid));
 	}
     }
-    
-    public class Overlay {
-	private Area a;
-	private OverlayInfo id;
-	private Function<Coord, Boolean> mask;
-	
-	public Overlay(Area a, OverlayInfo id) {
-	    this.a = a;
+
+    public static interface LocalOverlay {
+	public OverlayInfo id();
+	public void fill(Area a, boolean[] buf);
+	public default boolean filter(Area a) {return(false);}
+	public default void tick() {}
+    }
+
+    public void add(LocalOverlay ol) {
+	synchronized (ols) {
+	    ols.add(ol);
+	    olseq++;
+	}
+    }
+
+    public void remove(LocalOverlay ol) {
+	synchronized (ols) {
+	    ols.remove(ol);
+	    olseq++;
+	}
+    }
+    public class RectOverlay implements LocalOverlay {
+	public final OverlayInfo id;
+	public Area a;
+
+	public RectOverlay(OverlayInfo id, Area a) {
 	    this.id = id;
-	    synchronized (ols) {
-		ols.add(this);
+	    this.a = a;
+	}
+
+	public OverlayInfo id() {return(id);}
+
+	public boolean filter(Area b) {
+	    return(b.overlap(a) == null);
+	}
+
+	public void fill(Area b, boolean[] buf) {
+	    Area ol = a.overlap(b);
+	    if(ol != null) {
+		for(Coord lc : ol)
+		    buf[b.ri(lc)] = true;
+	    }
+	}
+
+	public void update(Area a) {
+	    if(!a.equals(this.a)) {
+		this.a = a;
 		olseq++;
 	    }
 	}
+    }
+
+    public class MaskedRectOverlay implements LocalOverlay {
+	public OverlayInfo id;
+	public Area a;
+	private final Function<Coord, Boolean> mask;
+
+	public MaskedRectOverlay(OverlayInfo id, Area a, Function<Coord, Boolean> mask) {
+	    this.id = id;
+	    this.a = a;
+	    this.mask = mask;
+	}
 	
-	public void destroy() {
-	    synchronized (ols) {
-		ols.remove(this);
+	public OverlayInfo id() {return(id);}
+
+	public boolean filter(Area b) {
+	    return(b.overlap(a) == null);
+	}
+
+	public void fill(Area b, boolean[] buf) {
+	    Area ol = a.overlap(b);
+	    if(ol == null) {return;}
+	    for (Coord lc : ol) {
+		if(mask(lc)) {buf[b.ri(lc)] = true;}
+	    }
+	}
+
+	public void update(Area a) {
+	    if(!a.equals(this.a)) {
+		this.a = a;
 		olseq++;
 	    }
 	}
-	
+
 	public void update(OverlayInfo id, Area a) {
 	    if(!id.equals(this.id)) {
-		olseq++;
 		this.id = id;
+		olseq++;
 	    }
 	    update(a);
 	}
-	
-	public void update(Area a) {
-	    if(!a.equals(this.a)) {
-		olseq++;
-		this.a = a;
-	    }
-	}
-	
-	public void mask(Function<Coord, Boolean> mask) {this.mask = mask;}
-	
+
 	public boolean mask(Coord c) {return mask == null || Boolean.TRUE.equals(mask.apply(c));}
+    }
+
+    @Deprecated
+    public class Overlay extends RectOverlay {
+	public Overlay(Area a, OverlayInfo id) {
+	    super(id, a);
+	    ols.add(this);
+	    olseq++;
+	}
+
+	public void destroy() {
+	    ols.remove(this);
+	    olseq++;
+	}
     }
     
     private void cktileid(int id) {
-	if(id >= nsets.length) {
+	if(id >= sets.length) {
 	    synchronized(setmon) {
-		if(id >= nsets.length) {
-		    nsets = Utils.extend(nsets, Integer.highestOneBit(id) * 2);
+		if(id >= sets.length) {
 		    sets  = Utils.extend(sets,  Integer.highestOneBit(id) * 2);
 		    csets = Utils.extend(csets, Integer.highestOneBit(id) * 2);
 		    tiles = Utils.extend(tiles, Integer.highestOneBit(id) * 2);
@@ -508,7 +573,7 @@ public class MCache implements MapSource {
 	    int[] ids = new int[16];
 	    int nids = 0;
 	    {
-		boolean[] uids = new boolean[nsets.length];
+		boolean[] uids = new boolean[sets.length];
 		int i = area.ul.x + (area.ul.y * cmaps.x);
 		for(int y = 0; y < cutsz.y; y++, i += (cmaps.x - cutsz.x)) {
 		    for(int x = 0; x < cutsz.x; x++, i++) {
@@ -639,11 +704,11 @@ public class MCache implements MapSource {
 		String resnm = buf.string();
 		int resver = buf.uint16();
 		cktileid(tileid);
-		nsets[tileid] = new Resource.Spec(Resource.remote(), resnm, resver);
+		sets[tileid] = new Resource.Spec(Resource.remote(), resnm, resver);
 	    }
 	    for(int i = 0; i < tiles.length; i++) {
 		tiles[i] = buf.uint8();
-		if(nsets[tiles[i]] == null)
+		if(sets[tiles[i]] == null)
 		    throw(new Message.FormatError(String.format("Got undefined tile: " + tiles[i])));
 	    }
 	}
@@ -663,12 +728,36 @@ public class MCache implements MapSource {
 		String resnm = buf.string();
 		int resver = buf.uint16();
 		cktileid(tileid);
-		nsets[tileid] = new Resource.Spec(Resource.remote(), resnm, resver);
+		sets[tileid] = new Resource.Spec(Resource.remote(), resnm, resver);
 	    }
 	    boolean lg = maxid >= 256;
 	    for(int i = 0; i < tiles.length; i++) {
 		tiles[i] = tileids[lg ? buf.uint16() : buf.uint8()];
-		if(nsets[tiles[i]] == null)
+		if(sets[tiles[i]] == null)
+		    throw(new Message.FormatError(String.format("Got undefined tile: " + tiles[i])));
+	    }
+	}
+
+	private void filltiles3(Message buf) {
+	    int[] tileids = new int[1];
+	    int maxid = 0;
+	    while(true) {
+		int encid = buf.uint16();
+		if(encid == 65535)
+		    break;
+		maxid = Math.max(maxid, encid);
+		int tileid = buf.uint16();
+		if(encid >= tileids.length)
+		    tileids = Utils.extend(tileids, Integer.highestOneBit(encid) * 2);
+		tileids[encid] = tileid;
+		Indir<Resource> res = sess.getres(buf.uint16());
+		cktileid(tileid);
+		sets[tileid] = res;
+	    }
+	    boolean lg = maxid >= 256;
+	    for(int i = 0; i < tiles.length; i++) {
+		tiles[i] = tileids[lg ? buf.uint16() : buf.uint8()];
+		if(sets[tiles[i]] == null)
 		    throw(new Message.FormatError(String.format("Got undefined tile: " + tiles[i])));
 	    }
 	}
@@ -769,27 +858,30 @@ public class MCache implements MapSource {
 		    len = msg.int32();
 		Message buf = new LimitMessage(msg, len);
 		switch(lnm) {
-		    case "z":
-			subfill(new ZMessage(buf));
-			break;
-		    case "m":
-			id = buf.int64();
-			break;
-		    case "t":
-			filltiles(buf);
-			break;
-		    case "t2":
-			filltiles2(buf);
-			break;
-		    case "h":
-			fillz(buf);
-			break;
-		    case "pi":
-			decplots(buf);
-			break;
-		    case "p":
-			fillplots(buf);
-			break;
+		case "z":
+		    subfill(new ZMessage(buf));
+		    break;
+		case "m":
+		    id = buf.int64();
+		    break;
+		case "t":
+		    filltiles(buf);
+		    break;
+		case "t2":
+		    filltiles2(buf);
+		    break;
+		case "t3":
+		    filltiles3(buf);
+		    break;
+		case "h":
+		    fillz(buf);
+		    break;
+		case "pi":
+		    decplots(buf);
+		    break;
+		case "p":
+		    fillplots(buf);
+		    break;
 		}
 		buf.skip();
 	    }
@@ -833,6 +925,8 @@ public class MCache implements MapSource {
 	}
 	for(Grid g : copy)
 	    g.tick(dt);
+	for(LocalOverlay lol : new ArrayList<>(ols))
+	    lol.tick();
     }
     
     public void gtick(Render g) {
@@ -989,9 +1083,9 @@ public class MCache implements MapSource {
 	    }
 	}
 	synchronized (ols) {
-	    for (Overlay lol : ols) {
-		if((lol.a.overlap(a) != null) && !ret.contains(lol.id))
-		    ret.add(lol.id);
+	    for (LocalOverlay lol : ols) {
+		if(!lol.filter(a) && !ret.contains(lol.id()))
+		    ret.add(lol.id());
 	    }
 	}
 	return(ret);
@@ -1013,18 +1107,13 @@ public class MCache implements MapSource {
 	    }
 	}
 	synchronized (ols) {
-	    for (Overlay lol : ols) {
-		if(lol.id != id)
+	    for(LocalOverlay lol : ols) {
+		if(lol.id() != id)
 		    continue;
-		Area la = lol.a.overlap(a);
-		if(la != null) {
-		    for (Coord lc : la)
-			if(lol.mask(lc)) {buf[a.ri(lc)] = true;}
-		}
+		lol.fill(a, buf);
 	    }
 	}
-    }
-    
+    }    
     public MapMesh getcut(Coord cc) {
 	return(getgrid(cc.div(cutn)).getcut(cc.mod(cutn)));
     }
@@ -1098,26 +1187,12 @@ public class MCache implements MapSource {
 	    }
 	}
     }
-    
-    public Resource.Spec tilesetn(int i) {
-	Resource.Spec[] nsets = this.nsets;
-	if(i >= nsets.length)
-	    return(null);
-	return(nsets[i]);
-    }
-    
+
     public Resource tilesetr(int i) {
-	Reference<Resource>[] sets = this.sets;
-	if(i >= sets.length)
+	Indir<Resource>[] sets = this.sets;
+	if(sets[i] == null)
 	    return(null);
-	Resource res = (sets[i] == null) ? null : sets[i].get();
-	if(res == null) {
-	    Resource.Spec[] nsets = this.nsets;
-	    if(nsets[i] == null)
-		return(null);
-	    sets[i] = new SoftReference<>(res = nsets[i].get());
-	}
-	return(res);
+	return(sets[i].get());
     }
     
     public Tileset tileset(int i) {

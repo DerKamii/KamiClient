@@ -22,10 +22,19 @@ public class CustomOptPanels {
 	
 	x = 0;
 	y = START;
-	panel.add(new CFGColorBtn(CFG.COLOR_MINE_SUPPORT_OVERLAY, "Mine support overlay", false), x, y);
+	panel.add(new CFGColorBtn(CFG.COLOR_MINE_SUPPORT_OVERLAY, "Mine support overlay", true), x, y);
+	
+	y += STEP;
+	panel.add(new CFGColorBtn(CFG.COLOR_MINE_SUPPORT_SINGLE_OVERLAY, "Mine support (single) overlay", true), x, y);
+
+	y += STEP;
+	panel.add(new CFGColorBtn(CFG.COLOR_MINE_SUPPORT_VIRTUAL_OVERLAY, "Mine support build preview", true), x, y);
 	
 	y += STEP;
 	panel.add(new CFGColorBtn(CFG.COLOR_MINE_SUPPORT_DAMAGED_OVERLAY, "Damaged mine support overlay", true), x, y);
+
+	y+=STEP;
+	y = addSlider(CFG.MINE_SUPPORT_DANGER_THRESHOLD, 0, 100, "Mine support danger threshold %d%% HP:", "Mine support with less than this HP threshold will be considered dangerous.", panel, x, y, STEP);
 	
 	y += STEP;
 	panel.add(new CFGColorBtn(CFG.COLOR_TILE_GRID, "Tile grid", true), x, y);
@@ -127,7 +136,7 @@ public class CustomOptPanels {
 	
 	y += STEP;
 	panel.add(new CFGBox("Re-aggro animals", CFG.COMBAT_RE_AGGRO), x, y).settip("Automatically re-start combat with animals that dropped out of combat with you.\nOnly really useful if 'Auto peace on combat start' is enabled.", true);
-	
+
 	y += STEP;
 	panel.add(new CFGBox("Always mark current target", CFG.ALWAYS_MARK_COMBAT_TARGET , "Usually current target only marked when there's more than one"), x, y);
 	

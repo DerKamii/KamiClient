@@ -111,7 +111,7 @@
     "gfx/tiles/rocks/halite",
     "gfx/tiles/rocks/hornblende",
     "gfx/tiles/rocks/jasper",
-    "gfx/tiles/rocks/corund",
+    "gfx/tiles/rocks/korund",
     "gfx/tiles/rocks/kyanite",
     "gfx/tiles/rocks/limestone",
     "gfx/tiles/rocks/marble",
@@ -131,7 +131,8 @@
     "gfx/tiles/rocks/soapstone",
     "gfx/tiles/rocks/sodalite",
     "gfx/tiles/rocks/sunstone",
-    "gfx/tiles/rocks/zincspar"
+    "gfx/tiles/rocks/zincspar",
+    "gfx/tiles/rocks/corund"
   ],
   "Paving": [
     "gfx/tiles/paving/acrebrick",

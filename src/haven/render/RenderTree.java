@@ -608,6 +608,9 @@ public class RenderTree implements RenderList.Adapter, Disposable {
 
 	private void upddstate(DepInfo nst) {
 	    DepInfo pst = setdstate(nst);
+		if(pst == null) {
+		throw new IllegalStateException(String.format("upddstate: pst is null for '%s'", path()));
+	    }
 	    int[] defch = nst.defdiff(pst);
 	    if(defch == null) {
 		int[] ch = new int[pst.ndef];
@@ -812,6 +815,16 @@ public class RenderTree implements RenderList.Adapter, Disposable {
 
 	public String toString() {
 	    return(String.format("#<rendertree.slot %s>", node));
+	 }
+	 
+	public String path() {
+	    String path = String.valueOf(node);
+	    TreeSlot slot = parent;
+	    if(slot != null) {
+		return slot.path() + "/" + path;
+	    } else {
+		return path;
+	    }
 	}
     }
 

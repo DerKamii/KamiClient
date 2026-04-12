@@ -291,10 +291,12 @@ public class MapFile {
 
     public static class PMarkerOld extends MarkerOld {
 	public Color color;
+	public boolean onmap;
 
-	public PMarkerOld(long seg, Coord tc, String nm, Color color) {
+	public PMarkerOld(long seg, Coord tc, String nm, Color color, boolean onmap) {
 	    super(seg, tc, nm);
 	    this.color = color;
+	    this.onmap = onmap;
 	}
     }
 
@@ -311,7 +313,7 @@ public class MapFile {
 
     private static Marker loadmarker(Message fp) {
 	int ver = fp.uint8();
-	if(ver == 1) {
+	if((ver >= 1) && (ver <= 2)) {
 	    long seg = fp.int64();
 	    Coord tc = fp.coord();
 	    String nm = fp.string();
@@ -319,7 +321,8 @@ public class MapFile {
 	    switch(type) {
 	    case 'p':
 		Color color = fp.color();
-		return(new PMarker(seg, tc, nm, color));
+		boolean onmap = (ver >= 2) ? fp.uint8() != 0 : false;
+		return(new PMarker(seg, tc, nm, color, onmap));
 	    case 's':
 		long oid = fp.int64();
 		Resource.Saved res = new Resource.Saved(Resource.remote(), fp.string(), fp.uint16());
@@ -333,13 +336,15 @@ public class MapFile {
     }
 
     private static void savemarker(Message fp, Marker mark) {
-	fp.adduint8(1);
+	fp.adduint8(2);
 	fp.addint64(mark.seg);
 	fp.addcoord(mark.tc);
 	fp.addstring(mark.nm);
 	if(mark instanceof PMarker) {
+	    PMarker pm = (PMarker)mark;
 	    fp.adduint8('p');
-	    fp.addcolor(((PMarker)mark).color);
+	    fp.addcolor(pm.color);
+	    fp.adduint8(pm.onmap ? 1 : 0);
 	} else if(mark instanceof SMarker) {
 	    SMarker sm = (SMarker)mark;
 	    fp.adduint8('s');
@@ -2113,7 +2118,7 @@ public class MapFile {
 	    }
 	    return(null);
 	}
-    
+ 
 	Marker prevcmark(CustomMarker mark) {
 	    for (Marker pm : MapFile.this.markers) {
 		if(pm instanceof CustomMarker) {

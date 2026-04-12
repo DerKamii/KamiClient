@@ -17,10 +17,12 @@ public class PMarker extends Marker {
     }
     
     public Color color;
+    public boolean onmap;
     
-    public PMarker(long seg, Coord tc, String nm, Color color) {
+    public PMarker(long seg, Coord tc, String nm, Color color, boolean onmap) {
 	super(seg, tc, nm);
 	this.color = color;
+	this.onmap = onmap;
     }
     
     @Override
@@ -47,10 +49,5 @@ public class PMarker extends Marker {
     @Override
     public Area area() {
 	return Area.sized(flagcc.inv(), UI.scale(flagbg.sz));
-    }
-    
-    @Override
-    public int hashCode() {
-	return Objects.hash(super.hashCode(), color);
     }
 }

@@ -181,11 +181,10 @@ public class DecoX extends Window.DefaultDeco {
 	private static final int capo = UI.scale(2), capio = UI.scale(1);
 	private static final Coord mrgn = UI.scale(1, 1);
 	private static final double cay = 0.5;
-	private static final Text.Furnace cf = new Text.Imager(new PUtils.TexFurn(new Text.Foundry(Text.serif.deriveFont(Font.BOLD, UI.scale(14))).aa(true), WindowX.ctex)) {
-	    protected BufferedImage proc(Text text) {
-		return (rasterimg(blurmask2(text.img.getRaster(), UI.rscale(0.75), UI.rscale(1.0), Color.BLACK)));
-	    }
-	};
+	public static final Text.Forge cf =  new PUtils.BlurFurn(new PUtils.TexFurn(new Text.Foundry(Text.serif, 14).aa(true), WindowX.ctex),
+	    UI.rscale(0.75), UI.rscale(1.0), new Color(96, 96, 0));
+	public static final Text.Forge ncf = new PUtils.BlurFurn(new PUtils.TexFurn(new Text.Foundry(Text.serif, 14).aa(true), WindowX.ctex),
+	    UI.rscale(0.75), UI.rscale(1.0), Color.BLACK);
 	
 	public static final BufferedImage[] cbtni = new BufferedImage[]{
 	    Resource.loadsimg("gfx/hud/btn-close"),
@@ -194,6 +193,7 @@ public class DecoX extends Window.DefaultDeco {
 	};
 	
 	private static final IBox wbox = new IBox.Scaled("gfx/hud/wnd", "tl", "tr", "bl", "br", "extvl", "extvr", "extht", "exthb");
+	private boolean cfocus;
 	
 	@Override
 	public void apply(WindowX wndX, DecoX decoX) {
@@ -228,7 +228,7 @@ public class DecoX extends Window.DefaultDeco {
 	    Window wnd = decoX.wndx();
 	    Text cap = decoX.cap;
 	    if((cap == null) || (!Objects.equals(cap.text, wnd.cap))) {
-		cap = (wnd.cap == null) ? null : cf.render(wnd.cap);
+		cap = (wnd.cap == null) ? null : ((cfocus = wnd.hasfocus) ? cf : ncf).render(wnd.cap);
 		decoX.cmw = (cap == null) ? 0 : cap.sz().x;
 		decoX.cpsz = Coord.of(cl.sz().x + decoX.cmw + cr.sz().x, cm.sz.y);
 		decoX.cmw = decoX.cmw - (cl.sz().x) - UI.scale(5);

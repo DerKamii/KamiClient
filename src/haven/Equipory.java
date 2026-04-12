@@ -143,24 +143,19 @@ public class Equipory extends Widget implements DTarget {
     public Equipory(long gobid) {
 	super(isz);
 	ava = add(new Avaview(bg.sz(), gobid, "equcam") {
-	    public boolean mousedown(MouseDownEvent ev) {
-		return(false);
-	    }
-	    
-	    public void draw(GOut g) {
-		g.image(bg, Coord.z);
-		super.draw(g);
-	    }
-	    
-	    {
-		basic.add(new Outlines(false));
-	    }
-	    
-	    final FColor cc = new FColor(0, 0, 0, 0);
-	    protected FColor clearcolor() {return(cc);}
-	}, bgc);
+		public boolean mousedown(MouseDownEvent ev) {
+		    return(false);
+		}
+
+		public void draw(GOut g) {
+		    g.image(bg, Coord.z);
+		    super.draw(g);
+		}
+		
+		final FColor cc = new FColor(0, 0, 0, 0);
+		protected FColor clearcolor() {return(cc);}
+	    }, bgc);	
 //	ava.color = null;
-	
 	bonuses = add(new AttrBonusesWdg(isz.y - UI.scale(20)), isz.x + 5, 0);
 	pack();
     }

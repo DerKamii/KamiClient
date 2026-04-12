@@ -30,7 +30,7 @@ public class ExtInventory extends Widget {
     private static final String CFG_SHOW = "ext.show";
     private static final String CFG_INV = "ext.inv";
     private static int curType = 0;
-    private static final Set<String> EXCLUDES = new HashSet<>(Arrays.asList("Steelbox", "Pouch", "Frame", "Tub", "Fireplace", "Rack", "Pane mold", "Table", "Purse", "Archery Target"));
+    private static final Set<String> EXCLUDES = new HashSet<>(Arrays.asList("Steelbox", "Pouch", "Frame", "Tub", "Fireplace", "Rack", "Pane mold", "Table", "Purse", "Archery Target", "Stack", "Belt"));
     public final Inventory inv;
     private final ItemGroupList list;
     private final Widget extension;
@@ -165,18 +165,22 @@ public class ExtInventory extends Widget {
     
     @Override
     protected void added() {
-	wnd = null;//just in case
-	Window tmp;
-	//do not try to add if we are in the contents window
-	if(!(parent instanceof GItem.ContentsWindow)
-	    //or in the item
-	    && !(parent instanceof GItem)
-	    //or if we have no window parent,
-	    && (tmp = getparent(Window.class)) != null
-	    //or it is not WindowX for some reason
-	    && tmp instanceof WindowX) {
-	    
-	    wnd = (WindowX) tmp;
+	super.added();
+	wnd = null; //just in case
+	decoChanged(getparent(Window.class));
+    }
+
+    protected void decoChanged(Window target) {
+	wnd = null; //just in case
+	boolean parentIsGItem = parent instanceof GItem;
+	boolean isWX = target instanceof WindowX;
+	if(!parentIsGItem //in the item
+	    //or if we have not WindowX parent, 
+	    && target instanceof WindowX
+	    //or its deco is not DecoX
+	    && target.deco instanceof DecoX) {
+
+	    wnd = (WindowX) target;
 	    disabled = disabled || needDisableExtraInventory(wnd.caption());
 	    boolean vis = !disabled && wnd.cfg.getValue(CFG_SHOW, false);
 	    showInv = wnd.cfg.getValue(CFG_INV, true);

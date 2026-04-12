@@ -16,6 +16,7 @@ import java.util.List;
 
 public class CFG<T> {
     public static final CFG<String> VERSION = new CFG<>("version", "");
+    public static final CFG<Integer> VERSION_NUM = new CFG<>("version_num", 0);
     public static final CFG<Boolean> VIDEO_FULL_SCREEN = new CFG<>("video.full_screen", false);
 //    public static final CFG<Boolean> DISPLAY_KINNAMES = new CFG<>("display.kinnames", true);
     public static final CFG<Boolean> DISPLAY_KINSFX = new CFG<>("display.kinsfx", true);
@@ -39,7 +40,6 @@ public class CFG<T> {
     public static final CFG<Boolean> UI_INSTANT_LONG_TIPS = new CFG<>("ui.instant_long_tips", false);
     public static final CFG<Boolean> SHOW_GOB_RADIUS = new CFG<>("display.show_gob_radius", false);
     public static final CFG<Boolean> SHOW_MINESWEEPER_OVERLAY = new CFG<>("display.minesweeper_overlay", false);
-    public static final CFG<Boolean> SHOW_MINE_SUPPORT_AS_OVERLAY = new CFG<>("display.mine_support_overlay", true);
     public static final CFG<Boolean> SHOW_CONTAINER_FULLNESS = new CFG<>("display.container_status", false);
     public static final CFG<Boolean> SHOW_PROGRESS_COLOR = new CFG<>("display.progress_coloring", false);
     public static final CFG<Boolean> SIMPLE_CROPS = new CFG<>("display.simple_crops", false);
@@ -48,6 +48,7 @@ public class CFG<T> {
     public static final CFG<Boolean> DISPLAY_RIDGE_BOX = new CFG<>("display.ridge_box", false);
     public static final CFG<Boolean> COLORIZE_DEEP_WATER = new CFG<>("display.colored_deep_water", true);
     public static final CFG<Integer> DISPLAY_SCALE_CUPBOARDS = new CFG<>("display.scale.cupboards", 100);
+    public static final CFG<Integer> MINE_SUPPORT_DANGER_THRESHOLD = new CFG<>("display.mine_support_danger_threshold", 50);
     public static final CFG<Integer> DISPLAY_SCALE_WALLS = new CFG<>("display.scale.walls", 100);
     public static final CFG<Boolean> DISPLAY_DECALS_ON_TOP = new CFG<>("display.decals_on_top", false);
     public static final CFG<Boolean> DISPLAY_NO_MAT_CUPBOARDS = new CFG<>("display.no_mat.cupboards", false);
@@ -126,8 +127,10 @@ public class CFG<T> {
     public static final CFG<Boolean> SHOW_BOT_MESSAGES = new CFG<>("ui.hide_bot_messages", true);
     
     //Color settings
-    public static final CFG<Color> COLOR_MINE_SUPPORT_OVERLAY = new CFG<>("colors.mine_support_overlay", new Color(149, 246, 194));
-    public static final CFG<Color> COLOR_MINE_SUPPORT_DAMAGED_OVERLAY = new CFG<>("colors.damaged_mine_support_overlay", new Color(253, 44, 70));
+        public static final CFG<Color> COLOR_MINE_SUPPORT_SINGLE_OVERLAY = new CFG<>("colors.mine_support_single_overlay", new Color(10, 211, 188, 70));
+    public static final CFG<Color> COLOR_MINE_SUPPORT_OVERLAY = new CFG<>("colors.mine_support_overlay", new Color(15, 227, 120, 70));
+    public static final CFG<Color> COLOR_MINE_SUPPORT_DAMAGED_OVERLAY = new CFG<>("colors.damaged_mine_support_overlay", new Color(253, 44, 70, 75));
+    public static final CFG<Color> COLOR_MINE_SUPPORT_VIRTUAL_OVERLAY = new CFG<>("colors.mine_support_overlay_virtual", new Color(190, 27, 255, 64));    
     public static final CFG<Color> COLOR_TILE_GRID = new CFG<>("colors.tile_grid", new Color(255, 255, 255, 48));
     public static final CFG<Color> COLOR_HBOX_FILLED = new CFG<>("colors.hit_box_filled", new Color(178, 71, 178, 160));
     public static final CFG<Color> COLOR_HBOX_SOLID = new CFG<>("colors.hit_box_solid", new Color(178, 71, 178, 255));
@@ -231,6 +234,25 @@ public class CFG<T> {
 	    new CFG<>("display.buffs." + toggle.action, true),
 	    new CFG<>("general.start_toggle." + toggle.action, false)
 	));
+	processVersions();
+    }
+
+    private static final int LATEST = 1;
+    private static void processVersions() {
+	int version = VERSION_NUM.get();
+	
+	if(version < LATEST) {
+	    
+	    //Reset mine support colors
+	    if(version < 1) {
+		COLOR_MINE_SUPPORT_OVERLAY.reset(false);
+		COLOR_MINE_SUPPORT_SINGLE_OVERLAY.reset(false);
+		COLOR_MINE_SUPPORT_DAMAGED_OVERLAY.reset(false);
+		COLOR_MINE_SUPPORT_VIRTUAL_OVERLAY.reset(false);
+	    }
+	    
+	    VERSION_NUM.set(LATEST);
+	}
     }
 
     public interface Observer<T> {
@@ -252,7 +274,7 @@ public class CFG<T> {
     }
 
     public void set(T value) {
-	CFG.set(this, value);
+	CFG.set(this, value, true);
 	observe();
     }
 
@@ -261,6 +283,15 @@ public class CFG<T> {
 	if(observe) {observe();}
     }
 
+	private void set(T value, boolean observe, boolean store) {
+	CFG.set(this, value, store);
+	if(observe) {observe();}
+    }
+
+    private void reset(boolean store) {
+	set(def, true, store);
+    }
+    
     public Disposable observe(Observer<T> observer) {
 	this.observers.add(observer);
 	return new ObserverHolder<>(this, observer);
@@ -313,7 +344,7 @@ public class CFG<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public static synchronized <E> void set(CFG<E> name, E value) {
+    private static synchronized <E> void set(CFG<E> name, E value, boolean store) {
 	cache.put(name.path, value);
 	if(name.path == null) {return;}
 	String[] parts = name.path.split("\\.");
@@ -335,7 +366,7 @@ public class CFG<T> {
 	    Map<Object, Object> map = (Map<Object, Object>) cur;
 	    map.put(parts[parts.length - 1], value);
 	}
-	store();
+	if(store) {store();}
     }
 
     private static synchronized void store() {

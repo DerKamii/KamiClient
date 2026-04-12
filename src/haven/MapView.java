@@ -44,13 +44,15 @@ import haven.render.*;
 import haven.MCache.OverlayInfo;
 import haven.render.sl.Uniform;
 import haven.render.sl.Type;
+import haven.res.gfx.fx.mscover.Global;
+import haven.res.gfx.fx.mscover.ShowCover;
 import haven.res.gfx.fx.msrad.MSRad;
 import haven.rx.Reactor;
 import me.ender.ChatCommands;
 import me.ender.CustomCursors;
 import me.ender.minimap.Minesweeper;
 
-public class MapView extends PView implements DTarget, Console.Directory, Widget.CursorQuery.Handler {
+public class MapView extends PView implements DTarget, Console.Directory {
     public static boolean clickdb = false;
     public long plgob = -1;
     public Coord2d cc;
@@ -687,12 +689,14 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	disposables.add(CFG.DISPLAY_GOB_HITBOX.observe(this::updatePlobDrawable));
 	disposables.add(CFG.DISPLAY_GOB_HITBOX_TOP.observe(this::updatePlobDrawable));
 	disposables.add(CFG.SHOW_GOB_RADIUS.observe(this::updateSupportOverlay));
-	disposables.add(CFG.SHOW_MINE_SUPPORT_AS_OVERLAY.observe(this::updateSupportOverlay));
 	disposables.add(CFG.COLOR_MINE_SUPPORT_OVERLAY.observe(this::updateSupportOverlayColor));
+	disposables.add(CFG.COLOR_MINE_SUPPORT_SINGLE_OVERLAY.observe(this::updateSupportOverlayColor));
+	disposables.add(CFG.COLOR_MINE_SUPPORT_DAMAGED_OVERLAY.observe(this::updateSupportOverlayColor));
+	disposables.add(CFG.COLOR_MINE_SUPPORT_VIRTUAL_OVERLAY.observe(this::updateSupportOverlayColor));
 	disposables.add(CFG.COLOR_TILE_GRID.observe(this::updateGridMat));
 	disposables.add(CFG.DISPLAY_FLAVOR.observe(terrain::updateFlavor));
 	disposables.add(CFG.SHOW_MINESWEEPER_OVERLAY.observe(terrain::updateMinesweeper));
-	updateSupportOverlay(null);
+	updateSupportOverlay();
 	updateGridMat(null);
     }
     
@@ -711,16 +715,29 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
     }
     
     private void updateSupportOverlayColor(CFG<Color> cfg) {
-	Overlay o = ols.remove(MSRad.safeol);
+	Overlay o = ols.remove(Global.ol_1);
+	if(o != null) {o.remove();}
+
+	o = ols.remove(Global.ol_m);
+	if(o != null) {o.remove();}
+
+	o = ols.remove(Global.ol_v);
+	if(o != null) {o.remove();}
+
+	o = ols.remove(Global.ol_d);
 	if(o != null) {o.remove();}
     }
     
     private void updateSupportOverlay(CFG<Boolean> cfg) {
-	boolean show = CFG.SHOW_GOB_RADIUS.get() && CFG.SHOW_MINE_SUPPORT_AS_OVERLAY.get();
-	if(show && !visol(MSRad.OL_TAG)) {
-	    enol(MSRad.OL_TAG);
-	} else if(!show && visol(MSRad.OL_TAG)) {
-	    disol(MSRad.OL_TAG);
+	updateSupportOverlay();
+    }
+    
+    public void updateSupportOverlay() {
+	boolean show = CFG.SHOW_GOB_RADIUS.get() || ShowCover.show;
+	if(show && !visol(Global.OL_TAG)) {
+	    enol(Global.OL_TAG);
+	} else if(!show && visol(Global.OL_TAG)) {
+	    disol(Global.OL_TAG);
 	}
     }
     
@@ -733,9 +750,12 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
     }
     
     public void dispose() {
-	gobs.slot.remove();
-	clmaplist.dispose();
-	clobjlist.dispose();
+	if (gobs.slot != null)
+	    gobs.slot.remove();
+	if (clmaplist != null)
+	    clmaplist.dispose();
+	if (clobjlist != null)
+	    clobjlist.dispose();
 	super.dispose();
     }
     
@@ -2070,6 +2090,7 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 		    Plob ob = placing.get();
 		    synchronized(ob) {
 			ob.slot.remove();
+			ob.removed();
 		    }
 		}
 		this.placing = null;
@@ -2110,6 +2131,7 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 		    Plob ob = placing.get();
 		    synchronized(ob) {
 			ob.slot.remove();
+			ob.removed();
 		    }
 		}
 		this.placing = null;
@@ -2242,19 +2264,12 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 		    if(clickb == 3) {
 			Reactor.GOB_INTERACT.onNext(gob);
 		    }
-		    if(ui.gui.mapfile.domark) {
-			ui.gui.mapfile.addMarker(gob);
-			return;
-		    }
 		    if(clickb == 3) {FlowerMenu.lastGob(gob);}
 		    if(ui.modflags(UI.MOD_CTRL_ALT) && clickb == 1) {
 			ChatCommands.sendGobHighlight(ui, gob.id);
 			return;
 		    }
 		}
-	    } else if(ui.gui.mapfile.domark) {
-		ui.gui.mapfile.addMarker(mc.floor(tilesz));
-		return;
 	    } else if(ui.modflags(UI.MOD_CTRL_ALT) && clickb == 1) {
 		Coord gc = mc.floor(tilesz).div(MCache.cmaps);
 		MCache.Grid grid = MapView.this.ui.sess.glob.map.getgrid(gc);
@@ -2322,12 +2337,6 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	parent.setfocus(this);
 	Loader.Future<Plob> placing_l = this.placing;
 	if(CustomCursors.processDown(this, ev)){return true;}
-	if(ev.b == 3) {
-	    if(ui.gui.mapfile.domark) {
-		ui.gui.mapfile.domark = false;
-		return true;
-	    }
-	}
 	if(ev.b == 2) {
 	    if(camdrag == null && camera.click(ev.c)) {
 		camdrag = ui.grabmouse(this);
@@ -2514,7 +2523,7 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	public final Coord max;
 	public Coord sc;
 	public int modflags;
-	private MCache.Overlay ol;
+	private MCache.RectOverlay ol;
 	private UI.Grab mgrab;
 	private Text tt;
 	final GrabXL xl = new GrabXL(this) {
@@ -2541,14 +2550,15 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 		if(selection != this)
 		    return(false);
 		if(sc != null) {
-		    ol.destroy();
+		    glob.map.remove(ol);
 		    mgrab.remove();
 		}
 		sc = mc.div(MCache.tilesz2);
 		modflags = ui.modflags();
 		xl.mv = true;
 		mgrab = ui.grabmouse(MapView.this);
-		ol = glob.map.new Overlay(Area.sized(sc, new Coord(1, 1)), selol);
+		ol = glob.map.new RectOverlay(selol, Area.sized(sc, new Coord(1, 1)));
+		glob.map.add(ol);
 		return(true);
 	    }
 	}
@@ -2569,7 +2579,7 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 		    Coord ec = getec(mc);
 		    xl.mv = false;
 		    tt = null;
-		    ol.destroy();
+		    glob.map.remove(ol);
 		    mgrab.remove();
 		    wdgmsg("sel", sc, ec, modflags);
 		    sc = null;
@@ -2597,7 +2607,7 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	public void destroy() {
 	    synchronized(MapView.this) {
 		if(sc != null) {
-		    ol.destroy();
+		    glob.map.remove(ol);
 		    mgrab.remove();
 		}
 		release(xl);
@@ -2746,15 +2756,6 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	    otip = null;
 	}
 	stip = tip;
-    }
-    
-    @Override
-    public boolean getcurs(CursorQuery ev) {
-	if(ui.gui.mapfile != null && ui.gui.mapfile.domark) {
-	    ev.set(MapWnd.markcurs);
-	    return true;
-	}
-	return false;
     }
     
     public CompletableFuture<Coord2d> hit(Coord c) {

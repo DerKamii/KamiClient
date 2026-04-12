@@ -9,11 +9,11 @@ import java.util.stream.Collectors;
 
 public class Hitbox extends SlottedNode implements Rendered {
     private static final VertexArray.Layout LAYOUT = new VertexArray.Layout(new VertexArray.Layout.Input(Homo3D.vertex, new VectorFormat(3, NumberFormat.FLOAT32), 0, 0, 12));
-    private VertexArray mesh;
+    private HitBoxData mesh;
     private Model model;
     private final Gob gob;
     private final boolean filled;
-    private static final Map<Resource, VertexArray> VERTEX_CACHE = new HashMap<>();
+    private static final Map<Resource, HitBoxData> VERTEX_CACHE = new HashMap<>();
     private static final float Z = 0.1f;
     private static final float PASSABLE_WIDTH = 1.5f;
     private static final float SOLID_WIDTH = 3f;
@@ -77,7 +77,7 @@ public class Hitbox extends SlottedNode implements Rendered {
 		? FILLED
 		: passable ? (top ? PASSABLE_TOP : PASSABLE) : (top ? SOLID_TOP : SOLID);
 	    try {
-		VertexArray m = getMesh(gob);
+		HitBoxData m = getMesh(gob);
 		boolean changed = false;
 		if(m != null && m != mesh) {
 		    changed = true;
@@ -89,7 +89,7 @@ public class Hitbox extends SlottedNode implements Rendered {
 		    if(needFilled) {
 			if(changed || model == null) {
 			    changed = true;
-			    model = new Model(Model.Mode.TRIANGLE_FAN, mesh, null);
+			    model = mesh.fill();
 			}
 		    } else if(model != null) {
 			changed = true;
@@ -101,7 +101,7 @@ public class Hitbox extends SlottedNode implements Rendered {
 			model = null;
 		    } else if(mesh != null && (model == null || changed)) {
 			changed = true;
-			model = new Model(Model.Mode.LINES, mesh, null);
+			model = mesh.lines();
 		    }
 		}
 		
@@ -139,12 +139,12 @@ public class Hitbox extends SlottedNode implements Rendered {
 	return false;
     }
     
-    private static VertexArray getMesh(Gob gob) {
+    private static HitBoxData getMesh(Gob gob) {
 	Resource res = getResource(gob);
-	VertexArray mesh;
+	HitBoxData data;
 	synchronized (VERTEX_CACHE) {
-	    mesh = VERTEX_CACHE.get(res);
-	    if(mesh == null) {
+	    data = VERTEX_CACHE.get(res);
+	    if(data == null) {
 		List<List<Coord3f>> polygons = new LinkedList<>();
 	    
 		Collection<Resource.Neg> negs = res.layers(Resource.Neg.class);
@@ -173,40 +173,12 @@ public class Hitbox extends SlottedNode implements Rendered {
 		}
 	    
 		if(!polygons.isEmpty()) {
-		    List<Float> vertices = new LinkedList<>();
-		
-		    for (List<Coord3f> polygon : polygons) {
-			addLoopedVertices(vertices, polygon);
-		    }
-		
-		    float[] data = convert(vertices);
-		    VertexArray.Buffer vbo = new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.STATIC, DataBuffer.Filler.of(data));
-		    mesh = new VertexArray(LAYOUT, vbo);
-		
-		    VERTEX_CACHE.put(res, mesh);
+		    data = new HitBoxData(polygons);
+		    VERTEX_CACHE.put(res, data);
 		}
 	    }
 	}
-	return mesh;
-    }
-    
-    private static float[] convert(List<Float> list) {
-	float[] ret = new float[list.size()];
-	int i = 0;
-	for (Float value : list) {
-	    ret[i++] = value;
-	}
-	return ret;
-    }
-    
-    private static void addLoopedVertices(List<Float> target, List<Coord3f> vertices) {
-	int n = vertices.size();
-	for (int i = 0; i < n; i++) {
-	    Coord3f a = vertices.get(i);
-	    Coord3f b = vertices.get((i + 1) % n);
-	    Collections.addAll(target, a.x, a.y, a.z);
-	    Collections.addAll(target, b.x, b.y, b.z);
-	}
+	return data;
     }
     
     private static Resource getResource(Gob gob) {
@@ -242,6 +214,9 @@ public class Hitbox extends SlottedNode implements Rendered {
 	if(res.name.startsWith("gfx/kritter/reindeer")) {
 	    return Resource.remote().loadwait("gfx/kritter/reindeer/reindeer");
 	}
+	if(res.name.startsWith("gfx/terobjs/producesack")) {
+	    return Resource.remote().loadwait("gfx/terobjs/producesack");
+	}
 	return res;
     }
     
@@ -255,6 +230,89 @@ public class Hitbox extends SlottedNode implements Rendered {
 	} else {
 	    CFG.DISPLAY_GOB_HITBOX.set(false);
 	    CFG.DISPLAY_GOB_HITBOX_TOP.set(false);
+	}
+    }
+
+    private static class HitBoxData {
+	private final VertexArray vertices;
+	private final Model.Indices lineIdx;
+	private final Model.Indices fillIdx;
+
+	private Model lines, fill;
+
+	public HitBoxData(List<List<Coord3f>> polygons) {
+	    float[] data = toVertexArray(polygons);
+	    vertices =  new VertexArray(LAYOUT, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.STATIC, DataBuffer.Filler.of(data)));
+
+	    short[] indices = lineIndices(polygons);
+	    lineIdx = new Model.Indices(indices.length, NumberFormat.UINT16, DataBuffer.Usage.STATIC, DataBuffer.Filler.of(indices));
+
+	    indices = triangleIndices(polygons);
+	    fillIdx = new Model.Indices(indices.length, NumberFormat.UINT16, DataBuffer.Usage.STATIC, DataBuffer.Filler.of(indices));
+	}
+
+	public Model lines() {
+	    if(lines == null) {
+		lines = new Model(Model.Mode.LINES, vertices, lineIdx);
+	    }
+	    return lines;
+	}
+
+	public Model fill() {
+	    if(fill == null) {
+		fill = new Model(Model.Mode.TRIANGLES, vertices, fillIdx);
+	    }
+	    return fill;
+	}
+
+	private static short[] lineIndices(List<List<Coord3f>> polygons) {
+	    short[] buf = new short[2 * polygons.stream().mapToInt(List::size).sum()];
+	    short start = 0;
+	    short idx = 0;
+
+	    for (List<Coord3f> polygon : polygons) {
+		short size = (short) polygon.size();
+		for (short i = 0; i < size; i++) {
+		    buf[idx++] = (short) (start + i);
+		    buf[idx++] = (short) (start + ((i + 1) % size));
+		}
+		start += size;
+	    }
+	    return buf;
+	}
+
+	private static short[] triangleIndices(List<List<Coord3f>> polygons) {
+	    short[] buf = new short[3 * polygons.stream().mapToInt(List::size).map(v -> v < 3 ? 0 : v - 2).sum()];
+	    if(buf.length == 0) {return buf;}
+
+	    short start = 0;
+	    short idx = 0;
+
+	    for (List<Coord3f> polygon : polygons) {
+		short size = (short) polygon.size();
+		for (short i = 1; i < size - 1; i++) {
+		    buf[idx++] = start;
+		    buf[idx++] = (short) (start + i);
+		    buf[idx++] = (short) (start + i + 1);
+		}
+		start += size;
+	    }
+
+	    return buf;
+	}
+
+	private static float[] toVertexArray(List<List<Coord3f>> polygons) {
+	    float[] data = new float[3 * polygons.stream().mapToInt(List::size).sum()];
+	    int i = 0;
+	    for (List<Coord3f> polygon : polygons) {
+		for (Coord3f p : polygon) {
+		    data[i++] = p.x;
+		    data[i++] = p.y;
+		    data[i++] = p.z;
+		}
+	    }
+	    
+	    return data;
 	}
     }
 }

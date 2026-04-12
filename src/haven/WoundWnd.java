@@ -61,15 +61,18 @@ public class WoundWnd extends Widget {
     }
     
     public static class WoundPagina extends ItemInfo.Tip {
-	public final String str;
-	
-	public WoundPagina(Owner owner, String str) {
+	public final RichText.Document doc;
+
+	public WoundPagina(Owner owner, RichText.Document doc) {
 	    super(owner);
-	    this.str = str;
+	    this.doc = doc;
+	}
+	public WoundPagina(Owner owner, Resource.Pagina pag) {
+	    this(owner, resdoc(pag.getres(), pag.text + WoundTreatment.treatment(pag.getres())));
 	}
 	
 	public void layout(Layout l) {
-	    BufferedImage t = ifnd.render(str, l.width).img;
+	    BufferedImage t = ifnd.render(doc, l.width).img;
 	    if(t != null) {
 		l.cmp.add(t, Coord.of(0, l.cmp.sz.y));
 		l.cmp.sz = l.cmp.sz.add(0, UI.scale(10));
@@ -107,7 +110,7 @@ public class WoundWnd extends Widget {
 		List<ItemInfo> info = ItemInfo.buildinfo(this, rawinfo);
 		Resource.Pagina pag = res.get().layer(Resource.pagina);
 		if(pag != null)
-		    info.add(new WoundPagina(this, pag.text + WoundTreatment.treatment(res.get())));
+		    info.add(new WoundPagina(this, pag));
 		this.info = info;
 	    }
 	    return(info);
@@ -144,11 +147,11 @@ public class WoundWnd extends Widget {
 	}
 	
 	public void tick(double dt) {
-	    super.tick(dt);
 	    try {
 		if(this.info != wound().info())
 		    set(() -> new TexI(renderinfo(sz.x - Scrollbar.width - (marg().x * 2))));
 	    } catch(Loading l) {}
+	    super.tick(dt);
 	}
 	
 	public void drawbg(GOut g) {}

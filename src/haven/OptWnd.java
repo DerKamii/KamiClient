@@ -1199,7 +1199,7 @@ public class OptWnd extends WindowX {
 	panel.add(new CFGBox("Show object radius", CFG.SHOW_GOB_RADIUS, "Shows radius of mine supports, beehives etc.", true), x, y);
 	
 	y += STEP;
-	panel.add(new CFGBox("Show mine support radius as overlay", CFG.SHOW_MINE_SUPPORT_AS_OVERLAY, "Will highlight tiles covered by mine supports, instead of drawing radius around supports."), x, y);
+	y = addSlider(CFG.MINE_SUPPORT_DANGER_THRESHOLD, 0, 100, "Mine support danger threshold %d%% HP:", "Mine support with less than this HP threshold will be considered dangerous.", panel, x, y, STEP);
 
 	y += STEP;
 	panel.add(new Button(UI.scale(150), "Show as buffs", false) {
@@ -1265,6 +1265,15 @@ public class OptWnd extends WindowX {
 	title.c.x = (panel.sz.x - title.sz.x) / 2;
     }
 
+	public static int addSlider(CFG<Integer> cfg, int min, int max, String format, String tip, Panel panel, int x, int y, int STEP) {
+	final Label label = panel.add(new Label(""), x, y);
+	label.settip(tip);
+	
+	y += STEP;
+	panel.add(new CFGSlider(UI.scale(200), min, max, cfg, label, format), x, y).settip(tip);
+	
+	return y;
+    }
     private void initUIPanel(Panel panel) {
 	int STEP = UI.scale(25);
 	int START;

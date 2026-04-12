@@ -532,6 +532,8 @@ public class Widget {
 	    focused.hasfocus = true;
 	    focused.gotfocus();
 	}
+	if(ui != null)
+	    ui.dispatch(this, new GotFocusEvent());
 	synchronized (focusListeners) { focusListeners.forEach(action -> action.call(this, true)); }
     }
     
@@ -597,6 +599,8 @@ public class Widget {
 	    focused.hasfocus = false;
 	    focused.lostfocus();
 	}
+	if(ui != null)
+	    ui.dispatch(this, new LostFocusEvent());
 	synchronized (focusListeners) { focusListeners.forEach(action -> action.call(this, false)); }
     }
     
@@ -758,7 +762,7 @@ public class Widget {
 	    if(tt instanceof String) {
 		settip((String)tt);
 	    } else if(tt instanceof Integer) {
-		tooltip = new PaginaTip(ui.sess.getresv(tt));
+		tooltip = new PaginaTip(ui.sess.getresv(tt), (a < args.length) ? Utils.bv(args[a++]) : false);
 	    }
 	} else if(msg == "gk") {
 	    if(args[0] instanceof Integer) {
@@ -1255,7 +1259,16 @@ public class Widget {
 	    return(super.shandle(w));
 	}
     }
-    
+
+    public static abstract class FocusChangeEvent extends Event {
+	public boolean propagation(Widget from) {
+	    return(false);
+	}
+    }
+
+    public static class GotFocusEvent extends FocusChangeEvent {}
+    public static class LostFocusEvent extends FocusChangeEvent {}
+
     public static abstract class QueryEvent<R> extends PointerEvent {
 	public final QueryEvent<R> root;
 	public R ret;
@@ -1842,32 +1855,43 @@ public class Widget {
     public static class PaginaTip implements Indir<Tex> {
 	public final String title;
 	public final Indir<Resource> res;
+	public final boolean tiptitle;
 	private Tex rend;
 	private boolean hasrend = false;
 	
 	public PaginaTip(Indir<Resource> res, String title) {
 	    this.res = res;
 	    this.title = title;
+	    this.tiptitle = false;
+	}
+
+	public PaginaTip(Indir<Resource> res, boolean tiptitle) {
+	    this.res = res;
+	    this.title = null;
+	    this.tiptitle = tiptitle;
 	}
 	
 	public PaginaTip(Indir<Resource> res) {
-	    this(res, null);
+	    this(res, false);
 	}
 	
 	public Tex get() {
 	    if(!hasrend) {
 		render: {
 		    try {
-			Resource.Pagina pag = res.get().layer(Resource.pagina);
-			if(pag == null)
-			    break render;
-			String text;
+			Resource res = this.res.get();
+			Resource.Pagina pag = res.layer(Resource.pagina);
+			String text, title;
+			if(tiptitle)
+			    title = res.flayer(Resource.tooltip).t;
+			else
+			    title = this.title;
 			if(title == null) {
-			    if(pag.text.length() == 0)
+			    if((pag == null) || (pag.text.length() == 0))
 				break render;
 			    text = pag.text;
 			} else {
-			    if(pag.text.length() == 0)
+			    if((pag == null) || (pag.text.length() == 0))
 				text = title;
 			    else
 				text = title + "\n\n" + pag.text;

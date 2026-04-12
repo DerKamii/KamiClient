@@ -269,26 +269,6 @@ public class OCache implements Iterable<Gob> {
 	return(objs.get(id));
     }
     
-    private final List<SquareRadiiOverlay> msols = new LinkedList<>();
-    public boolean dirtyMSOls = true;
-    
-    /**Returns list of mine support overlays*/
-    public List<SquareRadiiOverlay> msols() {
-	if(!dirtyMSOls) {return msols;}
-	synchronized (msols) {
-	    dirtyMSOls = false;
-	    msols.clear();
-	    synchronized (this) {
-		for (Gob gob : objs.values()) {
-		    MSRad spr = gob.findsprol(MSRad.class);
-		    if(spr == null) {continue;}
-		    msols.add(spr.overlay);
-		}
-	    }
-	}
-	return msols;
-    }
-    
     private java.util.concurrent.atomic.AtomicLong nextvirt = new java.util.concurrent.atomic.AtomicLong(-1);
     public class Virtual extends Gob {
 	public Virtual(Coord2d c, double a) {
@@ -582,12 +562,16 @@ public class OCache implements Iterable<Gob> {
     
     public static class AttrDelta extends PMessage {
 	public boolean old;
-	
-	public AttrDelta(ObjDelta od, int type, Message blob, int len) {
-	    super(type, blob, len);
+
+	public AttrDelta(ObjDelta od, int type, byte[] blob) {
+	    super(type, blob);
 	    this.old = ((od.fl & 4) != 0);
 	}
-	
+
+	public AttrDelta(ObjDelta od, int type, Message blob, int len) {
+	    this(od, type, blob.bytes(len));
+	}
+
 	public AttrDelta(AttrDelta from) {
 	    super(from);
 	    this.old = from.old;

@@ -67,6 +67,8 @@ public class Window extends Widget {
     public static final Coord dlmrgn = UI.scale(23, 14);
     public static final Coord dsmrgn = UI.scale(9, 9);
     public static final BufferedImage ctex = Resource.loadsimg("gfx/hud/fonttex");
+	@Deprecated public static final Text.Furnace cf = DefaultDeco.cf;
+    @Deprecated public static final Text.Furnace ncf = DefaultDeco.ncf;
     public static final IBox wbox = new IBox.Scaled("gfx/hud/wnd", "tl", "tr", "bl", "br", "extvl", "extvr", "extht", "exthb") {
 	    final Coord co = UI.scale(3, 3), bo = UI.scale(2, 2);
 
@@ -99,6 +101,7 @@ public class Window extends Widget {
     public boolean skipSavePos = false;
     private boolean closed = false;
     private String title;
+	protected Text.Furnace rcf = cf;
 
     @RName("wnd")
     public static class $_ implements Factory {

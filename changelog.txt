@@ -1,3 +1,7 @@
+$size[14]{$u{update on 12.04.2026:}
+* Merged all changes up to now.
+* Fixed gilding and added it to this update.
+`
 $size[14]{$u{update on 23.01.2026:}
 * Merged with newest updates.
 * Added higher zoom out for ortho cam.

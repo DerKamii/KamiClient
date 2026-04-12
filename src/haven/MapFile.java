@@ -1780,7 +1780,12 @@ public class MapFile {
 		    if(filter.includegrid(seg, gd.getKey(), gd.getValue()))
 			gridbuf.add(new Pair<>(gd.getKey(), gd.getValue()));
 		}
-	    } finally {
+	    } catch (Exception ex)
+	    {
+		System.out.println(ex.getMessage());
+		System.out.println("Skipping a segment because it contains errors.");
+		continue;
+	    }finally {
 		lock.readLock().unlock();
 	    }
 	    int ngrid = 0;
@@ -1854,6 +1859,11 @@ public class MapFile {
 		    if(filter.includegrid(seg, gd.getKey(), gd.getValue()))
 			gridbuf.add(new Pair<>(gd.getKey(), gd.getValue()));
 		}
+	    } catch (Exception ex)
+	    {
+		System.out.println(ex.getMessage());
+		System.out.println("Skipping a segment because it contains errors.");
+		continue;
 	    } finally {
 		lock.readLock().unlock();
 	    }

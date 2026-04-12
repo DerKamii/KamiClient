@@ -142,7 +142,7 @@
   </target>
 
   <target name="resources" depends="client-res-java">
-    <exec executable="java" failifexecutionfails="false">
+    <exec executable="java" failifexecutionfails="true">
       <arg line="-jar resources/LayerUtil.jar -re resources/src/local resources/compiled/res" />
     </exec>
     <exec executable="java" failifexecutionfails="false">

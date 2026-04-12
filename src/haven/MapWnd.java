@@ -1046,7 +1046,7 @@ public class MapWnd extends WindowX implements Console.Directory {
     
     public void exportMapToMapper() {
 	GameUI gui = getparent(GameUI.class);
-	if (integrations.mapv4.MappingClient.initialized())
+	if (!integrations.mapv4.MappingClient.initialized())
 	{
 	    gui.error("Mapper is not initialized. Check your options.");
 	}
@@ -1101,14 +1101,22 @@ public class MapWnd extends WindowX implements Console.Directory {
 
     public void exportmap() {
 	java.awt.EventQueue.invokeLater(() -> {
+	    try {
 		JFileChooser fc = new JFileChooser();
 		fc.setFileFilter(new FileNameExtensionFilter("Exported Haven map data", "hmap"));
-		if(fc.showSaveDialog(null) != JFileChooser.APPROVE_OPTION)
+		if(fc.showSaveDialog(null) != JFileChooser.APPROVE_OPTION) {
+		    ui.gui.error("Cancelled map export");
 		    return;
+		}
 		Path path = fc.getSelectedFile().toPath();
 		if(path.getFileName().toString().indexOf('.') < 0)
 		    path = path.resolveSibling(path.getFileName() + ".hmap");
+		ui.gui.msg("Starting map export process.", GameUI.MsgType.INFO);
 		exportmap(path);
+	    } catch (Exception ex)
+	    {
+		ui.gui.error("Error while exporting the map: " + ex.getMessage());
+	    }
 	    });
     }
     

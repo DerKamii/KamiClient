@@ -30,6 +30,7 @@ import java.util.*;
 import java.util.function.*;
 
 import haven.CFG;
+import haven.Composited;
 import haven.Config;
 
 public class TickList implements RenderList<TickList.TickNode> {
@@ -125,9 +126,8 @@ public class TickList implements RenderList<TickList.TickNode> {
     public void update(Pipe group, int[] statemask) {}
 
     public void tick(double dt) {
+	Composited.animTickFrame++;
 	try {
-	    
-	    
 	    List<Entry> copy;
 	    synchronized (cur) {
 		copy = new ArrayList<>(cur.values());

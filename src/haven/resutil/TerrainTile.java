@@ -146,28 +146,45 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 		}
 	    }
 	}
-
+	
 	private void setbase(float[][] bv) {
-	    for(int y = vs.ul.y; y < vs.br.y - 1; y++) {
-		for(int x = vs.ul.x; x < vs.br.x - 1; x++) {
-		    fall: {
-			for(int i = var.length - 1; i >= 0; i--) {
-			    Var v = var[i];
-			    double n = 0;
-			    for(double s = 64; s >= 8; s /= 2)
-				n += noise.get(s, x + m.ul.x, y + m.ul.y, v.nz);
-			    if(((n / 2) >= v.thrl) && ((n / 2) <= v.thrh)) {
-				bv[i + 1][vs.o(x, y)] = 1;
-				bv[i + 1][vs.o(x + 1, y)] = 1;
-				bv[i + 1][vs.o(x, y + 1)] = 1;
-				bv[i + 1][vs.o(x + 1, y + 1)] = 1;
-				break fall;
+	    if (CFG.ENABLE_TERRAIN_BLEND.get()) {
+		for (int y = vs.ul.y; y < vs.br.y - 1; y++) {
+		    for (int x = vs.ul.x; x < vs.br.x - 1; x++) {
+			fall: {
+			    for (int i = var.length - 1; i >= 0; i--) {
+				Var v = var[i];
+				double n = 0;
+				for (double s = 64; s >= 8; s /= 2)
+				    n += noise.get(s, x + m.ul.x, y + m.ul.y, v.nz);
+				if (((n / 2) >= v.thrl) && ((n / 2) <= v.thrh)) {
+				    bv[i + 1][vs.o(x, y)] = 1;
+				    bv[i + 1][vs.o(x + 1, y)] = 1;
+				    bv[i + 1][vs.o(x, y + 1)] = 1;
+				    bv[i + 1][vs.o(x + 1, y + 1)] = 1;
+				    break fall;
+				}
 			    }
+			    bv[0][vs.o(x, y)] = 1;
+			    bv[0][vs.o(x + 1, y)] = 1;
+			    bv[0][vs.o(x, y + 1)] = 1;
+			    bv[0][vs.o(x + 1, y + 1)] = 1;
 			}
-			bv[0][vs.o(x, y)] = 1;
-			bv[0][vs.o(x + 1, y)] = 1;
-			bv[0][vs.o(x, y + 1)] = 1;
-			bv[0][vs.o(x + 1, y + 1)] = 1;
+		    }
+		}
+	    } else {
+		for (int y = vs.ul.y; y < vs.br.y - 1; y++) {
+		    for (int x = vs.ul.x; x < vs.br.x - 1; x++) {
+			bv[0][vs.o(x, y)] = 1.0F;
+			bv[0][vs.o(x + 1, y)] = 1.0F;
+			bv[0][vs.o(x, y + 1)] = 1.0F;
+			bv[0][vs.o(x + 1, y + 1)] = 1.0F;
+			for (int i = var.length - 1; i >= 0; i--) {
+			    bv[i + 1][vs.o(x, y)] = 1.0F;
+			    bv[i + 1][vs.o(x + 1, y)] = 1.0F;
+			    bv[i + 1][vs.o(x, y + 1)] = 1.0F;
+			    bv[i + 1][vs.o(x + 1, y + 1)] = 1.0F;
+			}
 		    }
 		}
 	    }

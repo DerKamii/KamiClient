@@ -45,7 +45,8 @@ public interface GLPanel extends UIPanel, UI.Context {
 	public final CPUProfile uprof = new CPUProfile(300), rprof = new CPUProfile(300);
 	public final GPUProfile gprof = new GPUProfile(300);
 	protected boolean bgmode = false;
-	protected int fps, framelag;
+	public static volatile int currentFps;
+	public int fps, framelag;
 	protected volatile int frameno;
 	protected double uidle = 0.0, ridle = 0.0;
 	protected long lastrcycle = 0, ridletime = 0;
@@ -440,6 +441,7 @@ public interface GLPanel extends UIPanel, UI.Context {
 			}
 			if(now > frames[ckf]) {
 			    fps = (int)Math.round((i + 1) / (now - frames[ckf]));
+			    currentFps = fps;
 			    uidle = twait / (now - frames[ckf]);
 			}
 		    }

@@ -33,6 +33,9 @@ import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
 
 public class Composited implements RenderTree.Node, EquipTarget {
+    public static int animTickFrame = 0;
+    public static volatile int cachedAnimSkip = CFG.ANIM_FRAME_SKIP.get();
+    static { CFG.ANIM_FRAME_SKIP.observe(cfg -> cachedAnimSkip = cfg.get()); }
     public final Skeleton skel;
     public final Pose pose;
     public final OwnerContext eqowner;
@@ -196,10 +199,17 @@ public class Composited implements RenderTree.Node, EquipTarget {
 	}
 
 	public TickList.Ticking ticker() {return(this);}
+	private Pipe.Op lastMorphState = null;
 	public void autotick(double dt) {
+	    int skip = cachedAnimSkip;
+	    if(skip > 0 && (animTickFrame % (skip + 1)) != 0)
+		return;
 	    Pipe.Op nst = morph.state();
-	    for(RenderTree.Slot slot : slots)
-		slot.ostate(nst);
+	    if(nst != lastMorphState) {
+		for(RenderTree.Slot slot : slots)
+		    slot.ostate(nst);
+		lastMorphState = nst;
+	    }
 	}
     }
 

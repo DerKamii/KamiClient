@@ -8,15 +8,6 @@ import static haven.OptWnd.*;
 
 
 public interface KamiOptPanels {
-	static int addSlider(CFG<Integer> cfg, int min, int max, String format, String tip, OptWnd.Panel panel, int x, int y, int STEP) {
-		final Label label = panel.add(new Label(""), x, y);
-		label.settip(tip);
-
-		y += STEP;
-		panel.add(new CFGSlider(UI.scale(200), min, max, cfg, label, format), x, y).settip(tip);
-
-		return y;
-	}
 
 	static void initMinimapPanel(OptWnd wnd, OptWnd.Panel panel) {
 		int STEP = UI.scale(25);
@@ -71,6 +62,53 @@ public interface KamiOptPanels {
 	    
 	    	y += STEP;
 	    	panel.add(new CFGBox("Ignore exceptions", CFG.IGNORE_EXCEPTIONS, "The client contains a couple of porpusefully crafted exceptions that will crash the client. Some of them can be ignored with this enabled."), x, y);
+
+		y += STEP;
+		y += STEP;
+		panel.add(new Label("Performance tuning:"), x, y);
+
+		y += STEP;
+		{
+			Label adpy = new Label.Untranslated("");
+			String[] anames = {"Off", "Skip 1", "Skip 2", "Skip 3"};
+			panel.add(new Label("Animation frame skip"), x, y);
+			y += UI.scale(15);
+			panel.addhlp(new Coord(x, y), UI.scale(5),
+				new HSlider(UI.scale(160), 0, 3, CFG.ANIM_FRAME_SKIP.get()) {
+					protected void added() {dpy();}
+					void dpy() {adpy.settext(anames[this.val]);}
+					public void changed() {
+						CFG.ANIM_FRAME_SKIP.set(this.val);
+						dpy();
+					}
+				},
+				adpy);
+			y += STEP;
+		}
+
+		{
+			Label idpy = new Label.Untranslated("");
+			String[] inames = {"Off", "4/sec", "2/sec", "1/sec"};
+			double[] ivals = {0.0, 0.25, 0.5, 1.0};
+			int curidx = 1;
+			double curval = CFG.GOB_INFO_TICK_INTERVAL.get();
+			for(int i = 0; i < ivals.length; i++) {
+				if(Math.abs(ivals[i] - curval) < 0.01) {curidx = i; break;}
+			}
+			panel.add(new Label("Info overlay update rate"), x, y);
+			y += UI.scale(15);
+			panel.addhlp(new Coord(x, y), UI.scale(5),
+				new HSlider(UI.scale(160), 0, inames.length - 1, curidx) {
+					protected void added() {dpy();}
+					void dpy() {idpy.settext(inames[this.val]);}
+					public void changed() {
+						CFG.GOB_INFO_TICK_INTERVAL.set(ivals[this.val]);
+						dpy();
+					}
+				},
+				idpy);
+			y += STEP;
+		}
 
 		//second row
 		my = Math.max(my, y);

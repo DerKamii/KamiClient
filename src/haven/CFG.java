@@ -204,6 +204,8 @@ public class CFG<T> {
     public static final CFG<Boolean> ENABLE_PURGE_BUTTON_IN_KIN_LIST = new CFG<>("ui.enable_purge_button_kin_list", false);
     public static final CFG<Boolean> SHOW_FEP_NUMBERS_ON_FOOD = new CFG<>("ui.show_fep_numbers_on_food", false);
     public static final CFG<Boolean> EXTEND_ZOOM_ON_ORTHO = new CFG<>("cam.extend_zoom_on_ortho", false);
+    public static final CFG<Integer> ANIM_FRAME_SKIP = new CFG<>("perf.anim_frame_skip", 0);
+    public static final CFG<Double> GOB_INFO_TICK_INTERVAL = new CFG<>("perf.gob_info_tick_interval", 0.25, new com.google.gson.reflect.TypeToken<Double>(){});
     
     private static final String CONFIG_JSON = "config.json";
     private static final Map<Object, Object> cfg;

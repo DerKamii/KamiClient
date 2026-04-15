@@ -157,6 +157,9 @@ public class RUtils {
 
 	public TickList.Ticking ticker() {return(this);}
 	public void autotick(double dt) {
+	    int skip = Composited.cachedAnimSkip;
+	    if(skip > 0 && (Composited.animTickFrame % (skip + 1)) != 0)
+		return;
 	    update();
 	}
 

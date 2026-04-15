@@ -160,8 +160,17 @@ public class GeneralGobInfo extends GobInfo {
 	}
     }
     
+    private double tickAccum = 0;
+    private static volatile double cachedTickInterval = CFG.GOB_INFO_TICK_INTERVAL.get();
+    static { CFG.GOB_INFO_TICK_INTERVAL.observe(cfg -> cachedTickInterval = cfg.get()); }
     @Override
     public void ctick(double dt) {
+	if(cachedTickInterval > 0) {
+	    tickAccum += dt;
+	    if(tickAccum < cachedTickInterval)
+		return;
+	    tickAccum = 0;
+	}
 	if(enabled() && timer.update()) {dirty();}
 	super.ctick(dt);
     }

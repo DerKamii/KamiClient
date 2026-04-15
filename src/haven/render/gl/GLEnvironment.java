@@ -39,16 +39,16 @@ public abstract class GLEnvironment implements Environment {
     public final Caps caps;
     public int nilfbo_id = 0, nilfbo_db = 0;
     final Object drawmon = new Object();
-    final Object prepmon = new Object();
     final Collection<GLObject> disposed = new LinkedList<>();
     final List<GLQuery> queries = new LinkedList<>(); // Synchronized on drawmon
     final Queue<Runnable> callbacks = new LinkedList<>();
     Thread cbthread = null;
+    private final Object prepMon = new Object();
+    private final Queue<GLRender> prepq = new LinkedList<>();
     final Queue<GLRender> submitted = new LinkedList<>();
+    private volatile boolean invalid = false;
     Area wnd;
-    private GLRender prep = null;
     private Applier curstate = new Applier(this);
-    private boolean invalid = false;
 
     public static class HardwareException extends UnavailableException {
 	public final Caps caps;
@@ -316,34 +316,39 @@ public abstract class GLEnvironment implements Environment {
     }
 
     public void process(GL gl) {
-	GLRender prep;
+	/* Snapshot submitted before prep: any submit() that races after
+	 * this snapshot will be deferred to the next pass, and its prep
+	 * (enqueued before the render) will land in that next pass too. */
 	Collection<GLRender> copy;
 	synchronized(submitted) {
-	    /* It is important to fetch the submitted renders before
-	     * prep, so that additional once aren't submitted during
-	     * processing that haven't been prepared. */
 	    copy = new ArrayList<>(submitted);
 	    submitted.clear();
 	}
-	synchronized(prepmon) {
-	    prep = this.prep;
-	    this.prep = null;
+	Collection<GLRender> preps;
+	synchronized(prepMon) {
+	    preps = new ArrayList<>(prepq);
+	    prepq.clear();
 	}
 	try {
 	    synchronized(drawmon) {
 		checkqueries(gl);
-		if((prep != null) && (prep.gl != null)) {
-		    BufferBGL xf = new BufferBGL(16);
-		    this.curstate.apply(xf, prep.init);
-		    xf.run(gl);
-		    prep.gl.run(gl);
-		    this.curstate = prep.state;
+		for(GLRender p : preps) {
 		    try {
-			GLException.checkfor(gl, this);
-		    } catch(Exception exc) {
-			throw(new BGL.BGLException(prep.gl, null, exc));
+			if(p.gl != null) {
+			    BufferBGL xf = new BufferBGL(16);
+			    this.curstate.apply(xf, p.init);
+			    xf.run(gl);
+			    p.gl.run(gl);
+			    this.curstate = p.state;
+			    try {
+				GLException.checkfor(gl, this);
+			    } catch(Exception exc) {
+				throw(new BGL.BGLException(p.gl, null, exc));
+			    }
+			}
+		    } finally {
+			p.dispose();
 		    }
-		    prep.dispose();
 		}
 		for(GLRender cmd : copy) {
 		    BufferBGL xf = new BufferBGL(16);
@@ -389,20 +394,19 @@ public abstract class GLEnvironment implements Environment {
 	GLRender gcmd = (GLRender)cmd;
 	if(gcmd.env != this)
 	    throw(new IllegalArgumentException("environment mismatch"));
-	boolean inv;
+	if(gcmd.gl == null) {
+	    gcmd.dispose();
+	    return;
+	}
 	synchronized(submitted) {
-	    inv = invalid;
-	    if(gcmd.gl != null) {
-		if(!inv) {
-		    submitted.add(gcmd);
-		    submitted.notifyAll();
-		} else {
-		    gcmd.gl.abort();
-		}
+	    if(!invalid) {
+		submitted.add(gcmd);
+		submitted.notifyAll();
+		return;
 	    }
 	}
-	if(inv)
-	    gcmd.dispose();
+	gcmd.gl.abort();
+	gcmd.dispose();
     }
 
     public void submitwait() throws InterruptedException {
@@ -441,13 +445,6 @@ public abstract class GLEnvironment implements Environment {
     public abstract SysBuffer subsume(ByteBuffer data, int sz);
 
     public FillBuffer fillbuf(DataBuffer tgt, int from, int to) {
-	if((from == 0) && (to == tgt.size())) {
-	    StreamBuffer stb;
-	    if((tgt instanceof VertexArray.Buffer) && ((stb = GLReference.get(((VertexArray.Buffer)tgt).ro, StreamBuffer.class)) != null))
-		return(stb.new Fill());
-	    if((tgt instanceof Model.Indices) && ((stb = GLReference.get(((Model.Indices)tgt).ro, StreamBuffer.class)) != null))
-		return(stb.new Fill());
-	}
 	return(new FillBuffers.Array(this, to - from));
     }
 
@@ -465,25 +462,78 @@ public abstract class GLEnvironment implements Environment {
 	return(Environment.super.fillbuf(target));
     }
 
-    GLRender prepare() {
-	if(prep == null)
-	    prep = new GLRender(this);
-	return(prep);
+    private void enqprep(GLRender p) {
+	if(p.gl == null) {
+	    p.dispose();
+	    return;
+	}
+	synchronized(prepMon) {
+	    if(!invalid) {
+		prepq.add(p);
+		return;
+	    }
+	}
+	p.gl.abort();
+	p.dispose();
     }
     void prepare(GLObject obj) {
-	synchronized(prepmon) {
-	    prepare().gl().bglCreate(obj);
+	GLRender p = new GLRender(this);
+	boolean ok = false;
+	try {
+	    p.gl().bglCreate(obj);
+	    ok = true;
+	} finally {
+	    if(!ok) p.dispose();
 	}
+	enqprep(p);
     }
     void prepare(BGL.Request req) {
-	synchronized(prepmon) {
-	    prepare().gl().bglSubmit(req);
+	GLRender p = new GLRender(this);
+	boolean ok = false;
+	try {
+	    p.gl().bglSubmit(req);
+	    ok = true;
+	} finally {
+	    if(!ok) p.dispose();
 	}
+	enqprep(p);
     }
     void prepare(Consumer<GLRender> func) {
-	synchronized(prepmon) {
-	    func.accept(prepare());
+	GLRender p = new GLRender(this);
+	boolean ok = false;
+	try {
+	    func.accept(p);
+	    ok = true;
+	} finally {
+	    if(!ok) p.dispose();
 	}
+	enqprep(p);
+    }
+
+    <T extends DataBuffer> StreamBuffer.Fill runStreamFill(StreamBuffer ret, T buf, DataBuffer.Filler<? super T> init) {
+	StreamBuffer.Fill fill = ret.new Fill();
+	GLEnvironment back = this;
+	Environment proxy = new Environment.Proxy() {
+		public Environment back() {return(back);}
+		public FillBuffer fillbuf(DataBuffer t, int from, int to) {
+		    if((t == buf) && (from == 0) && (to == buf.size()))
+			return(fill);
+		    return(back.fillbuf(t, from, to));
+		}
+		public FillBuffer fillbuf(DataBuffer t) {
+		    if(t == buf)
+			return(fill);
+		    return(back.fillbuf(t));
+		}
+	    };
+	FillBuffer result = init.fill(buf, proxy);
+	if(result != fill) {
+	    ByteBuffer src = result.push();
+	    ((java.nio.Buffer)src).flip();
+	    fill.pull(src);
+	    result.dispose();
+	}
+	return(fill);
     }
 
     Disposable prepare(Model.Indices buf) {
@@ -500,10 +550,9 @@ public abstract class GLEnvironment implements Environment {
 	    case STREAM: {
 		StreamBuffer ret;
 		if(((ret = GLReference.get(buf.ro, StreamBuffer.class)) == null) || (ret.rbuf.env != this)) {
-		    if(buf.ro != null)
-			buf.ro.dispose();
-		    buf.ro = new GLReference<>(ret = new StreamBuffer(this, buf.size()));
-		    StreamBuffer.Fill data = (buf.init == null) ? null : (StreamBuffer.Fill)buf.init.fill(buf, this);
+		    Disposable old = buf.ro;
+		    ret = new StreamBuffer(this, buf.size());
+		    StreamBuffer.Fill data = (buf.init == null) ? null : runStreamFill(ret, buf, buf.init);
 		    StreamBuffer jdret = ret;
 		    GLBuffer rbuf = ret.rbuf;
 		    prepare((GLRender g) -> {
@@ -520,15 +569,17 @@ public abstract class GLEnvironment implements Environment {
 				gl.glObjectLabel(GL.GL_BUFFER, rbuf, String.valueOf(buf.desc));
 			    rbuf.setmem(MemStats.INDICES, buf.size());
 			});
+		    if(old != null)
+			old.dispose();
+		    buf.ro = new GLReference<>(ret);
 		}
 		return(ret);
 	    }
 	    case STATIC: {
 		GLBuffer ret;
 		if(((ret = GLReference.get(buf.ro, GLBuffer.class)) == null) || (ret.env != this)) {
-		    if(buf.ro != null)
-			buf.ro.dispose();
-		    buf.ro = new GLReference<>(ret = new GLBuffer(this));
+		    Disposable old = buf.ro;
+		    ret = new GLBuffer(this);
 		    FillBuffers.Array data = (buf.init == null) ? null : (FillBuffers.Array)buf.init.fill(buf, this);
 		    GLBuffer jdret = ret;
 		    prepare((GLRender g) -> {
@@ -540,6 +591,9 @@ public abstract class GLEnvironment implements Environment {
 			    jdret.setmem(MemStats.INDICES, buf.size());
 			    if(data != null) data.dispose();
 			});
+		    if(old != null)
+			old.dispose();
+		    buf.ro = new GLReference<>(ret);
 		}
 		return(ret);
 	    }
@@ -562,10 +616,9 @@ public abstract class GLEnvironment implements Environment {
 	    case STREAM: {
 		StreamBuffer ret;
 		if(((ret = GLReference.get(buf.ro, StreamBuffer.class)) == null) || (ret.rbuf.env != this)) {
-		    if(buf.ro != null)
-			buf.ro.dispose();
-		    buf.ro = new GLReference<>(ret = new StreamBuffer(this, buf.size()));
-		    StreamBuffer.Fill data = (buf.init == null) ? null : (StreamBuffer.Fill)buf.init.fill(buf, this);
+		    Disposable old = buf.ro;
+		    ret = new StreamBuffer(this, buf.size());
+		    StreamBuffer.Fill data = (buf.init == null) ? null : runStreamFill(ret, buf, buf.init);
 		    StreamBuffer jdret = ret;
 		    GLBuffer rbuf = ret.rbuf;
 		    prepare((GLRender g) -> {
@@ -582,15 +635,17 @@ public abstract class GLEnvironment implements Environment {
 				gl.glObjectLabel(GL.GL_BUFFER, rbuf, String.valueOf(buf.desc));
 			    rbuf.setmem(MemStats.VERTICES, buf.size());
 			});
+		    if(old != null)
+			old.dispose();
+		    buf.ro = new GLReference<>(ret);
 		}
 		return(ret);
 	    }
 	    case STATIC: {
 		GLBuffer ret;
 		if(((ret = GLReference.get(buf.ro, GLBuffer.class)) == null) || (ret.env != this)) {
-		    if(buf.ro != null)
-			buf.ro.dispose();
-		    buf.ro = new GLReference<>(ret = new GLBuffer(this));
+		    Disposable old = buf.ro;
+		    ret = new GLBuffer(this);
 		    FillBuffers.Array data = (buf.init == null) ? null : (FillBuffers.Array)buf.init.fill(buf, this);
 		    GLBuffer jdret = ret;
 		    prepare((GLRender g) -> {
@@ -602,6 +657,9 @@ public abstract class GLEnvironment implements Environment {
 			    jdret.setmem(MemStats.VERTICES, buf.size());
 			    if(data != null) data.dispose();
 			});
+		    if(old != null)
+			old.dispose();
+		    buf.ro = new GLReference<>(ret);
 		}
 		return(ret);
 	    }
@@ -1023,16 +1081,28 @@ public abstract class GLEnvironment implements Environment {
     }
 
     public void dispose() {
+	invalid = true;
 	{
 	    Collection<GLRender> copy;
 	    synchronized(submitted) {
 		copy = new ArrayList<>(submitted);
 		submitted.clear();
-		invalid = true;
 	    }
 	    for(GLRender cmd : copy) {
 		cmd.gl.abort();
 		cmd.dispose();
+	    }
+	}
+	{
+	    Collection<GLRender> copy;
+	    synchronized(prepMon) {
+		copy = new ArrayList<>(prepq);
+		prepq.clear();
+	    }
+	    for(GLRender p : copy) {
+		if(p.gl != null)
+		    p.gl.abort();
+		p.dispose();
 	    }
 	}
 	{

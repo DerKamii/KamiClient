@@ -59,6 +59,8 @@ public class VaoBindState extends VaoState {
 	    gl.glBindVertexArray(that.vao);
 	    if(DO_GL_EBO_FIXUP)
 		gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, that.ebo);
+	} else if(DO_GL_EBO_FIXUP && (that.ebo != this.ebo)) {
+	    gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, that.ebo);
 	}
     }
 

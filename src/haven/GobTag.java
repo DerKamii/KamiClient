@@ -60,7 +60,9 @@ public enum GobTag {
     };
     
     private static final String[] BIG_PARTS = {
-        "/orca/orcabeef", "/spermwhale/spermwhaleskull", "/spermwhale/spermwhalesteak", "/spermwhale/spermwhaleheart", "/spermwhale/spermwhaleskeleton"
+        "/orca/orcabeef", "/spermwhale/spermwhaleskull",
+        "/spermwhale/spermwhalesteak", "/spermwhale/spermwhaleheart",
+        "/spermwhale/spermwhaleskeleton", "/mammoth/mammothskull"
     };
     private static final String[] ANIMALS = {
         "/fox", "/swan", "/bat", "/beaver", "/reddeer"

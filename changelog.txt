@@ -1,3 +1,6 @@
+$size[14]{$u{update on dev:}
+* Fixed aggro rings on mammoth skulls.
+`
 $size[14]{$u{update on 12.04.2026:}
 * Merged all changes up to now.
 * Fixed gilding and added it to this update.

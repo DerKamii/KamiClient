@@ -1,5 +1,9 @@
 $size[14]{$u{update on dev:}
 * Fixed aggro rings on mammoth skulls.
+* Added a couple of performance optimizations that hopefully will help
+* More zoom without clipping. You're welcome.
+* Fixe NPE on cave click to move (Minimap)
+* Merged PR to fix a rare AMD driver Nullpointer error (Thanks onefuncman)
 `
 $size[14]{$u{update on 12.04.2026:}
 * Merged all changes up to now.

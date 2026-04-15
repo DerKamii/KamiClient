@@ -36,6 +36,7 @@ public class Composited implements RenderTree.Node, EquipTarget {
     public static int animTickFrame = 0;
     public static volatile int cachedAnimSkip = CFG.ANIM_FRAME_SKIP.get();
     static { CFG.ANIM_FRAME_SKIP.observe(cfg -> cachedAnimSkip = cfg.get()); }
+    public volatile boolean frozen = false;
     public final Skeleton skel;
     public final Pose pose;
     public final OwnerContext eqowner;
@@ -201,6 +202,7 @@ public class Composited implements RenderTree.Node, EquipTarget {
 	public TickList.Ticking ticker() {return(this);}
 	private Pipe.Op lastMorphState = null;
 	public void autotick(double dt) {
+	    if(frozen) return;
 	    int skip = cachedAnimSkip;
 	    if(skip > 0 && (animTickFrame % (skip + 1)) != 0)
 		return;
@@ -544,6 +546,7 @@ public class Composited implements RenderTree.Node, EquipTarget {
     }
     
     public void tick(double dt) {
+	if(frozen) return;
 	if(poses != null)
 	    poses.tick((float)dt);
 	for(Equipped equ : this.equ)

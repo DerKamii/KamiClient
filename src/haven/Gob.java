@@ -1401,6 +1401,29 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	}
     }
     
+    private boolean applyHide(Drawable d, boolean needHide) {
+	boolean changed = false;
+	if(d != null && d.skipRender != needHide) {
+	    changed = true;
+	    d.skipRender = needHide;
+	    if(needHide) {
+		if(d.slots != null) {
+		    ArrayList<RenderTree.Slot> tmpSlots = new ArrayList<>(d.slots);
+		    glob.loader.defer(() -> RUtils.multiremSafe(tmpSlots), null);
+		}
+	    } else {
+		ArrayList<RenderTree.Slot> tmpSlots = new ArrayList<>(slots);
+		glob.loader.defer(() -> RUtils.multiaddSafe(tmpSlots, d), null);
+	    }
+	}
+	if(needHide) {
+	    tag(GobTag.HIDDEN);
+	} else {
+	    untag(GobTag.HIDDEN);
+	}
+	return changed;
+    }
+
     private boolean updateVisibility() {
 	if(anyOf(GobTag.TREE, GobTag.BUSH)) {
 	    Drawable d = drawable;
@@ -1409,26 +1432,14 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    if(onRadar != null && onRadar && CFG.SKIP_HIDING_RADAR_TREES.get()) {
 		needHide = false;
 	    }
-	    boolean changed = false;
-	    if(d != null && d.skipRender != needHide) {
-		changed = true;
-		d.skipRender = needHide;
-		if(needHide) {
-		    if(d.slots != null) {
-			ArrayList<RenderTree.Slot> tmpSlots = new ArrayList<>(d.slots);
-			glob.loader.defer(() -> RUtils.multiremSafe(tmpSlots), null);
-		    }
-		} else {
-		    ArrayList<RenderTree.Slot> tmpSlots = new ArrayList<>(slots);
-		    glob.loader.defer(() -> RUtils.multiaddSafe(tmpSlots, d), null);
-		}
-	    }
-	    if(needHide) {
-		tag(GobTag.HIDDEN);
-	    } else {
-		untag(GobTag.HIDDEN);
-	    }
-	    return changed;
+	    if(applyHide(d, needHide))
+		return true;
+	}
+	if(is(GobTag.DOMESTIC)) {
+	    Drawable d = drawable;
+	    boolean needHide = CFG.HIDE_DOMESTIC_ANIMALS.get();
+	    if(applyHide(d, needHide))
+		return true;
 	}
 	// Tests for later usage
 //	String resName = resid();
@@ -1474,11 +1485,22 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     
     public final Placed placed = new Placed();
     
+    private static volatile boolean freezeDomesticAnims = CFG.FREEZE_DOMESTIC_ANIM.get();
+    static { CFG.FREEZE_DOMESTIC_ANIM.observe(cfg -> freezeDomesticAnims = cfg.get()); }
+
     private void updateTags() {
 	Set<GobTag> tags = GobTag.tags(this);
 	synchronized (this.tags) {
 	    this.tags.clear();
 	    this.tags.addAll(tags);
+	}
+	updateAnimFreeze(tags);
+    }
+
+    private void updateAnimFreeze(Set<GobTag> tags) {
+	if(drawable instanceof Composite) {
+	    Composited comp = ((Composite) drawable).comp;
+	    comp.frozen = freezeDomesticAnims && tags.contains(GobTag.DOMESTIC);
 	}
     }
     

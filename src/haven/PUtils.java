@@ -484,18 +484,24 @@ public class PUtils {
 		for(; si < ci; si++)
 		    cf[si] *= wa;
 	    }
+	    int[] rowIn = new int[w * nb];
+	    int[] rowOut = new int[tsz.x * nb];
 	    for(int y = 0; y < h; y++) {
+		in.getPixels(0, y, w, 1, rowIn);
 		for(int x = 0, ci = 0; x < tsz.x; x++) {
 		    for(int b = 0; b < nb; b++)
 			ca[b] = 0.0;
 		    for(int sx = cl[x]; sx <= cr[x]; sx++) {
 			double fw = cf[ci++];
+			int base = sx * nb;
 			for(int b = 0; b < nb; b++)
-			    ca[b] += in.getSample(sx, y, b) * fw;
+			    ca[b] += rowIn[base + b] * fw;
 		    }
+		    int obase = x * nb;
 		    for(int b = 0; b < nb; b++)
-			buf.setSample(x, y, b, Utils.clip((int)ca[b], 0, 255));
+			rowOut[obase + b] = Utils.clip((int)ca[b], 0, 255);
 		}
+		buf.setPixels(0, y, tsz.x, 1, rowOut);
 	    }
 	}
 
@@ -519,18 +525,24 @@ public class PUtils {
 		for(; si < ci; si++)
 		    cf[si] *= wa;
 	    }
+	    int[] colIn = new int[h * nb];
+	    int[] colOut = new int[tsz.y * nb];
 	    for(int x = 0; x < tsz.x; x++) {
+		buf.getPixels(x, 0, 1, h, colIn);
 		for(int y = 0, ci = 0; y < tsz.y; y++) {
 		    for(int b = 0; b < nb; b++)
 			ca[b] = 0.0;
 		    for(int sy = cu[y]; sy <= cd[y]; sy++) {
 			double fw = cf[ci++];
+			int base = sy * nb;
 			for(int b = 0; b < nb; b++)
-			    ca[b] += buf.getSample(x, sy, b) * fw;
+			    ca[b] += colIn[base + b] * fw;
 		    }
+		    int obase = y * nb;
 		    for(int b = 0; b < nb; b++)
-			res.setSample(x, y, b, Utils.clip((int)ca[b], 0, 255));
+			colOut[obase + b] = Utils.clip((int)ca[b], 0, 255);
 		}
+		res.setPixels(x, 0, 1, tsz.y, colOut);
 	    }
 	}
 	return(res);
@@ -566,18 +578,24 @@ public class PUtils {
 		for(; si < ci; si++)
 		    cf[si] *= wa;
 	    }
+	    int[] rowIn = new int[w * nb];
+	    int[] rowOut = new int[tsz.x * nb];
 	    for(int y = 0; y < h; y++) {
+		in.getPixels(0, y, w, 1, rowIn);
 		for(int x = 0, ci = 0; x < tsz.x; x++) {
 		    for(int b = 0; b < nb; b++)
 			ca[b] = 0.0;
 		    for(int sx = cl[x]; sx <= cr[x]; sx++) {
 			double fw = cf[ci++];
+			int base = sx * nb;
 			for(int b = 0; b < nb; b++)
-			    ca[b] += in.getSample(sx, y, b) * fw;
+			    ca[b] += rowIn[base + b] * fw;
 		    }
+		    int obase = x * nb;
 		    for(int b = 0; b < nb; b++)
-			buf.setSample(x, y, b, Utils.clip((int)ca[b], 0, 255));
+			rowOut[obase + b] = Utils.clip((int)ca[b], 0, 255);
 		}
+		buf.setPixels(0, y, tsz.x, 1, rowOut);
 	    }
 	}
 
@@ -601,18 +619,24 @@ public class PUtils {
 		for(; si < ci; si++)
 		    cf[si] *= wa;
 	    }
+	    int[] colIn = new int[h * nb];
+	    int[] colOut = new int[tsz.y * nb];
 	    for(int x = 0; x < tsz.x; x++) {
+		buf.getPixels(x, 0, 1, h, colIn);
 		for(int y = 0, ci = 0; y < tsz.y; y++) {
 		    for(int b = 0; b < nb; b++)
 			ca[b] = 0.0;
 		    for(int sy = cu[y]; sy <= cd[y]; sy++) {
 			double fw = cf[ci++];
+			int base = sy * nb;
 			for(int b = 0; b < nb; b++)
-			    ca[b] += buf.getSample(x, sy, b) * fw;
+			    ca[b] += colIn[base + b] * fw;
 		    }
+		    int obase = y * nb;
 		    for(int b = 0; b < nb; b++)
-			res.setSample(x, y, b, Utils.clip((int)ca[b], 0, 255));
+			colOut[obase + b] = Utils.clip((int)ca[b], 0, 255);
 		}
+		res.setPixels(x, 0, 1, tsz.y, colOut);
 	    }
 	}
 	return(res);

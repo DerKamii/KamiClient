@@ -10,39 +10,47 @@ public abstract class GobInfo extends GAttrib implements RenderTree.Node, PView.
     protected final Object texLock = new Object();
     protected Pair<Double, Double> center = new Pair<>(0.5, 0.5);
     protected boolean dirty = true;
-    
+    protected boolean noContent = false;
+
     public GobInfo(Gob owner) {
 	super(owner);
     }
-    
+
     protected abstract boolean enabled();
-    
+
     protected void up(int up) {pos.z = up;}
-    
+
     @Override
     public void ctick(double dt) {
 	synchronized (texLock) {
-	    if(enabled() && (dirty || tex == null)) {
+	    if(enabled() && !noContent && (dirty || tex == null)) {
 		if(tex != null) {tex.dispose();}
 		tex = render();
 		dirty = false;
-	    }
-	}
-    }
-    
-    @Override
-    public void draw(GOut g, Pipe state) {
-	synchronized (texLock) {
-	    if(enabled() && tex != null) {
-		Coord sc = Homo3D.obj2sc(pos, state, Area.sized(g.sz()));
-		if(sc == null) {return;}
-		if(sc.isect(Coord.z, g.sz())) {
-		    g.aimage(tex, sc, center.a, center.b);
+		if(tex == null) {
+		    noContent = hasLoadedRes();
 		}
 	    }
 	}
     }
-    
+
+    private boolean hasLoadedRes() {
+	return gob != null && gob.resid() != null;
+    }
+
+    @Override
+    public void draw(GOut g, Pipe state) {
+	if(noContent) {return;}
+	Tex t = tex;
+	if(t != null && enabled()) {
+	    Coord sc = Homo3D.obj2sc(pos, state, Area.sized(g.sz()));
+	    if(sc == null) {return;}
+	    if(sc.isect(Coord.z, g.sz())) {
+		g.aimage(t, sc, center.a, center.b);
+	    }
+	}
+    }
+
     protected abstract Tex render();
 
     public void clean() {
@@ -51,10 +59,14 @@ public abstract class GobInfo extends GAttrib implements RenderTree.Node, PView.
 		tex.dispose();
 		tex = null;
 	    }
+	    noContent = false;
 	}
     }
-    
-    public void dirty() {dirty = true;}
+
+    public void dirty() {
+	noContent = false;
+	dirty = true;
+    }
 
     public void dispose() {
 	clean();

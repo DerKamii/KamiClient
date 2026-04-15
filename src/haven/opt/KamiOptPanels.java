@@ -110,6 +110,12 @@ public interface KamiOptPanels {
 			y += STEP;
 		}
 
+		y += STEP;
+		panel.add(new CFGBox("Freeze domestic animal animations", CFG.FREEZE_DOMESTIC_ANIM, "Stops animation ticking for domesticated animals. Reduces CPU usage when many animals are on screen."), x, y);
+
+		y += STEP;
+		panel.add(new CFGBox("Hide domestic animals", CFG.HIDE_DOMESTIC_ANIMALS, "Completely hides domesticated animals from rendering. Reduces GPU workload when many animals are on screen."), x, y);
+
 		//second row
 		my = Math.max(my, y);
 		x += UI.scale(265);

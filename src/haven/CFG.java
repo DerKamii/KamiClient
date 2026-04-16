@@ -204,7 +204,8 @@ public class CFG<T> {
     public static final CFG<Boolean> ENABLE_PURGE_BUTTON_IN_KIN_LIST = new CFG<>("ui.enable_purge_button_kin_list", false);
     public static final CFG<Boolean> SHOW_FEP_NUMBERS_ON_FOOD = new CFG<>("ui.show_fep_numbers_on_food", false);
     public static final CFG<Boolean> EXTEND_ZOOM_ON_ORTHO = new CFG<>("cam.extend_zoom_on_ortho", false);
-    public static final CFG<Integer> ANIM_FRAME_SKIP = new CFG<>("perf.anim_frame_skip", 0);
+    public static final CFG<Boolean> EXTENDED_ORTHO_VIEW = new CFG<>("cam.extended_ortho_view", false);
+    public static final CFG<Integer> ANIM_FRAME_SKIP = new CFG<>("perf.anim_frame_skip", 1);
     public static final CFG<Double> GOB_INFO_TICK_INTERVAL = new CFG<>("perf.gob_info_tick_interval", 0.25, new com.google.gson.reflect.TypeToken<Double>(){});
     public static final CFG<Boolean> FREEZE_DOMESTIC_ANIM = new CFG<>("perf.freeze_domestic_anim", false);
     public static final CFG<Boolean> HIDE_DOMESTIC_ANIMALS = new CFG<>("perf.hide_domestic_animals", false);

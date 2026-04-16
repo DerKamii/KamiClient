@@ -949,6 +949,9 @@ public class OptWnd extends WindowX {
 	
 	y += STEP;
 	camera.add(new CFGBox("Extend zoom for ortho", CFG.EXTEND_ZOOM_ON_ORTHO), x, y);
+
+	y += STEP;
+	camera.add(new CFGBox("Extended ortho view distance (Worse FPS)", CFG.EXTENDED_ORTHO_VIEW), x, y);
     
 	y += BIG_STEP;
 	my = Math.max(my, y);

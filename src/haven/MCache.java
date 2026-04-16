@@ -890,11 +890,14 @@ public class MCache implements MapSource {
 	public void fill(Message msg) {
 	    int ver = msg.uint8();
 	    if(ver == 1) {
+		int[] prevTiles = tiles.clone();
+		float[] prevZ = z.clone();
 		subfill(msg);
+		if(!Arrays.equals(tiles, prevTiles) || !Arrays.equals(z, prevZ))
+		    invalidate();
 	    } else {
 		throw(new RuntimeException("Unknown map data version " + ver));
 	    }
-	    invalidate();
 	    seq++;
 	}
 	

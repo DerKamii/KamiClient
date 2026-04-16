@@ -53,6 +53,7 @@ public class Composite extends Drawable implements EquipTarget {
     boolean changed = true;
     private String resId = null;
     private List<String> poses = new LinkedList<>();
+    private double animAccumDt = 0;
     
     public Composite(Gob gob, Indir<Resource> base) {
 	super(gob);
@@ -137,7 +138,16 @@ public class Composite extends Drawable implements EquipTarget {
 	    updequ();
 	}
 	processResId();
-	comp.tick(dt);
+	int skip = Composited.cachedAnimSkip;
+	if(skip > 0) {
+	    animAccumDt += dt;
+	    if(((Composited.animTickFrame + 1) % (skip + 1)) == 0) {
+		comp.tick(animAccumDt);
+		animAccumDt = 0;
+	    }
+	} else {
+	    comp.tick(dt);
+	}
     }
     
     public void gtick(Render g) {

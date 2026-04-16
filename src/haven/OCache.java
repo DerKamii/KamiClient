@@ -66,6 +66,8 @@ public class OCache implements Iterable<Gob> {
     private MultiMap<Long, Gob> objs = new HashMultiMap<Long, Gob>();
     private Glob glob;
     private final Collection<ChangeCallback> cbs = new WeakList<ChangeCallback>();
+    private List<Gob> gobSnapshot = new ArrayList<>();
+    private boolean gobSnapshotDirty = true;
     public final PathVisualizer paths = new PathVisualizer();
     private final List<Disposable> disposables = new LinkedList<>();
     
@@ -152,6 +154,7 @@ public class OCache implements Iterable<Gob> {
 	    synchronized(this) {
 		cbs = new ArrayList<>(this.cbs);
 		objs.put(ob.id, ob);
+		gobSnapshotDirty = true;
 	    }
 	    for(ChangeCallback cb : cbs) {
 		cb.added(ob);
@@ -167,6 +170,7 @@ public class OCache implements Iterable<Gob> {
 	    if((old != null) && (old != ob))
 		throw(new RuntimeException(String.format("object %d removed wrong object", ob.id)));
 	    cbs = new ArrayList<>(this.cbs);
+	    gobSnapshotDirty = true;
 	}
 	if(old != null) {
 	    synchronized(old) {
@@ -177,12 +181,20 @@ public class OCache implements Iterable<Gob> {
 	}
     }
     
-    public void ctick(double dt) {
-	ArrayList<Gob> copy = new ArrayList<Gob>();
+    private List<Gob> getGobSnapshot() {
 	synchronized(this) {
-	    for(Gob g : this)
-		copy.add(g);
+	    if(gobSnapshotDirty) {
+		gobSnapshot = new ArrayList<>();
+		for(Gob g : this)
+		    gobSnapshot.add(g);
+		gobSnapshotDirty = false;
+	    }
+	    return gobSnapshot;
 	}
+    }
+
+    public void ctick(double dt) {
+	List<Gob> copy = getGobSnapshot();
 	Consumer<Gob> task = g -> {
 	    synchronized(g) {
 		g.ctick(dt);
@@ -199,11 +211,7 @@ public class OCache implements Iterable<Gob> {
     }
     
     public void gtick(Render g) {
-	ArrayList<Gob> copy = new ArrayList<Gob>();
-	synchronized(this) {
-	    for(Gob ob : this)
-		copy.add(ob);
-	}
+	List<Gob> copy = getGobSnapshot();
 	if(!Config.par.get()) {
 	    copy.forEach(ob -> {
 		synchronized(ob) {

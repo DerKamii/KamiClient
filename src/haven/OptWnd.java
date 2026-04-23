@@ -1160,7 +1160,10 @@ public class OptWnd extends WindowX {
     
 	y += STEP;
 	panel.add(new CFGBox("Make terrain flat", CFG.FLAT_TERRAIN, null, true), x, y);
-	
+
+	y += STEP;
+	panel.add(new CFGBox("Flat cave walls", CFG.FLAT_CAVE_WALLS, "Replaces cave walls with flat markers and paints the wall's stone type on the ground, useful for prospecting through walls"), x, y);
+
 	y += STEP;
 	panel.add(new CFGBox("Colorize ridge tiles", CFG.DISPLAY_RIDGE_BOX, "Makes it easier to properly approach ridge for climbing"), x, y);
 	

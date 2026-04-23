@@ -45,6 +45,7 @@ public class CFG<T> {
     public static final CFG<Boolean> SIMPLE_CROPS = new CFG<>("display.simple_crops", false);
     public static final CFG<Boolean> NO_TILE_TRANSITION = new CFG<>("display.no_tile_transition", false);
     public static final CFG<Boolean> FLAT_TERRAIN = new CFG<>("display.flat_terrain", false);
+    public static final CFG<Boolean> FLAT_CAVE_WALLS = new CFG<>("display.flat_cave_walls", false);
     public static final CFG<Boolean> DISPLAY_RIDGE_BOX = new CFG<>("display.ridge_box", false);
     public static final CFG<Boolean> COLORIZE_DEEP_WATER = new CFG<>("display.colored_deep_water", true);
     public static final CFG<Integer> DISPLAY_SCALE_CUPBOARDS = new CFG<>("display.scale.cupboards", 100);

@@ -30,11 +30,13 @@ import java.util.*;
 import haven.*;
 import haven.MapMesh.Scan;
 import haven.Surface.Vertex;
+import haven.render.Pipe;
 
 public class CaveTile extends Tiler {
     public static final float h = 16;
     public final Material wtex;
     public final Tiler ground;
+    public static final Map<Material, Tex> tiles = new HashMap<>();
 
     public static class Walls {
 	public final MapMesh m;
@@ -51,14 +53,22 @@ public class CaveTile extends Tiler {
 
 	public Vertex[] fortile(Coord tc) {
 	    if(wv[cs.o(tc)] == null) {
-		Random rnd = m.grnd(tc.add(m.ul));
-		Vertex[] buf = wv[cs.o(tc)] = new Vertex[4];
-		buf[0] = ms.new Vertex(ms.fortile(tc));
-		for(int i = 1; i < buf.length; i++) {
-		    buf[i] = ms.new Vertex(buf[0].x, buf[0].y, buf[0].z + (i * h / (buf.length - 1)));
-		    buf[i].x += (rnd.nextFloat() - 0.5f) * 3.0f;
-		    buf[i].y += (rnd.nextFloat() - 0.5f) * 3.0f;
-		    buf[i].z += (rnd.nextFloat() - 0.5f) * 3.5f;
+		if(CFG.FLAT_CAVE_WALLS.get()) {
+		    Vertex[] buf = wv[cs.o(tc)] = new Vertex[4];
+		    buf[0] = ms.fortile(tc);
+		    buf[1] = ms.new Vertex(buf[0].x, buf[0].y, buf[0].z + 5f);
+		    buf[2] = ms.new Vertex(buf[0].x + 0.01f, buf[0].y + 0.01f, buf[0].z + 5f);
+		    buf[3] = ms.new Vertex(buf[0].x, buf[0].y, buf[0].z);
+		} else {
+		    Random rnd = m.grnd(tc.add(m.ul));
+		    Vertex[] buf = wv[cs.o(tc)] = new Vertex[4];
+		    buf[0] = ms.new Vertex(ms.fortile(tc));
+		    for(int i = 1; i < buf.length; i++) {
+			buf[i] = ms.new Vertex(buf[0].x, buf[0].y, buf[0].z + (i * h / (buf.length - 1)));
+			buf[i].x += (rnd.nextFloat() - 0.5f) * 3.0f;
+			buf[i].y += (rnd.nextFloat() - 0.5f) * 3.0f;
+			buf[i].z += (rnd.nextFloat() - 0.5f) * 3.5f;
+		    }
 		}
 	    }
 	    return(wv[cs.o(tc)]);
@@ -132,8 +142,27 @@ public class CaveTile extends Tiler {
 	    if(w == null) w = m.data(walls);
 	    mkwall(m, w, lc.add(tccs[(i + 1) % 4]), lc.add(tccs[i]));
 	}
-	if(ground != null)
-	    ground.lay(m, rnd, lc, gc);
+	if(ground != null) {
+	    Tex tex = tiles.get(wtex);
+	    if(tex == null && CFG.FLAT_CAVE_WALLS.get()) {
+		for(Pipe.Op gs : wtex.statesForTiles) {
+		    if(gs instanceof TexRender.TexDraw) {
+			if(gs.toString().contains("gfx/tiles/mountain-tex"))
+			    break;
+			tiles.put(wtex, tex = ((TexRender.TexDraw)gs).tex);
+			break;
+		    }
+		}
+	    }
+	    if(tex != null && CFG.FLAT_CAVE_WALLS.get() && ground instanceof GroundTile) {
+		MapMesh.MapSurface s = m.data(m.gnd);
+		GroundTile grn = (GroundTile)ground;
+		MPart d = MPart.splitquad(lc, gc, s.fortilea(lc), s.split[s.bs.o(lc)]);
+		grn._faces(m, tex, 0, d.v, d.tcx, d.tcy, d.f);
+	    } else {
+		ground.lay(m, rnd, lc, gc);
+	    }
+	}
     }
 
     public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {}

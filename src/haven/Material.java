@@ -35,6 +35,7 @@ import static haven.PType.*;
 
 public class Material implements Pipe.Op {
     public final Pipe.Op states, dynstates;
+    public final Pipe.Op[] statesForTiles;
 
     public static final Pipe.Op nofacecull = (p -> p.put(States.facecull, null));
     @SpecName("nofacecull")
@@ -138,6 +139,7 @@ public class Material implements Pipe.Op {
     public Material(Pipe.Op[] states, Pipe.Op[] dynstates) {
 	this.states = Pipe.Op.compose(states);
 	this.dynstates = Pipe.Op.compose(dynstates);
+	this.statesForTiles = states;
     }
 
     public Material(Pipe.Op... states) {

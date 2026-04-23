@@ -1403,10 +1403,58 @@ public class MapView extends PView implements DTarget, Console.Directory {
     
     public Coord3f getcc() {
 	Gob pl = player();
+	Coord3f raw;
 	if(pl != null)
-	    return(pl.getc());
+	    raw = pl.getc();
 	else
-	    return(glob.map.getzp(cc));
+	    raw = glob.map.getzp(cc);
+	return(camfilter.filter(raw));
+    }
+
+    private final CamJitterFilter camfilter = new CamJitterFilter();
+
+    private static class CamJitterFilter {
+	private static final float DCUTOFF = 1.0f;
+	private static final float BETA = 0.007f;
+	private double lastTime = Double.NaN;
+	private Coord3f lastRaw, lastFiltered, lastDeriv;
+
+	Coord3f filter(Coord3f raw) {
+	    if(!CFG.CAMERA_SMOOTH_JITTER.get()) {
+		lastTime = Double.NaN;
+		return(raw);
+	    }
+	    double now = System.nanoTime() / 1e9;
+	    if(Double.isNaN(lastTime) || lastRaw == null) {
+		lastTime = now;
+		lastRaw = raw;
+		lastFiltered = raw;
+		lastDeriv = Coord3f.o;
+		return(raw);
+	    }
+	    float dt = (float)(now - lastTime);
+	    if(dt <= 0) return(lastFiltered);
+	    lastTime = now;
+
+	    Coord3f rawDeriv = raw.sub(lastRaw).mul(1f / dt);
+	    float da = alpha(dt, DCUTOFF);
+	    Coord3f deriv = lastDeriv.add(rawDeriv.sub(lastDeriv).mul(da));
+	    lastDeriv = deriv;
+	    lastRaw = raw;
+
+	    float speed = (float)Math.hypot(deriv.x, deriv.y);
+	    float strength = Utils.clip(CFG.CAMERA_SMOOTH_STRENGTH.get(), 0, 100);
+	    float mincutoff = (101f - strength) * 0.1f;
+	    float cutoff = mincutoff + BETA * speed;
+	    float a = alpha(dt, cutoff);
+	    lastFiltered = lastFiltered.add(raw.sub(lastFiltered).mul(a));
+	    return(lastFiltered);
+	}
+
+	private static float alpha(float dt, float cutoff) {
+	    float tau = 1f / (2f * (float)Math.PI * cutoff);
+	    return(1f / (1f + tau / dt));
+	}
     }
     
     public static class Clicklist implements RenderList<Rendered>, RenderList.Adapter {

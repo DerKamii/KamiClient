@@ -952,7 +952,19 @@ public class OptWnd extends WindowX {
 
 	y += STEP;
 	camera.add(new CFGBox("Extended ortho view distance (Worse FPS)", CFG.EXTENDED_ORTHO_VIEW), x, y);
-    
+
+	y += STEP;
+	camera.add(new CFGBox("Smooth camera jitter", CFG.CAMERA_SMOOTH_JITTER), x, y);
+
+	y += STEP;
+	camera.add(new Label("Jitter smoothing strength"), x, y);
+	y += UI.scale(15);
+	camera.add(new HSlider(UI.scale(200), 0, 100, CFG.CAMERA_SMOOTH_STRENGTH.get()) {
+	    public void changed() {
+		CFG.CAMERA_SMOOTH_STRENGTH.set(val);
+	    }
+	}, x, y);
+
 	y += BIG_STEP;
 	my = Math.max(my, y);
 

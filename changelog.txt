@@ -1,4 +1,4 @@
-$size[14]{$u{update on dev:}
+$size[14]{$u{update on 23.04.2026:}
 * Fixed aggro rings on mammoth skulls.
 * Added a couple of performance optimizations that hopefully will help
 * More zoom without clipping. You're welcome.
@@ -7,6 +7,9 @@ $size[14]{$u{update on dev:}
 * Added hide domestic animal option in experimental options.
 * Fixed near clipping for ortho
 * Added additional view to ortho, for screenshots. (Tanks FPS! You're warned)
+* Added jitter smoothing options
+* Added flat cave-walls from Hurricane (Thanks ND)
+* Merged loftar code.
 `
 $size[14]{$u{update on 12.04.2026:}
 * Merged all changes up to now.

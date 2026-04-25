@@ -215,6 +215,7 @@ public class CFG<T> {
     public static final CFG<Boolean> PARALLEL_TICK = new CFG<>("perf.parallel_tick", true);
     public static final CFG<Integer> GL_DISPOSE_PER_FRAME = new CFG<>("perf.gl_dispose_per_frame", 64);
     public static final CFG<Boolean> DISABLE_YULELIGHTS_FX = new CFG<>("display.disable_yulelights_fx", true);
+    public static final CFG<Boolean> HIDE_GAMEUI_PORTRAIT = new CFG<>("display.hide_gameui_portrait", false);
     public static final CFG<Boolean> MAP_COMPACT_LOCKED = new CFG<>("map.compact_locked", false);
 
     private static final String CONFIG_JSON = "config.json";

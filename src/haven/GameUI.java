@@ -379,7 +379,11 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
 	menupanel.add(new MainMenu(), 0, 0);
 	menubuttons(rbtnimg);
 	foldbuttons();
-	portrait = ulpanel.add(Frame.with(new Avaview(Avaview.dasz, plid, "avacam"), false), UI.scale(10, 10));
+	if(CFG.HIDE_GAMEUI_PORTRAIT.get()) {
+	    portrait = ulpanel.add(new Widget(Avaview.dasz.add(Window.wbox.bisz())), UI.scale(10, 10));
+	} else {
+	    portrait = ulpanel.add(Frame.with(new Avaview(Avaview.dasz, plid, "avacam"), false), UI.scale(10, 10));
+	}
 	buffs = ulpanel.add(new Bufflist(), portrait.c.x + portrait.sz.x + UI.scale(10), portrait.c.y + ((IMeter.fsz.y + UI.scale(2)) * 2) + UI.scale(5 - 2));
 	calendar = umpanel.add(new Cal(), Coord.z);
 	eqproxyHandBelt = add(new EquipProxy(CFG.UI_SHOW_EQPROXY_HAND, SLOTS.HAND_LEFT, SLOTS.HAND_RIGHT, SLOTS.BELT), UI.scale(420, 5));

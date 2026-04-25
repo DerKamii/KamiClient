@@ -227,8 +227,10 @@ public class DecoX extends Window.DefaultDeco {
 	public void drawframe(GOut g, DecoX decoX) {
 	    Window wnd = decoX.wndx();
 	    Text cap = decoX.cap;
-	    if((cap == null) || (!Objects.equals(cap.text, wnd.cap))) {
+	    if((cap == null) || (!Objects.equals(cap.text, wnd.cap)) || (cfocus != wnd.hasfocus)) {
+		if(cap != null) cap.dispose();
 		cap = (wnd.cap == null) ? null : ((cfocus = wnd.hasfocus) ? cf : ncf).render(wnd.cap);
+		decoX.cap = cap;
 		decoX.cmw = (cap == null) ? 0 : cap.sz().x;
 		decoX.cpsz = Coord.of(cl.sz().x + decoX.cmw + cr.sz().x, cm.sz.y);
 		decoX.cmw = decoX.cmw - (cl.sz().x) - UI.scale(5);

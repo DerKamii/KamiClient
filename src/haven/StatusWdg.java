@@ -34,8 +34,12 @@ public class StatusWdg extends Widget {
 	if(!CFG.SHOW_STATS.get() || System.currentTimeMillis() - lastUpdateTime < 1000) return;
 
 	lastUpdateTime = System.currentTimeMillis();
+	Tex oldPlayers = players;
 	players = Text.renderstroked(String.format("Players: %s", httpStatus.users), Color.WHITE, Color.BLACK).tex();
+	if(oldPlayers != null) oldPlayers.dispose();
+	Tex oldFps = fpstext;
 	fpstext = Text.renderstroked(String.format("FPS: %d", GLPanel.Loop.currentFps), Color.WHITE, Color.BLACK).tex();
+	if(oldFps != null) oldFps.dispose();
 
 	updatePing();
     }
@@ -89,7 +93,10 @@ public class StatusWdg extends Widget {
 	    if(ping.isEmpty())
 		ping = "?";
 
-	    pingtime = Text.renderstroked(String.format("Ping: %s ms", ping), Color.WHITE, Color.BLACK).tex();
+	    Tex newPing = Text.renderstroked(String.format("Ping: %s ms", ping), Color.WHITE, Color.BLACK).tex();
+	    Tex oldPing = pingtime;
+	    pingtime = newPing;
+	    if(oldPing != null) oldPing.dispose();
 	    updatePingPending = false;
 	}, "PingUpdater");
 	pingUpdaterThread.start();

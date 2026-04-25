@@ -111,6 +111,9 @@ public interface KamiOptPanels {
 		}
 
 		y += STEP;
+		panel.add(new CFGBox("Parallel scene tick", CFG.PARALLEL_TICK, "Runs scene-tick processing across multiple threads. Off = single-threaded (less variance, slower average). Useful when stutters feel worse than baseline FPS."), x, y);
+
+		y += STEP;
 		{
 			Label ddpy = new Label.Untranslated("");
 			String[] dnames = {"Unlimited", "16", "32", "64", "128", "256"};

@@ -212,6 +212,7 @@ public class CFG<T> {
     public static final CFG<Double> GOB_INFO_TICK_INTERVAL = new CFG<>("perf.gob_info_tick_interval", 0.25, new com.google.gson.reflect.TypeToken<Double>(){});
     public static final CFG<Boolean> FREEZE_DOMESTIC_ANIM = new CFG<>("perf.freeze_domestic_anim", false);
     public static final CFG<Boolean> HIDE_DOMESTIC_ANIMALS = new CFG<>("perf.hide_domestic_animals", false);
+    public static final CFG<Boolean> PARALLEL_TICK = new CFG<>("perf.parallel_tick", true);
     public static final CFG<Integer> GL_DISPOSE_PER_FRAME = new CFG<>("perf.gl_dispose_per_frame", 64);
     public static final CFG<Boolean> MAP_COMPACT_LOCKED = new CFG<>("map.compact_locked", false);
 

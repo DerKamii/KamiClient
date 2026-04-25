@@ -36,6 +36,8 @@ import haven.Config;
 public class TickList implements RenderList<TickList.TickNode> {
     private static volatile boolean cachedHideTrees = CFG.HIDE_TREES.get();
     static { CFG.HIDE_TREES.observe(cfg -> cachedHideTrees = cfg.get()); }
+    private static volatile boolean cachedParallelTick = CFG.PARALLEL_TICK.get();
+    static { CFG.PARALLEL_TICK.observe(cfg -> cachedParallelTick = cfg.get()); }
 
     private final Map<Ticking, Entry> cur = new HashMap<>();
     private List<Entry> snapshot = new ArrayList<>();
@@ -155,7 +157,7 @@ public class TickList implements RenderList<TickList.TickNode> {
 			}
 		}
 	    };
-	    if(!Config.par.get())
+	    if(!Config.par.get() || !cachedParallelTick)
 		copy.forEach(task);
 	    else
 		copy.parallelStream().forEach(task);
@@ -184,7 +186,7 @@ public class TickList implements RenderList<TickList.TickNode> {
 		}
 	    }
 	};
-	if(!Config.par.get()) {
+	if(!Config.par.get() || !cachedParallelTick) {
 	    copy.forEach(ent -> task.accept(ent, g));
 	} else {
 	    Collection<Render> subs = new ArrayList<>();

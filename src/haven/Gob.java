@@ -1602,6 +1602,8 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     public void markerUpdated() {status.update(StatusType.marker);}
 
     public void placementDirty() {placed.dirty = true;}
+
+    public void markStateDirty() {stateDirty = true; placed.dirty = true;}
     
     private static void updateStatus(UI ui, long gobId, StatusType type) {
 	Gob gob = ui.sess.glob.oc.getgob(gobId);
@@ -1653,6 +1655,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	
 	if(status.updated(StatusType.drawable)) {
 	    customScale.update(this);
+	    markStateDirty();
 	}
 	
 	if(status.updated(StatusType.drawable, StatusType.id, StatusType.icon)) {
@@ -1728,6 +1731,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    }
 	}
 	customColor.color(c);
+	markStateDirty();
     }
     
     private void updateMarkerSprite() {

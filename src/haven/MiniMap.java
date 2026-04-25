@@ -1192,6 +1192,8 @@ public class MiniMap extends Widget {
 			Resource.Tooltip tt = tres.layer(Resource.tooltip);
 			if(tt != null)
 			    tname = tt.t;
+			else
+			    tname = L10N.biome(ClientUtils.prettyResName(tres));
 		    }
 		}
 	    }

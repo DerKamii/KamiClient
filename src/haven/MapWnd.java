@@ -94,7 +94,7 @@ public class MapWnd extends WindowX implements Console.Directory {
 	toolbar = add(new Widget(Coord.z));
 	toolbar.add(new Img(Resource.loadtex("gfx/hud/mmap/fgwdg")) {
 		public boolean mousedown(MouseDownEvent ev) {
-		    if((ev.b == 1) && checkhit(ev.c)) {
+		    if((ev.b == 1) && checkhit(ev.c) && !compactLocked()) {
 			MapWnd.this.drag(parentpos(MapWnd.this, ev.c));
 			return(true);
 		    }
@@ -151,6 +151,10 @@ public class MapWnd extends WindowX implements Console.Directory {
 	    .changed(a -> toggleol(TileHighlight.TAG, a))
 	    .rclick(() -> {TileHighlight.toggle(ui);})
 	    .settip("Left-click to toggle tile highlight\nRight-click to open settings", true);
+	
+	btn = topbar.add(new ICheckBox("gfx/hud/mmap/lock", "", "-d", "-h"), btn.pos("ur"))
+	    .state(CFG.MAP_COMPACT_LOCKED::get).set(a -> toggleCompactLock())
+	    .settip("Lock compact window position & size.", true);
     
 	btn = topbar.add(new ICheckBox("gfx/hud/mmap/marknames", "", "-d", "-h"), UI.scale(new Coord(4,24)))
 	    .state(CFG.MMAP_SHOW_MARKER_NAMES::get)
@@ -181,6 +185,14 @@ public class MapWnd extends WindowX implements Console.Directory {
     protected void added() {
 	super.added();
 	mv.basic.add(mvmarks);
+    }
+
+    public boolean compactLocked() {
+	return compact() && CFG.MAP_COMPACT_LOCKED.get();
+    }
+
+    public void toggleCompactLock() {
+	CFG.MAP_COMPACT_LOCKED.set(!CFG.MAP_COMPACT_LOCKED.get());
     }
 
     public void remove() {
@@ -217,7 +229,7 @@ public class MapWnd extends WindowX implements Console.Directory {
 	private Coord dragc;
 	public boolean mousedown(MouseDownEvent ev) {
 	    Coord c = ev.c, cc = c.sub(sc);
-	    if((ev.b == 1) && compact() && (cc.x < sizer.sz().x) && (cc.y < sizer.sz().y) && (cc.y >= sizer.sz().y - UI.scale(25) + (sizer.sz().x - cc.x))) {
+	    if((ev.b == 1) && compact() && !compactLocked() && (cc.x < sizer.sz().x) && (cc.y < sizer.sz().y) && (cc.y >= sizer.sz().y - UI.scale(25) + (sizer.sz().x - cc.x))) {
 		if(drag == null) {
 		    drag = ui.grabmouse(this);
 		    dragc = csz().sub(parentpos(MapWnd.this, c));
@@ -225,7 +237,7 @@ public class MapWnd extends WindowX implements Console.Directory {
 		}
 	    }
 	    /* XXX: Shift-clicks that do not drag should be propagated to the map. */
-	    if((ev.b == 1) && (checkhit(c) || ui.modshift)) {
+	    if((ev.b == 1) && (checkhit(c) || ui.modshift) && !compactLocked()) {
 		MapWnd.this.drag(parentpos(MapWnd.this, c));
 		return(true);
 	    }

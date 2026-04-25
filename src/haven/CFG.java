@@ -101,7 +101,7 @@ public class CFG<T> {
     public static final CFG<Boolean> MMAP_VIEW = new CFG<>("ui.mmap_view", false);
     public static final CFG<Boolean> MMAP_GRID = new CFG<>("ui.mmap_grid", false);
     public static final CFG<Boolean> MMAP_POINTER = new CFG<>("ui.mmap_pointer", false);
-    public static final CFG<Boolean> MMAP_SHOW_BIOMES = new CFG<>("ui.mmap_biomes", true);
+    public static final CFG<Boolean> MMAP_SHOW_BIOMES = new CFG<>("ui.mmap_biomes", false);
     public static final CFG<Boolean> MMAP_SHOW_PATH = new CFG<>("ui.mmap_path", false);
     public static final CFG<Boolean> MMAP_SHOW_MARKER_NAMES = new CFG<>("ui.mmap_mnames", false);
     public static final CFG<Boolean> MMAP_SHOW_PARTY_NAMES = new CFG<>("ui.mmap_party_names", false);
@@ -212,7 +212,8 @@ public class CFG<T> {
     public static final CFG<Double> GOB_INFO_TICK_INTERVAL = new CFG<>("perf.gob_info_tick_interval", 0.25, new com.google.gson.reflect.TypeToken<Double>(){});
     public static final CFG<Boolean> FREEZE_DOMESTIC_ANIM = new CFG<>("perf.freeze_domestic_anim", false);
     public static final CFG<Boolean> HIDE_DOMESTIC_ANIMALS = new CFG<>("perf.hide_domestic_animals", false);
-    
+    public static final CFG<Boolean> MAP_COMPACT_LOCKED = new CFG<>("map.compact_locked", false);
+
     private static final String CONFIG_JSON = "config.json";
     private static final Map<Object, Object> cfg;
     private static final Map<String, Object> cache = new HashMap<>();

@@ -196,7 +196,13 @@ public interface GLPanel extends UIPanel, UI.Context {
 	    Tex tex = (tt == null) ? null : tt.get();
 	    if(tex != null) {
 		Coord sz = tex.sz();
-		Coord pos = ui.mc.sub(sz).sub(curshotspot);
+		Coord pad = UI.scale(16, 20);
+		Coord pos = ui.mc.add(pad);
+		Coord rsz = ui.root.sz;
+		if(pos.x + sz.x > rsz.x)
+		    pos.x = ui.mc.x - sz.x - UI.scale(4);
+		if(pos.y + sz.y > rsz.y)
+		    pos.y = ui.mc.y - sz.y - UI.scale(4);
 		if(pos.x < 0)
 		    pos.x = 0;
 		if(pos.y < 0)

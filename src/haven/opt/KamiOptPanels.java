@@ -111,6 +111,31 @@ public interface KamiOptPanels {
 		}
 
 		y += STEP;
+		{
+			Label ddpy = new Label.Untranslated("");
+			String[] dnames = {"Unlimited", "16", "32", "64", "128", "256"};
+			int[] dvals = {0, 16, 32, 64, 128, 256};
+			int curidx = 3;
+			int curval = CFG.GL_DISPOSE_PER_FRAME.get();
+			for(int i = 0; i < dvals.length; i++) {
+				if(dvals[i] == curval) {curidx = i; break;}
+			}
+			panel.add(new Label("GL disposes per frame"), x, y);
+			y += UI.scale(15);
+			panel.addhlp(new Coord(x, y), UI.scale(5),
+				new HSlider(UI.scale(160), 0, dnames.length - 1, curidx) {
+					protected void added() {dpy();}
+					void dpy() {ddpy.settext(dnames[this.val]);}
+					public void changed() {
+						CFG.GL_DISPOSE_PER_FRAME.set(dvals[this.val]);
+						dpy();
+					}
+				},
+				ddpy);
+			y += STEP;
+		}
+
+		y += STEP;
 		panel.add(new CFGBox("Freeze domestic animal animations", CFG.FREEZE_DOMESTIC_ANIM, "Stops animation ticking for domesticated animals. Reduces CPU usage when many animals are on screen."), x, y);
 
 		y += STEP;

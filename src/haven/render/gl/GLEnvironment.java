@@ -416,6 +416,9 @@ public abstract class GLEnvironment implements Environment {
 	}
     }
 
+    public static volatile int cachedDisposeCap = haven.CFG.GL_DISPOSE_PER_FRAME.get();
+    static { haven.CFG.GL_DISPOSE_PER_FRAME.observe(cfg -> cachedDisposeCap = cfg.get()); }
+
     private BufferBGL disposeall() {
 	int tail;
 	synchronized(seqmon) {
@@ -423,16 +426,26 @@ public abstract class GLEnvironment implements Environment {
 	}
 	BufferBGL buf = new BufferBGL();
 	Collection<GLObject> copy;
+	int cap = cachedDisposeCap;
 	synchronized(disposed) {
 	    if(disposed.isEmpty())
 		return(buf);
-	    copy = new ArrayList<>(disposed.size());
+	    /* Cap the number of GL deletes per frame to smooth out the driver-side
+	     * stall when many resources go down at once. Safety valve: if pending
+	     * grows past 8x cap, drain everything to prevent unbounded backlog. */
+	    int pendingTotal = disposed.size();
+	    int effectiveCap = (cap > 0 && pendingTotal < cap * 8) ? cap : Integer.MAX_VALUE;
+	    copy = new ArrayList<>(Math.min(pendingTotal, effectiveCap));
+	    int taken = 0;
 	    for(Iterator<GLObject> i = disposed.iterator(); i.hasNext();) {
+		if(taken >= effectiveCap)
+		    break;
 		GLObject obj = i.next();
 		if(obj.dispseq - tail > 0)
 		    break;
 		copy.add(obj);
 		i.remove();
+		taken++;
 	    }
 	}
 	for(GLObject obj : copy)

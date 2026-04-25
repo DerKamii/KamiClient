@@ -1,3 +1,11 @@
+$size[14]{$u{update on 26.04.2026:}
+* Fixed small UI texture problem
+* Fixed status widget texture problem
+* Added disable yule light + fx toggle. enabled by default.
+* Fixed a major stutter source
+* Added the possibility to disable parallel tick processing
+* Switching to ZGC now
+`
 $size[14]{$u{update on 25.04.2026:}
 * Fixed container highlight
 * Buff toggle on login (restart required)
@@ -12,7 +20,7 @@ $size[14]{$u{update on 23.04.2026:}
 * Added a couple of performance optimizations that hopefully will help
 * More zoom without clipping. You're welcome.
 * Fixe NPE on cave click to move (Minimap)
-* Merged PR to fix a rare AMD driver Nullpointer error (Thanks onefuncman)
+* Merged PR to fix a Nullpointer error (Thanks onefuncman)
 * Added hide domestic animal option in experimental options.
 * Fixed near clipping for ortho
 * Added additional view to ortho, for screenshots. (Tanks FPS! You're warned)

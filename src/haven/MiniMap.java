@@ -575,7 +575,6 @@ public class MiniMap extends Widget {
 	public final Area mapext;
 	public final Indir<? extends DataGrid> gref;
 	public Coord dc;
-	private DataGrid cgrid = null;
 	private Tex img = null;
 	private Defer.Future<Tex> nextimg = null;
 
@@ -1163,7 +1162,7 @@ public class MiniMap extends Widget {
 		if(allowzoomout())
 		    zoomlevel = Math.min(zoomlevel + 1, dlvl + 1);
 	    }
-	} else {
+	} else if(ev.a < 0) {
 	    if(zoomlevel > 0) {
 		zoomlevel--;
 	    } else {

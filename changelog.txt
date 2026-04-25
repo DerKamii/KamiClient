@@ -1,3 +1,12 @@
+$size[14]{$u{update on 25.04.2026:}
+* Fixed container highlight
+* Buff toggle on login (restart required)
+* Fixed cupboard size
+* Fixed wall size
+* Added compact mode map window lock
+* Changed tooltip position to bottom right of mouse.
+* Merged Loftar code.
+`
 $size[14]{$u{update on 23.04.2026:}
 * Fixed aggro rings on mammoth skulls.
 * Added a couple of performance optimizations that hopefully will help

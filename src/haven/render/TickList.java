@@ -38,6 +38,17 @@ public class TickList implements RenderList<TickList.TickNode> {
     static { CFG.HIDE_TREES.observe(cfg -> cachedHideTrees = cfg.get()); }
     private static volatile boolean cachedParallelTick = CFG.PARALLEL_TICK.get();
     static { CFG.PARALLEL_TICK.observe(cfg -> cachedParallelTick = cfg.get()); }
+    private static volatile boolean cachedDisableYulelights = CFG.DISABLE_YULELIGHTS_FX.get();
+    static { CFG.DISABLE_YULELIGHTS_FX.observe(cfg -> cachedDisableYulelights = cfg.get()); }
+
+    private static boolean isYuleAnimFlare(Entry ent) {
+	if(!cachedDisableYulelights) return false;
+	if(!ent.isAnimFlare || !(ent.tick instanceof haven.Sprite)) return false;
+	haven.Sprite spr = (haven.Sprite)ent.tick;
+	try {
+	    return spr.res != null && spr.res.name != null && spr.res.name.contains("yule");
+	} catch(Throwable t) { return false; }
+    }
 
     private final Map<Ticking, Entry> cur = new HashMap<>();
     private List<Entry> snapshot = new ArrayList<>();
@@ -148,6 +159,8 @@ public class TickList implements RenderList<TickList.TickNode> {
 		copy = snapshot;
 	    }
 	    Consumer<Entry> task = ent -> {
+		if(isYuleAnimFlare(ent))
+		    return;
 		if(ent.mon == null) {
 		    ent.tick.autotick(dt);
 		} else {

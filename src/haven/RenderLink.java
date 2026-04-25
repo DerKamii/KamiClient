@@ -91,6 +91,7 @@ public interface RenderLink {
 
     public static class AmbientLink implements RenderLink {
 	public final Indir<Resource> res;
+	private static final Node NOOP = new Node() {};
 
 	public AmbientLink(Indir<Resource> res) {
 	    this.res = res;
@@ -103,6 +104,21 @@ public interface RenderLink {
 	}
 
 	public Node make(Owner owner) {
+	    if(CFG.DISABLE_YULELIGHTS_FX.get()) {
+		try {
+		    Gob g = null;
+		    if(owner instanceof Gob) g = (Gob)owner;
+		    else if(owner instanceof Gob.Overlay) g = ((Gob.Overlay)owner).gob;
+		    if(g != null) {
+			String rid = g.resid();
+			if(rid != null && rid.contains("yule"))
+			    return(NOOP);
+		    }
+		    Resource lr = res.get();
+		    if(lr != null && lr.name != null && lr.name.contains("yule"))
+			return(NOOP);
+		} catch(Throwable t) {}
+	    }
 	    return(new ActAudio.Ambience(res.get()));
 	}
     }

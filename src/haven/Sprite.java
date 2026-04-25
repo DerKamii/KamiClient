@@ -166,7 +166,30 @@ public abstract class Sprite implements RenderTree.Node, PView.Render2D {
 	return(ret);
     }
     
+    private static boolean isYuleAudio(Resource res, Owner owner) {
+	if(!CFG.DISABLE_YULELIGHTS_FX.get()) return false;
+	try {
+	    boolean resIsAudio = res != null && (
+		(res.layer(Audio.clip, "amb") != null)
+		|| (res.layer(Audio.clip, "cl") != null)
+		|| (res.layer(Audio.clip, "rep") != null)
+		|| (res.layer(ClipAmbiance.Desc.class) != null));
+	    if(resIsAudio && res.name != null && res.name.contains("yule")) return true;
+	    Gob g = null;
+	    if(owner instanceof Gob) g = (Gob)owner;
+	    else if(owner instanceof Gob.Overlay) g = ((Gob.Overlay)owner).gob;
+	    if(g != null) {
+		String rid = g.resid();
+		if(rid != null && rid.contains("yule") && resIsAudio) return true;
+	    }
+	} catch(Throwable t) {}
+	return false;
+    }
+
     public static Sprite create(Owner owner, Resource res, Message sdt) {
+	if(isYuleAudio(res, owner)) {
+	    return(new Sprite(owner, res) {});
+	}
 	{
 	    Factory f = res.getcode(Factory.class, false);
 	    if(f != null) {

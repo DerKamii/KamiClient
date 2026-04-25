@@ -203,8 +203,29 @@ public class RenderTree implements RenderList.Adapter, Disposable {
 	    return(ret);
 	}
 
+	/* Cap the interner size to prevent unbounded growth.
+	 *
+	 * The DepInfo interner is meant to dedupe state configurations so downstream
+	 * caches can key on identity. However, because per-frame state slots like
+	 * FrameInfo (which holds the per-frame `time`) participate in DepInfo's hash
+	 * via state[i].hashCode() — and FrameInfo doesn't override hashCode, so it
+	 * inherits identity hashCode — every PView.tick produces a DepInfo with a
+	 * fresh hash. The interner never finds a match, always inserts, and grows
+	 * unboundedly until GC. The accumulated dead refs then trigger ~80-150ms
+	 * cleanup spikes inside add() once a frame's intern call drains the queue.
+	 *
+	 * Capping at 8192 keeps lookups cheap and prevents the cleanup-burst spike.
+	 * Past the cap we still find() (preserves dedup of existing entries) but
+	 * skip add() — returning `this`. Downstream consumers still get a valid
+	 * DepInfo; they just lose dedup for new entries past the cap.
+	 */
+	private static final int INTERN_SIZE_CAP = 8192;
 	public DepInfo intern() {
 	    synchronized(interned) {
+		if(interned.size() >= INTERN_SIZE_CAP) {
+		    DepInfo found = interned.find(this);
+		    return found != null ? found : this;
+		}
 		return(interned.intern(this));
 	    }
 	}

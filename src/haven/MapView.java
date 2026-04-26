@@ -1414,10 +1414,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private final CamJitterFilter camfilter = new CamJitterFilter();
 
     private static class CamJitterFilter {
-	private static final float DCUTOFF = 1.0f;
-	private static final float BETA = 0.007f;
+	// Half-life of the spring's catch-up, in seconds. The camera closes
+	// half the gap to the player every HALF_LIFE seconds when not pinned
+	// at the leash boundary.
+	private static final float HALF_LIFE = 0.4f;
 	private double lastTime = Double.NaN;
-	private Coord3f lastRaw, lastFiltered, lastDeriv;
+	private Coord3f filtered;
 
 	Coord3f filter(Coord3f raw) {
 	    if(!CFG.CAMERA_SMOOTH_JITTER.get()) {
@@ -1425,35 +1427,36 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		return(raw);
 	    }
 	    double now = System.nanoTime() / 1e9;
-	    if(Double.isNaN(lastTime) || lastRaw == null) {
+	    if(Double.isNaN(lastTime) || filtered == null) {
 		lastTime = now;
-		lastRaw = raw;
-		lastFiltered = raw;
-		lastDeriv = Coord3f.o;
+		filtered = raw;
 		return(raw);
 	    }
 	    float dt = (float)(now - lastTime);
-	    if(dt <= 0) return(lastFiltered);
+	    if(dt <= 0) return(filtered);
 	    lastTime = now;
 
-	    Coord3f rawDeriv = raw.sub(lastRaw).mul(1f / dt);
-	    float da = alpha(dt, DCUTOFF);
-	    Coord3f deriv = lastDeriv.add(rawDeriv.sub(lastDeriv).mul(da));
-	    lastDeriv = deriv;
-	    lastRaw = raw;
+	    float leash = Utils.clip(CFG.CAMERA_SMOOTH_STRENGTH.get(), 0, 50);
 
-	    float speed = (float)Math.hypot(deriv.x, deriv.y);
-	    float strength = Utils.clip(CFG.CAMERA_SMOOTH_STRENGTH.get(), 0, 100);
-	    float mincutoff = (101f - strength) * 0.1f;
-	    float cutoff = mincutoff + BETA * speed;
-	    float a = alpha(dt, cutoff);
-	    lastFiltered = lastFiltered.add(raw.sub(lastFiltered).mul(a));
-	    return(lastFiltered);
-	}
+	    // Spring pull toward the player (z follows raw exactly — leash is 2D).
+	    float a = 1f - (float)Math.pow(0.5, dt / HALF_LIFE);
+	    float fx = filtered.x + (raw.x - filtered.x) * a;
+	    float fy = filtered.y + (raw.y - filtered.y) * a;
 
-	private static float alpha(float dt, float cutoff) {
-	    float tau = 1f / (2f * (float)Math.PI * cutoff);
-	    return(1f / (1f + tau / dt));
+	    // Clamp the offset to the leash radius. When the player moves faster
+	    // than the spring can keep up, the offset hits this clamp and the
+	    // camera then advances at the player's velocity (pinned at the edge).
+	    float ox = fx - raw.x;
+	    float oy = fy - raw.y;
+	    float dist = (float)Math.hypot(ox, oy);
+	    if(dist > leash && dist > 0f) {
+		float scale = leash / dist;
+		fx = raw.x + ox * scale;
+		fy = raw.y + oy * scale;
+	    }
+
+	    filtered = new Coord3f(fx, fy, raw.z);
+	    return(filtered);
 	}
     }
     

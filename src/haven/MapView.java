@@ -1414,12 +1414,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private final CamJitterFilter camfilter = new CamJitterFilter();
 
     private static class CamJitterFilter {
-	// Half-life of the spring's catch-up, in seconds. The camera closes
-	// half the gap to the player every HALF_LIFE seconds when not pinned
-	// at the leash boundary.
-	private static final float HALF_LIFE = 0.4f;
+	// Critically-damped spring. OMEGA controls how fast the camera reaches
+	// the target — roughly 4/OMEGA seconds to settle from rest. OMEGA=6
+	// gives ~0.65s settle on big jumps with smooth ease-in-out.
+	private static final float OMEGA = 6f;
 	private double lastTime = Double.NaN;
 	private Coord3f filtered;
+	private float vx, vy;
 
 	Coord3f filter(Coord3f raw) {
 	    if(!CFG.CAMERA_SMOOTH_JITTER.get()) {
@@ -1430,22 +1431,39 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    if(Double.isNaN(lastTime) || filtered == null) {
 		lastTime = now;
 		filtered = raw;
+		vx = vy = 0f;
 		return(raw);
 	    }
 	    float dt = (float)(now - lastTime);
 	    if(dt <= 0) return(filtered);
 	    lastTime = now;
+	    if(dt > 0.1f) dt = 0.1f;
+
+	    // Teleport detection: if the player jumped a huge distance (e.g. zoning
+	    // indoors, fast-travel), don't try to spring across it — that overshoots
+	    // and bounces. Snap the camera and reset velocity.
+	    if(Math.hypot(filtered.x - raw.x, filtered.y - raw.y) > 1000f) {
+		filtered = raw;
+		vx = vy = 0f;
+		return(raw);
+	    }
 
 	    float leash = Utils.clip(CFG.CAMERA_SMOOTH_STRENGTH.get(), 0, 50);
 
-	    // Spring pull toward the player (z follows raw exactly — leash is 2D).
-	    float a = 1f - (float)Math.pow(0.5, dt / HALF_LIFE);
-	    float fx = filtered.x + (raw.x - filtered.x) * a;
-	    float fy = filtered.y + (raw.y - filtered.y) * a;
+	    // Critically-damped spring integration (semi-implicit). Produces
+	    // ease-in-out: accelerates from rest, decelerates into the target,
+	    // no overshoot, no exponential tail.
+	    float dx = filtered.x - raw.x;
+	    float dy = filtered.y - raw.y;
+	    float ax = -2f * OMEGA * vx - OMEGA * OMEGA * dx;
+	    float ay = -2f * OMEGA * vy - OMEGA * OMEGA * dy;
+	    vx += ax * dt;
+	    vy += ay * dt;
+	    float fx = filtered.x + vx * dt;
+	    float fy = filtered.y + vy * dt;
 
-	    // Clamp the offset to the leash radius. When the player moves faster
-	    // than the spring can keep up, the offset hits this clamp and the
-	    // camera then advances at the player's velocity (pinned at the edge).
+	    // Clamp offset to leash radius. Pinning at the boundary kills any
+	    // outward velocity component so the camera tracks at player speed.
 	    float ox = fx - raw.x;
 	    float oy = fy - raw.y;
 	    float dist = (float)Math.hypot(ox, oy);
@@ -1453,6 +1471,18 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		float scale = leash / dist;
 		fx = raw.x + ox * scale;
 		fy = raw.y + oy * scale;
+		float radial = (vx * ox + vy * oy) / dist;
+		if(radial > 0f) {
+		    vx -= radial * (ox / dist);
+		    vy -= radial * (oy / dist);
+		}
+	    }
+
+	    // Snap when essentially home — kills sub-pixel drift.
+	    if(Math.hypot(fx - raw.x, fy - raw.y) < 0.05f && Math.hypot(vx, vy) < 0.5f) {
+		fx = raw.x;
+		fy = raw.y;
+		vx = vy = 0f;
 	    }
 
 	    filtered = new Coord3f(fx, fy, raw.z);

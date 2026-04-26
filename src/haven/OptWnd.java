@@ -959,7 +959,7 @@ public class OptWnd extends WindowX {
 	y += STEP;
 	camera.add(new Label("Jitter smoothing strength"), x, y);
 	y += UI.scale(15);
-	camera.add(new HSlider(UI.scale(200), 0, 100, CFG.CAMERA_SMOOTH_STRENGTH.get()) {
+	camera.add(new HSlider(UI.scale(200), 0, 200, CFG.CAMERA_SMOOTH_STRENGTH.get()) {
 	    public void changed() {
 		CFG.CAMERA_SMOOTH_STRENGTH.set(val);
 	    }

@@ -208,6 +208,7 @@ public class CFG<T> {
     public static final CFG<Boolean> EXTENDED_ORTHO_VIEW = new CFG<>("cam.extended_ortho_view", false);
     public static final CFG<Boolean> CAMERA_SMOOTH_JITTER = new CFG<>("cam.smooth_jitter", true);
     public static final CFG<Integer> CAMERA_SMOOTH_STRENGTH = new CFG<>("cam.smooth_strength", 30);
+    public static final CFG<Integer> CAMERA_ROTATION_SMOOTHING_MS = new CFG<>("cam.rotation_smoothing_ms", 250);
     public static final CFG<Integer> ANIM_FRAME_SKIP = new CFG<>("perf.anim_frame_skip", 0);
     public static final CFG<Double> GOB_INFO_TICK_INTERVAL = new CFG<>("perf.gob_info_tick_interval", 0.25, new com.google.gson.reflect.TypeToken<Double>(){});
     public static final CFG<Boolean> FREEZE_DOMESTIC_ANIM = new CFG<>("perf.freeze_domestic_anim", false);

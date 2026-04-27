@@ -965,6 +965,15 @@ public class OptWnd extends WindowX {
 	    }
 	}, x, y);
 
+	y += STEP;
+	camera.add(new Label("Rotation smoothing (ms)"), x, y);
+	y += UI.scale(15);
+	camera.add(new HSlider(UI.scale(200), 0, 200, CFG.CAMERA_ROTATION_SMOOTHING_MS.get()) {
+	    public void changed() {
+		CFG.CAMERA_ROTATION_SMOOTHING_MS.set(val);
+	    }
+	}, x, y);
+
 	y += BIG_STEP;
 	my = Math.max(my, y);
 

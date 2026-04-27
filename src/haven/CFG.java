@@ -218,6 +218,7 @@ public class CFG<T> {
     public static final CFG<Boolean> DISABLE_YULELIGHTS_FX = new CFG<>("display.disable_yulelights_fx", true);
     public static final CFG<Boolean> HIDE_GAMEUI_PORTRAIT = new CFG<>("display.hide_gameui_portrait", false);
     public static final CFG<Boolean> MAP_COMPACT_LOCKED = new CFG<>("map.compact_locked", false);
+    public static final CFG<Boolean> HIDE_ANIMAL_WARNING_IN_COMBAT = new CFG<>("ui.combat.hide_animal_warning_in_combat", false);
 
     private static final String CONFIG_JSON = "config.json";
     private static final Map<Object, Object> cfg;

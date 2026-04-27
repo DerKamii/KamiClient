@@ -1488,11 +1488,16 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     private static volatile boolean freezeDomesticAnims = CFG.FREEZE_DOMESTIC_ANIM.get();
     static { CFG.FREEZE_DOMESTIC_ANIM.observe(cfg -> freezeDomesticAnims = cfg.get()); }
 
+    public long lastInCombat = 0;
+
     private void updateTags() {
 	Set<GobTag> tags = GobTag.tags(this);
 	synchronized (this.tags) {
 	    this.tags.clear();
 	    this.tags.addAll(tags);
+	}
+	if(tags.contains(GobTag.IN_COMBAT)) {
+	    lastInCombat = System.currentTimeMillis();
 	}
 	updateAnimFreeze(tags);
     }

@@ -1,3 +1,9 @@
+$size[14]{$u{update on 27.04.2026:}
+* Fixed NPE on leftclick cave icons
+* Added the ability to turn off warning highlights while in combat
+* Added rotation smoothing
+* Changed smoothing defaults to 0, so you gotta set this yourself
+`
 $size[14]{$u{update on 26.04.2026:}
 * Fixed small UI texture problem
 * Fixed status widget texture problem

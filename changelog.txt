@@ -1,3 +1,6 @@
+$size[14]{$u{update on 28.04.2026:}
+* Fixed Ortho cams. Sorry guys.
+`
 $size[14]{$u{update on 27.04.2026:}
 * Fixed NPE on leftclick cave icons
 * Added the ability to turn off warning highlights while in combat

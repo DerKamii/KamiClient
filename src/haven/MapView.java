@@ -545,8 +545,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	
 	public void tick2(double dt) {
 	    dt *= tf;
-	    int smoothMs = CFG.CAMERA_ROTATION_SMOOTHING_MS.get();
-	    float cf = (smoothMs <= 0) ? 1f : 1f - (float)Math.pow(0.5, dt / (smoothMs / 1000.0));
+	    float cf = 1f - (float)Math.pow(500, -dt);
 	    Coord3f mc = getcc().invy();
 	    if((cc == null) || (Math.hypot(mc.x - cc.x, mc.y - cc.y) > 250))
 		cc = mc;

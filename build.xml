@@ -152,6 +152,7 @@
       <fileset dir="resources/compiled" />
       <fileset dir="resources/pre-compiled" />
       <fileset dir="resources" includes="item_data/**"/>
+      <fileset dir="resources" includes="sfx/legacy/**"/>
       <file file="etc/radar.json"/>
       <file file="etc/gob_contents.json5"/>
       <file file="etc/gob_path.json"/>

@@ -458,6 +458,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	initfullscreen.set(CFG.VIDEO_FULL_SCREEN.get());
 	Config.cmdline(args);
 	status("start");
+	me.ender.LegacyBGM.onGameStart();
 	try {
 	    javabughack();
 	} catch(InterruptedException e) {

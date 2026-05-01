@@ -2022,6 +2022,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     
     public void tick(double dt) {
 	super.tick(dt);
+	me.ender.LegacyBGM.tick(this);
 	checkload();
 	camload = null;
 	try {

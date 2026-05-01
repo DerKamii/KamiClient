@@ -670,6 +670,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    change(r.pag);
 	} else {
 	    r.pag.anew = r.pag.tnew = 0;
+	    me.ender.LegacyBGM.onPaginaUse(r.res != null ? r.res.name : null);
 	    r.use(iact);
 	    if(reset)
 		change(null);

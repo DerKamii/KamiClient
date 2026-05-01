@@ -220,6 +220,9 @@ public class CFG<T> {
     public static final CFG<Boolean> MAP_COMPACT_LOCKED = new CFG<>("map.compact_locked", false);
     public static final CFG<Boolean> HIDE_ANIMAL_WARNING_IN_COMBAT = new CFG<>("ui.combat.hide_animal_warning_in_combat", false);
     public static final CFG<Boolean> BLOCK_ATTACK_TAMED_HORSE = new CFG<>("ui.combat.block_attack_tamed_horse", true);
+    public static final CFG<Boolean> LEGACY_BGM_ENABLED = new CFG<>("audio.legacy_bgm.enabled", false);
+    public static final CFG<Boolean> LEGACY_BGM_NO_COOLDOWN = new CFG<>("audio.legacy_bgm.no_cooldown", false);
+    public static final CFG<Double> LEGACY_BGM_VOLUME = new CFG<>("audio.legacy_bgm.volume", 0.5, new com.google.gson.reflect.TypeToken<Double>(){});
 
     private static final String CONFIG_JSON = "config.json";
     private static final Map<Object, Object> cfg;

@@ -490,6 +490,22 @@ public class OptWnd extends WindowX {
 		prev.settip("Sets the size of the audio buffer. Smaller sizes are better, " +
 			    "but larger sizes can fix issues with broken sound.", true);
 	    }
+	    prev = add(new CFGBox("Use legacy BGM",
+				  CFG.LEGACY_BGM_ENABLED,
+				  "Plays nostalgic legacy MIDI music for client-side triggers (login, caves, fishing, etc.). Independent of server-pushed BGM."),
+		       prev.pos("bl").adds(0, 15));
+	    prev = add(new CFGBox("No cooldown",
+				  CFG.LEGACY_BGM_NO_COOLDOWN,
+				  "Disables the per-trigger cooldown so legacy tracks play every time their condition is met. For hardcore fans."),
+		       prev.pos("bl").adds(0, 2));
+	    prev = add(new Label("Legacy BGM volume"), prev.pos("bl").adds(0, 5));
+	    prev = add(new HSlider(UI.scale(200), 0, 1000, (int)(CFG.LEGACY_BGM_VOLUME.get() * 1000)) {
+		    public void changed() {
+			double v = val / 1000.0;
+			CFG.LEGACY_BGM_VOLUME.set(v);
+			me.ender.LegacyAudioPlayer.setVolume(v);
+		    }
+		}, prev.pos("bl").adds(0, 2));
 	    add(new PButton(UI.scale(200), "Back", 27, back), prev.pos("bl").adds(0, 30));
 	    pack();
 	}

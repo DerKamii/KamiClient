@@ -394,4 +394,8 @@ public class Composite extends Drawable implements EquipTarget {
 	}
 	return false;
     }
+
+    public List<String> getPoses() {
+	return new java.util.ArrayList<>(poses);
+    }
 }

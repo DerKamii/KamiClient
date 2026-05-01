@@ -415,6 +415,7 @@ public class Window extends Widget {
     }
     
     private static Pattern febre = Pattern.compile("Food event bonus: (\\d+)%");
+    private static final java.util.WeakHashMap<Button, Boolean> hookedFeastBtns = new java.util.WeakHashMap<>();
     protected void CheckForDinnerTable() {
 	int tablefep = -1;
 	boolean feast = false;
@@ -430,8 +431,18 @@ public class Window extends Widget {
 		}
 	    }
 	    if(w instanceof Button) {
-		if(((Button) w).text.text.equals("Feast!")) {
+		Button b = (Button) w;
+		if(b.text.text.equals("Feast!")) {
 		    feast = true;
+		    if(!hookedFeastBtns.containsKey(b)) {
+			hookedFeastBtns.put(b, Boolean.TRUE);
+			Runnable orig = b.action;
+			b.action = () -> {
+			    if(CFG.LEGACY_BGM_ENABLED.get())
+				me.ender.LegacyAudioPlayer.play("symbel", false, CFG.LEGACY_BGM_VOLUME.get());
+			    if(orig != null) orig.run();
+			};
+		    }
 		}
 	    }
 	}

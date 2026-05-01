@@ -1,3 +1,8 @@
+$size[14]{$u{update on 01.05.2026:}
+* Added toggle to block domesticated horses from being attacked.
+* Switched stack and equipory openings to bottom left to match tooltips
+* Added legacy bgm's on certain triggers. Might not be perfect. Taking feedback. Clientside triggers aren't perfect and cooldown makes it a song can't be played within 5 minutes.
+`
 $size[14]{$u{update on 28.04.2026:}
 * Fixed Ortho cams. Sorry guys.
 `

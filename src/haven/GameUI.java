@@ -303,6 +303,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
     private final Coord minimapc;
     private final Coord menugridc;
     public GameUI(String chrid, long plid, String genus) {
+	me.ender.LegacyBGM.onEnterGame();
 	this.chrid = chrid;
 	this.plid = plid;
 	this.genus = genus;

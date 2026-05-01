@@ -2337,7 +2337,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	protected abstract void hit(Coord pc, Coord2d mc, ClickData inf);
 	protected void nohit(Coord pc) {}
     }
-    
+
     private class Click extends Hittest {
 	int clickb;
 	
@@ -2354,6 +2354,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		args = Utils.extend(args, inf.clickargs());
 		Gob gob = Gob.from(inf.ci);
 		if(gob != null) {
+		    if(clickb == 1 && CFG.BLOCK_ATTACK_TAMED_HORSE.get()
+			&& ui.isCursor("gfx/hud/curs/atk")
+			&& gob.is(GobTag.HORSE) && gob.is(GobTag.DOMESTIC)) {
+			ui.message("Blocked attack on tamed horse.", GameUI.MsgType.BAD);
+			return;
+		    }
 		    if(clickb == 3) {
 			Reactor.GOB_INTERACT.onNext(gob);
 		    }

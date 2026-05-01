@@ -141,6 +141,9 @@ public class CustomOptPanels {
 	panel.add(new CFGBox("Disable animal warning while in combat", CFG.HIDE_ANIMAL_WARNING_IN_COMBAT, "Hides the aggressive animal warning circle for animals you are currently fighting."), x, y);
 
 	y += STEP;
+	panel.add(new CFGBox("Block attacks on tamed horses", CFG.BLOCK_ATTACK_TAMED_HORSE, "Prevents the attack-cursor click from being sent when the target is a tamed horse - useful to avoid hitting party members' horses during hunts."), x, y);
+
+	y += STEP;
 	panel.add(new CFGBox("Always mark current target", CFG.ALWAYS_MARK_COMBAT_TARGET , "Usually current target only marked when there's more than one"), x, y);
 	
 	y = AddCombatHighlight(panel, x, y, "Highlight party members in combat", CFG.HIGHLIGHT_PARTY_IN_COMBAT, CFG.MARK_PARTY_IN_COMBAT);

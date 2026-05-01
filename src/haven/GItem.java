@@ -638,7 +638,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 		if(cont.hovering_pos != null) {
 		    move(cont.hovering_pos);
 		} else {
-		    move(hover.parentpos(parent, hover.sz.sub(overlap).sub(HoverDeco.hovermarg)));
+		    move(hover.parentpos(parent, new Coord(HoverDeco.hovermarg.x + overlap.x - this.sz.x, hover.sz.y - overlap.y - HoverDeco.hovermarg.y)));
 		}
 	    }
 	}

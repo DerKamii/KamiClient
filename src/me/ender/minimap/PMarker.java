@@ -18,11 +18,15 @@ public class PMarker extends Marker {
     
     public Color color;
     public boolean onmap;
-    
-    public PMarker(long seg, Coord tc, String nm, Color color, boolean onmap) {
-	super(seg, tc, nm);
+
+    public PMarker(MapFile file, long seg, Coord tc, String nm, Color color, boolean onmap) {
+	super(file, seg, tc, nm);
 	this.color = color;
 	this.onmap = onmap;
+    }
+
+    public String toString() {
+	return(String.format("#<pmarker \"%s\" %s %d>", nm, color, seq));
     }
     
     @Override

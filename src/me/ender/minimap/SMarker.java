@@ -16,20 +16,24 @@ public class SMarker extends Marker {
     public List<QuestCondition> questConditions = new ArrayList<>();
     public Iterator<QuestCondition> questIterator;
 
-    public SMarker(long seg, Coord tc, String nm, long oid, Resource.Saved res) {
-	this(seg, tc, nm, oid, res, new byte[0]);
+    public SMarker(MapFile file, long seg, Coord tc, String nm, long oid, Resource.Saved res) {
+	this(file, seg, tc, nm, oid, res, new byte[0]);
     }
 
-    public SMarker(long seg, Coord tc, String nm, long oid, Resource.Saved res, byte[] data) {
-	super(seg, tc, nm);
+    public SMarker(MapFile file, long seg, Coord tc, String nm, long oid, Resource.Saved res, byte[] data) {
+	super(file, seg, tc, nm);
 	this.oid = oid;
 	this.res = res;
 	this.data = (data != null) ? data : new byte[0];
 	questIterator = Utils.circularIterator(questConditions);
     }
 
-    public SMarker(long seg, Coord tc, String nm, UID oid, Resource.Saved res, byte[] data) {
-	this(seg, tc, nm, oid.bits, res, data);
+    public SMarker(MapFile file, long seg, Coord tc, String nm, UID oid, Resource.Saved res, byte[] data) {
+	this(file, seg, tc, nm, oid.bits, res, data);
+    }
+
+    public String toString() {
+	return(String.format("#<smarker \"%s\" %s %s %s>", nm, oid, res.name, seq));
     }
     
     @Override

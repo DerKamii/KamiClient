@@ -5,14 +5,26 @@ import haven.*;
 import java.util.Objects;
 
 public abstract class Marker {
+    public final MapFile file;
     public long seg;
     public Coord tc;
     public String nm;
-    
-    public Marker(long seg, Coord tc, String nm) {
+    public volatile int seq = 0;
+
+    public Marker(MapFile file, long seg, Coord tc, String nm) {
+	this.file = file;
 	this.seg = seg;
 	this.tc = tc;
 	this.nm = nm;
+    }
+
+    public void update(boolean save) {
+	if(save) {
+	    file.update(this);
+	} else {
+	    seq++;
+	    file.markerseq++;
+	}
     }
     
     public String name() {

@@ -1,10 +1,10 @@
 {
-  "version": "03.05.2026 09:24",
+  "version": "03.05.2026 16:02",
   "colors": {
     "mine_support_overlay_virtual": "40be1bff",
     "mine_support_single_overlay": "460ad3bc",
     "mine_support_overlay": "460fe378",
     "damaged_mine_support_overlay": "4bfd2c46"
   },
-  "version_num": 1
+  "version_num": 1.0
 }

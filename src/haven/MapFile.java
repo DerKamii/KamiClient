@@ -53,7 +53,7 @@ public class MapFile {
     public final String filename;
     public final Collection<Long> knownsegs = new HashSet<>();
     public final Collection<Marker> markers = new ArrayList<>();
-    public final Map<Long, SMarker> smarkers = new HashMap<>();
+    public final Map<UID, me.ender.minimap.SMarker> smarkers = new HashMap<>();
     public volatile int markerseq = 0;
     public IDPool markerids = new IDPool(0, Long.MAX_VALUE);
     public final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -113,8 +113,8 @@ public class MapFile {
 		for(int i = 0, no = data.int32(); i < no; i++) {
 		    Marker mark = file.loadmarker(data);
 		    file.markers.add(mark);
-		    if((mark instanceof SMarker) && (((SMarker)mark).oid != 0))
-			file.smarkers.put(((SMarker)mark).oid, (SMarker)mark);
+		    if((mark instanceof me.ender.minimap.SMarker) && (((me.ender.minimap.SMarker)mark).oid.bits != 0))
+			file.smarkers.put(((me.ender.minimap.SMarker)mark).oid, (me.ender.minimap.SMarker)mark);
 		}
 	    } else {
 		throw(new IOException(String.format("unknown mapfile index version: %d", ver)));
@@ -289,14 +289,18 @@ public class MapFile {
 	}
     }
 
-    public abstract static class MarkerOld {
+    /* KamiClient: had to put these back as the vanilla shape because the
+     * thingwall resource (and probably others over time) loads bytecode that
+     * imports haven.MapFile$Marker directly, so we can't rename them away.
+     * Ender's marker classes now extend these instead of replacing them. */
+    public abstract static class Marker {
 	public final MapFile file;
 	public long seg;
 	public Coord tc;
 	public String nm;
 	public volatile int seq = 0;
 
-	public MarkerOld(MapFile file, long seg, Coord tc, String nm) {
+	public Marker(MapFile file, long seg, Coord tc, String nm) {
 	    this.file = file;
 	    this.seg = seg;
 	    this.tc = tc;
@@ -311,13 +315,21 @@ public class MapFile {
 		file.markerseq++;
 	    }
 	}
+
+	/* KamiClient: hooks for the minimap presentation that ender's classes
+	 * tack on. Defaulted here so plain vanilla markers (if anything ever
+	 * constructs one) don't blow up. */
+	public String name() {return(nm);}
+	public String tip(final UI ui) {return(nm);}
+	public void draw(final GOut g, final Coord c, final Text tip, final float scale, final MapFile file) {}
+	public Area area() {return(null);}
     }
 
-    public static class PMarkerOld extends MarkerOld {
+    public static class PMarker extends Marker {
 	public Color color;
 	public boolean onmap;
 
-	public PMarkerOld(MapFile file, long seg, Coord tc, String nm, Color color, boolean onmap) {
+	public PMarker(MapFile file, long seg, Coord tc, String nm, Color color, boolean onmap) {
 	    super(file, seg, tc, nm);
 	    this.color = color;
 	    this.onmap = onmap;
@@ -328,12 +340,12 @@ public class MapFile {
 	}
     }
 
-    public static class SMarkerOld extends MarkerOld {
+    public static class SMarker extends Marker {
 	public UID oid;
 	public Resource.Saved res;
 	public byte[] data;
 
-	public SMarkerOld(MapFile file, long seg, Coord tc, String nm, UID oid, Resource.Saved res, byte[] data) {
+	public SMarker(MapFile file, long seg, Coord tc, String nm, UID oid, Resource.Saved res, byte[] data) {
 	    super(file, seg, tc, nm);
 	    this.oid = oid;
 	    this.res = res;
@@ -356,14 +368,14 @@ public class MapFile {
 	    case 'p':
 		Color color = fp.color();
 		boolean onmap = (ver >= 2) ? fp.uint8() != 0 : false;
-		return(new PMarker(this, seg, tc, nm, color, onmap));
+		return(new me.ender.minimap.PMarker(this, seg, tc, nm, color, onmap));
 	    case 's':
 		UID oid = UID.of(fp.int64());
 		Resource.Saved res = new Resource.Saved(Resource.remote(), fp.string(), fp.uint16());
 		byte[] data = new byte[0];
 		if(ver >= 3)
 		    data = fp.bytes(fp.uint8());
-		return(new SMarker(this, seg, tc, nm, oid, res, data));
+		return(new me.ender.minimap.SMarker(this, seg, tc, nm, oid, res, data));
 	    default:
 		throw(new Message.FormatError("Unknown marker type: " + (int)type));
 	    }
@@ -375,12 +387,12 @@ public class MapFile {
 	    if(enc.containsKey("col")) {
 		Color color = COLOR.of(enc.get("col"));
 		boolean onmap = BOOL.of(enc.getOrDefault("md", 0));
-		return(new PMarker(this, seg, tc, nm, color, onmap));
+		return(new me.ender.minimap.PMarker(this, seg, tc, nm, color, onmap));
 	    } else if(enc.containsKey("res")) {
 		UID oid = UNIQID.of(enc.get("oid"));
 		Resource.Named res = (Resource.Named)enc.get("res");
 		byte[] data = BYTES.of(enc.getOrDefault("dat", new byte[0]));
-		return(new SMarker(this, seg, tc, nm, oid, new Resource.Saved(Resource.remote(), res.name, res.ver), data));
+		return(new me.ender.minimap.SMarker(this, seg, tc, nm, oid, new Resource.Saved(Resource.remote(), res.name, res.ver), data));
 	    } else {
 		throw(new Message.FormatError("Unknown marker type: " + enc));
 	    }
@@ -401,7 +413,7 @@ public class MapFile {
 		enc.put("md", 1);
 	} else if(mark instanceof SMarker) {
 	    SMarker sm = (SMarker)mark;
-	    enc.put("oid", UID.of(sm.oid));
+	    enc.put("oid", sm.oid);
 	    enc.put("res", sm.res);
 	    if(sm.data.length > 0)
 		enc.put("dat", sm.data);
@@ -416,8 +428,8 @@ public class MapFile {
 	lock.writeLock().lock();
 	try {
 	    if(markers.add(mark)) {
-		if((mark instanceof SMarker) && (((SMarker)mark).oid != 0))
-		    smarkers.put(((SMarker)mark).oid, (SMarker)mark);
+		if((mark instanceof me.ender.minimap.SMarker) && (((me.ender.minimap.SMarker)mark).oid.bits != 0))
+		    smarkers.put(((me.ender.minimap.SMarker)mark).oid, (me.ender.minimap.SMarker)mark);
 		defersave();
 		markerseq++;
 		mark.seq++;
@@ -431,8 +443,8 @@ public class MapFile {
 	lock.writeLock().lock();
 	try {
 	    if(markers.remove(mark)) {
-		if((mark instanceof SMarker) && (((SMarker)mark).oid != 0))
-		    smarkers.remove(((SMarker)mark).oid, (SMarker)mark);
+		if((mark instanceof me.ender.minimap.SMarker) && (((me.ender.minimap.SMarker)mark).oid.bits != 0))
+		    smarkers.remove(((me.ender.minimap.SMarker)mark).oid, (me.ender.minimap.SMarker)mark);
 		defersave();
 		markerseq++;
 		mark.seq++;
@@ -455,15 +467,11 @@ public class MapFile {
 	}
     }
 
-    /* Vestigial *Old marker classes are kept coherent with upstream for merge tracking;
-     * they are not connected to the live markers collection, so this overload is a no-op. */
-    public void update(MarkerOld mark) {}
-
-    public SMarker smarker(String resnm, long seg, Coord tc) {
+    public me.ender.minimap.SMarker smarker(String resnm, long seg, Coord tc) {
 	for(Marker mark : markers) {
-	    if(!(mark instanceof SMarker))
+	    if(!(mark instanceof me.ender.minimap.SMarker))
 		continue;
-	    SMarker sm = (SMarker)mark;
+	    me.ender.minimap.SMarker sm = (me.ender.minimap.SMarker)mark;
 	    if(sm.res.name.equals(resnm) && (sm.seg == seg) && sm.tc.equals(tc))
 		return(sm);
 	}

@@ -4,7 +4,7 @@ package haven.res.ui.locptr;
 import haven.*;
 import haven.render.*;
 import me.ender.ClientUtils;
-import me.ender.minimap.Marker;
+import haven.MapFile.Marker;
 import me.ender.minimap.PMarker;
 import me.ender.minimap.SMarker;
 

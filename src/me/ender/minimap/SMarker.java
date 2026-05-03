@@ -8,43 +8,33 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class SMarker extends Marker {
-    public final long oid;
-    public final Resource.Saved res;
-    public byte[] data;
-
+public class SMarker extends MapFile.SMarker {
     public List<QuestCondition> questConditions = new ArrayList<>();
     public Iterator<QuestCondition> questIterator;
 
-    public SMarker(MapFile file, long seg, Coord tc, String nm, long oid, Resource.Saved res) {
+    public SMarker(MapFile file, long seg, Coord tc, String nm, UID oid, Resource.Saved res) {
 	this(file, seg, tc, nm, oid, res, new byte[0]);
     }
 
-    public SMarker(MapFile file, long seg, Coord tc, String nm, long oid, Resource.Saved res, byte[] data) {
-	super(file, seg, tc, nm);
-	this.oid = oid;
-	this.res = res;
-	this.data = (data != null) ? data : new byte[0];
+    public SMarker(MapFile file, long seg, Coord tc, String nm, UID oid, Resource.Saved res, byte[] data) {
+	super(file, seg, tc, nm, oid, res, (data != null) ? data : new byte[0]);
 	questIterator = Utils.circularIterator(questConditions);
     }
 
-    public SMarker(MapFile file, long seg, Coord tc, String nm, UID oid, Resource.Saved res, byte[] data) {
-	this(file, seg, tc, nm, oid.bits, res, data);
-    }
-
-    public String toString() {
-	return(String.format("#<smarker \"%s\" %s %s %s>", nm, oid, res.name, seq));
-    }
-    
     @Override
     public boolean equals(Object o) {
 	if(this == o) return true;
 	if(o == null || getClass() != o.getClass()) return false;
-	if(!super.equals(o)) return false;
 	SMarker sMarker = (SMarker) o;
-	return oid == sMarker.oid && res.equals(sMarker.res);
+	return seg == sMarker.seg && tc.equals(sMarker.tc) && nm.equals(sMarker.nm)
+	    && oid.equals(sMarker.oid) && res.equals(sMarker.res);
     }
-    
+
+    @Override
+    public int hashCode() {
+	return Objects.hash(seg, tc, nm, oid, res);
+    }
+
     @Override
     public void draw(GOut g, Coord c, Text tip, final float scale, final MapFile file) {
 	try {
@@ -66,7 +56,7 @@ public class SMarker extends Marker {
 	    }
 	} catch (Loading ignored) {}
     }
-    
+
     @Override
     public Area area() {
 	try {
@@ -78,10 +68,5 @@ public class SMarker extends Marker {
 	} catch (Loading ignored) {
 	    return null;
 	}
-    }
-    
-    @Override
-    public int hashCode() {
-	return Objects.hash(super.hashCode(), oid, res);
     }
 }

@@ -1,6 +1,7 @@
 package haven;
 
 
+import haven.MapFile.Marker;
 import me.ender.minimap.*;
 
 import java.awt.*;
@@ -143,7 +144,7 @@ public class MapWnd2 extends MapWnd {
 	markobj(mark.res, mark.name, mc);
     }
 
-    public class GobMarker extends Marker {
+    public class GobMarker extends MapFile.Marker {
 	public final long gobid;
 	public final Indir<Resource> res;
 	private Coord2d rc = null;

@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import haven.MapFile.Segment;
 import haven.MapFile.DataGrid;
 import haven.MapFile.GridInfo;
+import haven.MapFile.Marker;
 import haven.MapFile.TileInfo;
 import me.ender.ClientUtils;
 import me.ender.QuestCondition;

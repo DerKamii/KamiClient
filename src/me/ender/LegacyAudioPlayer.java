@@ -22,15 +22,11 @@ public class LegacyAudioPlayer {
     private static PlayerThread current;
 
     public static boolean play(String name, boolean loop, double volume) {
-	if(LegacyAudioPlayer.class.getResource("/sfx/legacy/" + name + ".ogg") == null) {
-	    System.out.println("[LegacyAudio] not found: " + name + ".ogg");
+	if(LegacyAudioPlayer.class.getResource("/sfx/legacy/" + name + ".ogg") == null)
 	    return false;
-	}
 	synchronized(lock) {
-	    if(current != null && name.equals(current.name) && current.isAlive()) {
-		System.out.println("[LegacyAudio] " + name + " already playing, skipping");
+	    if(current != null && name.equals(current.name) && current.isAlive())
 		return false;
-	    }
 	}
 	stop();
 	PlayerThread t = new PlayerThread(name, loop, volume);
@@ -95,8 +91,7 @@ public class LegacyAudioPlayer {
 		do {
 		    decodeOnce();
 		} while(loop && !cancelled);
-	    } catch(Throwable t) {
-		System.out.println("[LegacyAudio] error playing " + name + ": " + t);
+	    } catch(Throwable ignore) {
 	    } finally {
 		SourceDataLine l = line;
 		if(l != null) {
@@ -129,11 +124,7 @@ public class LegacyAudioPlayer {
 		int bytes = in.read(oy.data, index, 4096);
 		oy.wrote(bytes);
 
-		if(oy.pageout(og) != 1) {
-		    if(bytes < 4096) return;
-		    System.out.println("[LegacyAudio] not an Ogg stream: " + name);
-		    return;
-		}
+		if(oy.pageout(og) != 1) return;
 
 		os.init(og.serialno());
 		vi.init();

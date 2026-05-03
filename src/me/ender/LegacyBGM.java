@@ -32,19 +32,15 @@ public class LegacyBGM {
     private static long lastRestingAt = 0;
     private static long lastFishingAt = 0;
     private static long lastTickCheck = 0;
-    private static String lastTileLogged = null;
-    private static String lastPoseLogged = null;
 
     public static void onGameStart() {
 	if(chrPlayed) return;
 	chrPlayed = true;
 	if(!CFG.LEGACY_BGM_ENABLED.get()) return;
-	System.out.println("[LegacyBGM] game start -> playing chr");
 	LegacyAudioPlayer.play("chr", false, CFG.LEGACY_BGM_VOLUME.get());
     }
 
     public static void onEnterGame() {
-	System.out.println("[LegacyBGM] entered game session -> stopping chr");
 	LegacyAudioPlayer.stop();
     }
 
@@ -53,14 +49,9 @@ public class LegacyBGM {
 	if(!CFG.LEGACY_BGM_ENABLED.get()) return;
 	if(!resname.equals("paginae/act/fish")) return;
 	long now = System.currentTimeMillis();
-	if(!cooldownPassed(lastFishingAt, FISHING_COOLDOWN_MS, now)) {
-	    System.out.println("[LegacyBGM] fishing on cooldown, skipping (" + resname + ")");
-	    return;
-	}
-	System.out.println("[LegacyBGM] fishing action: " + resname);
+	if(!cooldownPassed(lastFishingAt, FISHING_COOLDOWN_MS, now)) return;
 	if(LegacyAudioPlayer.play("fishing", false, CFG.LEGACY_BGM_VOLUME.get())) {
 	    lastFishingAt = now;
-	    System.out.println("[LegacyBGM] -> playing fishing");
 	}
     }
 
@@ -85,48 +76,32 @@ public class LegacyBGM {
 	if(pl == null || pl.rc == null) return;
 
 	String tileName = currentTileName(mv.glob.map, pl.rc);
-	if(tileName != null && !tileName.equals(lastTileLogged)) {
-	    System.out.println("[LegacyBGM] tile under player: " + tileName);
-	    lastTileLogged = tileName;
-	}
 
 	boolean inCave = isCaveName(tileName);
 	boolean indoors = !inCave && isIndoorsName(tileName);
 
 	if(indoors && !wasIndoors) {
-	    System.out.println("[LegacyBGM] outdoor->indoor edge, tile=" + tileName);
 	    if(cooldownPassed(lastCabinAt, COOLDOWN_MS, now)) {
 		if(LegacyAudioPlayer.play("cabin", false, CFG.LEGACY_BGM_VOLUME.get())) {
 		    lastCabinAt = now;
-		    System.out.println("[LegacyBGM] -> playing cabin");
 		}
-	    } else {
-		System.out.println("[LegacyBGM] cabin on cooldown, skipping");
 	    }
 	}
 	if(inCave && !wasInCave) {
-	    System.out.println("[LegacyBGM] entered cave, tile=" + tileName);
 	    if(cooldownPassed(lastCaveAt, COOLDOWN_MS, now)) {
 		if(LegacyAudioPlayer.play("cave", false, CFG.LEGACY_BGM_VOLUME.get())) {
 		    lastCaveAt = now;
-		    System.out.println("[LegacyBGM] -> playing cave");
 		}
-	    } else {
-		System.out.println("[LegacyBGM] cave on cooldown, skipping");
 	    }
 	}
 
 	Boolean onOwnLand = isOnOwnLand(mv.glob.map, pl.rc);
 	if(onOwnLand != null) {
 	    if(wasOnOwnLand != null && wasOnOwnLand && !onOwnLand && !indoors && !inCave) {
-		System.out.println("[LegacyBGM] left own claim/village");
 		if(cooldownPassed(lastCmbAt, COOLDOWN_MS, now)) {
 		    if(LegacyAudioPlayer.play("cmb", false, CFG.LEGACY_BGM_VOLUME.get())) {
 			lastCmbAt = now;
-			System.out.println("[LegacyBGM] -> playing cmb");
 		    }
-		} else {
-		    System.out.println("[LegacyBGM] cmb on cooldown, skipping");
 		}
 	    }
 	    wasOnOwnLand = onOwnLand;
@@ -136,14 +111,10 @@ public class LegacyBGM {
 	if(night != null) {
 	    boolean outdoors = !indoors && !inCave;
 	    if(wasNight != null && !wasNight && night && outdoors) {
-		System.out.println("[LegacyBGM] dusk fell while outdoors");
 		if(cooldownPassed(lastTravelAt, COOLDOWN_MS, now)) {
 		    if(LegacyAudioPlayer.play("travel", false, CFG.LEGACY_BGM_VOLUME.get())) {
 			lastTravelAt = now;
-			System.out.println("[LegacyBGM] -> playing travel");
 		    }
-		} else {
-		    System.out.println("[LegacyBGM] travel on cooldown, skipping");
 		}
 	    }
 	    wasNight = night;
@@ -151,21 +122,12 @@ public class LegacyBGM {
 
 	List<String> poses = currentPoses(pl);
 	if(poses != null) {
-	    String poseStr = String.join(",", poses);
-	    if(!poseStr.equals(lastPoseLogged)) {
-		System.out.println("[LegacyBGM] poses: " + poseStr);
-		lastPoseLogged = poseStr;
-	    }
 	    boolean sitting = isSittingPose(poses);
 	    if(wasSitting != null && !wasSitting && sitting) {
-		System.out.println("[LegacyBGM] started sitting");
 		if(cooldownPassed(lastRestingAt, COOLDOWN_MS, now)) {
 		    if(LegacyAudioPlayer.play("resting", false, CFG.LEGACY_BGM_VOLUME.get())) {
 			lastRestingAt = now;
-			System.out.println("[LegacyBGM] -> playing resting");
 		    }
-		} else {
-		    System.out.println("[LegacyBGM] resting on cooldown, skipping");
 		}
 	    }
 	    wasSitting = sitting;

@@ -35,6 +35,8 @@ public class IMeter extends LayerMeter {
     public static final Coord msz = UI.scale(75, 10);
     public final Indir<Resource> bg;
     public String tip;
+    private String lastRenderedTip;
+    private Tex tipTex;
 
     @RName("im")
     public static class $_ implements Factory {
@@ -50,13 +52,43 @@ public class IMeter extends LayerMeter {
 	this.bg = bg;
 	set(meters);
     }
-    
+
     @Override
     public Widget settip(String text) {
 	tip = text;
 	return super.settip(text);
     }
-    
+
+    /* KamiClient: take the server-pushed tip ("Hit Points: 250/300/333", "75",
+     * "7500/10000", ...), strip the label, drop HHP from HP ("SHP / MHP" only),
+     * and overlay it centred on the bar. Cribbed the approach from Hurricane. */
+    private String formatTip(String t) {
+	if(t == null || t.isEmpty()) return null;
+	String value = t;
+	int colon = value.indexOf(':');
+	if(colon >= 0) value = value.substring(colon + 1);
+	value = value.replaceAll("\\(.+?\\)", "").trim();
+	if(value.contains("/")) {
+	    String[] parts = value.split("/");
+	    if(parts.length >= 2) {
+		// HP: SHP/HHP/MHP, sparring adds a 4th. Show SHP / MHP.
+		value = parts[0].trim() + " / " + parts[parts.length - 1].trim();
+	    }
+	}
+	return value;
+    }
+
+    private Tex tipTex() {
+	if(!java.util.Objects.equals(tip, lastRenderedTip)) {
+	    if(tipTex != null) {tipTex.dispose(); tipTex = null;}
+	    String formatted = formatTip(tip);
+	    if(formatted != null && !formatted.isEmpty())
+		tipTex = Text.renderstroked(formatted, java.awt.Color.WHITE, java.awt.Color.BLACK).tex();
+	    lastRenderedTip = tip;
+	}
+	return tipTex;
+    }
+
     public void draw(GOut g) {
 	try {
 	    Tex bg = this.bg.get().flayer(Resource.imgc).tex();
@@ -71,6 +103,12 @@ public class IMeter extends LayerMeter {
 	    }
 	    g.chcolor();
 	    g.image(bg, Coord.z);
+	    Tex tt = tipTex();
+	    if(tt != null) {
+		// centre on the bar, not the bg image (icon biases bg left).
+		Coord c = off.add(msz.div(2)).sub(tt.sz().div(2));
+		g.image(tt, c);
+	    }
 	} catch(Loading l) {
 	}
     }

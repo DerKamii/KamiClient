@@ -1,3 +1,6 @@
+$size[14]{$u{update on 03.05.2026:}
+* Merged loftar's code
+`
 $size[14]{$u{update on 01.05.2026:}
 * Added toggle to block domesticated horses from being attacked.
 * Switched stack and equipory openings to bottom left to match tooltips

@@ -455,6 +455,10 @@ public class Config {
     public static void setUserName(String username) {
 	Config.username = username;
     }
+
+    public static String getUserName() {
+	return username;
+    }
     
     public static void setPlayerName(String playername) {
 	Config.playername = playername;

@@ -441,6 +441,8 @@ public enum GobTag {
                 tags.add(MARE);
             } else if(name.contains("/stallion")) {
                 tags.add(STALLION);
+            } else if (name.contains("/horse/horse")) {
+                return false;
             }
             return true;
         } else if(name.contains("/pig/")) {

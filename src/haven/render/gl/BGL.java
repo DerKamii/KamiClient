@@ -484,11 +484,11 @@ public abstract class BGL {
 	    });
     }
 
-    public void glDisableClientState(final int cap) {
-	add(new Command() {
-		public void run(GL gl) {gl.glDisableClientState(cap);}
-	    });
-    }
+//    public void glDisableClientState(final int cap) {
+//	add(new Command() {
+//		public void run(GL gl) {gl.glDisableClientState(cap);}
+//	    });
+//    }
 
     public void glDisableVertexAttribArray(final ID location) {
 	add(new Command() {
@@ -556,11 +556,11 @@ public abstract class BGL {
 	    });
     }
 
-    public void glEnableClientState(final int cap) {
-	add(new Command() {
-		public void run(GL gl) {gl.glEnableClientState(cap);}
-	    });
-    }
+//    public void glEnableClientState(final int cap) {
+//	add(new Command() {
+//		public void run(GL gl) {gl.glEnableClientState(cap);}
+//	    });
+//    }
 
     public void glEnableVertexAttribArray(final ID location) {
 	add(new Command() {

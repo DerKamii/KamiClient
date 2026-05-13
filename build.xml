@@ -65,7 +65,7 @@
   </target>
 
   <target name="extlib/jogl" depends="extlib-env" unless="extlib/has-jogl">
-    <extlib name="jogl" path="lib/ext/jogl" url="${ext-lib-base}/jogl/current" />
+    <extlib name="jogl" path="lib/ext/jogl" url="${ext-lib-base}/jogl/2.6.0" />
   </target>
 
   <target name="extlib/lwjgl-base" depends="extlib-env" unless="extlib/has-lwjgl-base">

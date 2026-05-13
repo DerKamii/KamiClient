@@ -919,6 +919,15 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	makeLocal("paginae/add/equip/sword-n-board", Action.EQUIP_SWORD_N_BOARD);
 	makeLocal("paginae/add/equip/bow", Action.EQUIP_BOW);
 	makeLocal("paginae/add/equip/spear", Action.EQUIP_SPEAR);
+	makeLocal("paginae/add/equip/travellerssacks", Action.EQUIP_TRAVELERS_SACKS);
+	makeLocal("paginae/add/equip/wanderersbindles", Action.EQUIP_WANDERERS_BINDLES);
+	makeLocal("paginae/add/equip/b12axe", Action.EQUIP_B12);
+	makeLocal("paginae/add/equip/cutblade", Action.EQUIP_CUTBLADE);
+	makeLocal("paginae/add/equip/giantneedle", Action.EQUIP_GIANT_NEEDLE);
+	makeLocal("paginae/add/equip/pickaxe", Action.EQUIP_PICKAXE);
+	makeLocal("paginae/add/equip/sledgehammer", Action.EQUIP_SLEDGEHAMMER);
+	makeLocal("paginae/add/equip/scythe", Action.EQUIP_SCYTHE);
+	makeLocal("paginae/add/equip/shovel", Action.EQUIP_SHOVEL);
 	
 	makeLocal("paginae/add/decks/deck1", Action.SELECT_DECK_1, () -> FightWndEx.isCurrentDeck(0));
 	makeLocal("paginae/add/decks/deck2", Action.SELECT_DECK_2, () -> FightWndEx.isCurrentDeck(1));

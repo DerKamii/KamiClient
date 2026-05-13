@@ -12,6 +12,15 @@ public class Equip {
     public static final Item SWORD = new Equip.Item("Sword", "/bronzesword", "/fyrdsword", "/hirdsword");
     public static final Item SHIELD = new Equip.Item("Shield", "/roundshield");
     public static final Item SPEAR = new Equip.Item("Spear", "/boarspear");
+    public static final Item TRAVELERS_SACK = new Equip.Item("Traveller's Sack", "/travellerssack");
+    public static final Item WANDERERS_BINDLE = new Equip.Item("Wanderer's Bindle", "/wanderersbindle");
+    public static final Item B12 = new Equip.Item("B12 Axe", "/b12axe");
+    public static final Item CUTBLADE = new Equip.Item("Cutblade", "/cutblade");
+    public static final Item GIANT_NEEDLE = new Equip.Item("Giant Needle", "/giantneedle");
+    public static final Item PICKAXE = new Equip.Item("Pickaxe", "/pickaxe");
+    public static final Item SLEDGEHAMMER = new Equip.Item("Sledgehammer", "/sledgehammer");
+    public static final Item SCYTHE = new Equip.Item("Scythe", "/scythe");
+    public static final Item SHOVEL = new Equip.Item("Shovel", "/shovel-m", "/shovel-t", "/shovel-w");
 
     //These items can't be placed into a belt
     private static final String[] FORBIDDEN = {
@@ -84,6 +93,63 @@ public class Equip {
 	    }
 	});
 	bot.start(gui.ui, true);
+    }
+
+    public static void twoSame(GameUI gui, Item target) {
+	Bot bot = Bot.execute((t, b) -> {
+	    Equipory equipory = gui.equipory;
+
+	    WItem leftHand = equipory.slot(HAND_LEFT);
+	    WItem rightHand = equipory.slot(HAND_RIGHT);
+	    String leftName = leftHand != null ? leftHand.item.resname() : null;
+	    String rightName = rightHand != null ? rightHand.item.resname() : null;
+
+	    boolean leftOk = GobTag.ofType(leftName, target.types);
+	    boolean rightOk = GobTag.ofType(rightName, target.types);
+	    if(leftOk && rightOk) {
+		b.cancel();
+		return;
+	    }
+
+	    boolean handleLeft = !leftOk && !checkForbidden(gui, leftName, HAND_LEFT);
+	    boolean handleRight = !rightOk && !checkForbidden(gui, rightName, HAND_RIGHT);
+
+	    if(!handleLeft && !handleRight) {
+		b.cancel();
+		return;
+	    }
+
+	    int needed = (handleLeft ? 1 : 0) + (handleRight ? 1 : 0);
+	    long available = InvHelper.BELT_CONTAINED(gui).get().stream()
+		.filter(c -> InvHelper.ofType(target.types).test(c.item))
+		.count();
+	    if(available < needed) {
+		b.cancel("Need " + needed + " " + target.name + " in belt, found " + available + ".");
+		return;
+	    }
+
+	    if(handleLeft) {
+		swapHandFromBelt(gui, equipory, target, HAND_LEFT, leftHand != null);
+	    }
+	    if(handleRight) {
+		swapHandFromBelt(gui, equipory, target, HAND_RIGHT, rightHand != null);
+	    }
+	});
+	bot.start(gui.ui, true);
+    }
+
+    private static void swapHandFromBelt(GameUI gui, Equipory equipory, Item target, SLOTS hand, boolean handOccupied) {
+	Optional<InvHelper.ContainedItem> opt = InvHelper.findFirstContained(InvHelper.ofType(target.types), InvHelper.BELT_CONTAINED(gui));
+	if(!opt.isPresent()) {return;}
+	InvHelper.ContainedItem item = opt.get();
+	item.take();
+	BotUtil.waitHeldChanged(gui);
+	equipory.sendDrop(hand);
+	BotUtil.waitHeldChanged(gui);
+	if(handOccupied) {
+	    item.putBack();
+	    BotUtil.waitHeldChanged(gui);
+	}
     }
 
     public static void twoItems(GameUI gui, Item first, Item second) {

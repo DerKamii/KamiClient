@@ -47,6 +47,15 @@ public enum Action {
     EQUIP_BOW(gui -> Equip.twoHanded(gui, Equip.BOW), "Equip Bow"),
     EQUIP_SPEAR(gui -> Equip.twoHanded(gui, Equip.SPEAR), "Equip Boar Spear"),
     EQUIP_SWORD_N_BOARD(gui -> Equip.twoItems(gui, Equip.SHIELD, Equip.SWORD), "Equip Sword & Shield"),
+    EQUIP_TRAVELERS_SACKS(gui -> Equip.twoSame(gui, Equip.TRAVELERS_SACK), "Equip Traveller's Sacks", "Takes two traveller's sacks from your belt and puts one in each hand."),
+    EQUIP_WANDERERS_BINDLES(gui -> Equip.twoSame(gui, Equip.WANDERERS_BINDLE), "Equip Wanderer's Bindles", "Takes two wanderer's bindles from your belt and puts one in each hand."),
+    EQUIP_B12(gui -> Equip.twoHanded(gui, Equip.B12), "Equip B12 Axe"),
+    EQUIP_CUTBLADE(gui -> Equip.twoHanded(gui, Equip.CUTBLADE), "Equip Cutblade"),
+    EQUIP_GIANT_NEEDLE(gui -> Equip.twoHanded(gui, Equip.GIANT_NEEDLE), "Equip Giant Needle"),
+    EQUIP_PICKAXE(gui -> Equip.twoHanded(gui, Equip.PICKAXE), "Equip Pickaxe"),
+    EQUIP_SLEDGEHAMMER(gui -> Equip.twoHanded(gui, Equip.SLEDGEHAMMER), "Equip Sledgehammer"),
+    EQUIP_SCYTHE(gui -> Equip.twoHanded(gui, Equip.SCYTHE), "Equip Scythe"),
+    EQUIP_SHOVEL(gui -> Equip.twoHanded(gui, Equip.SHOVEL), "Equip Shovel", "Equips a shovel from your belt — metal, tinker's, or wooden."),
     
     //Camera controls
     CAM_ZOOM_IN(gui -> gui.map.zoomCamera(-1), "Camera zoom in"),

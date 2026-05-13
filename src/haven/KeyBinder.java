@@ -109,6 +109,15 @@ public class KeyBinder {
 	add(EQUIP_BOW);
 	add(EQUIP_SPEAR);
 	add(EQUIP_SWORD_N_BOARD);
+	add(EQUIP_TRAVELERS_SACKS);
+	add(EQUIP_WANDERERS_BINDLES);
+	add(EQUIP_B12);
+	add(EQUIP_CUTBLADE);
+	add(EQUIP_GIANT_NEEDLE);
+	add(EQUIP_PICKAXE);
+	add(EQUIP_SLEDGEHAMMER);
+	add(EQUIP_SCYTHE);
+	add(EQUIP_SHOVEL);
 	
 	//Camera controls
 	add(KeyEvent.VK_ADD, NONE, CAM_ZOOM_IN);

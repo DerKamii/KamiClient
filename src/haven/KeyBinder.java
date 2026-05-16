@@ -105,7 +105,9 @@ public class KeyBinder {
 	add(AGGRO_ONE_PVE);
 	add(AGGRO_ONE_PVP);
 	add(AGGRO_ALL);
-	
+	add(COMBAT_DISTANCE_TOOL);
+	add(COMBAT_DISTANCE_AUTO);
+
 	add(EQUIP_BOW);
 	add(EQUIP_SPEAR);
 	add(EQUIP_SWORD_N_BOARD);

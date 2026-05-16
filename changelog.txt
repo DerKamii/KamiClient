@@ -5,6 +5,7 @@ $size[14]{$u{update on 14.05.2026:}
 * Yoinked Equip shortcuts from Hurricane / Thunder
 * Fixed domestic horse block
 * Switched to jogl 2.6.0 on standalone to support mac but dropped support for x86 (32bit).
+* Yoinked combat istance tooling from hurricane.
 `
 $size[14]{$u{update on 03.05.2026:}
 * Merged loftar's code

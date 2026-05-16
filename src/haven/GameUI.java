@@ -69,6 +69,9 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
     public MiniMap mmap;
     public Fightview fv;
     public Fightsess fsess;
+    // KamiClient: combat distancing tool, yoinked from Hurricane.
+    public haven.bot.CombatDistanceTool combatDistanceTool;
+    public Thread combatDistanceToolThread;
     private List<Widget> meters = new LinkedList<Widget>();
     private List<Widget> cmeters = new LinkedList<Widget>();
     private Text lastmsg;
@@ -979,6 +982,21 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
     
     public void toggleQuestHelper() {
 	questHelper.toggle();
+    }
+
+    // KamiClient: open/close the combat distancing tool (yoinked from Hurricane).
+    public void toggleCombatDistanceTool() {
+	if(combatDistanceTool == null && combatDistanceToolThread == null) {
+	    combatDistanceTool = new haven.bot.CombatDistanceTool(this);
+	    add(combatDistanceTool, Utils.getprefc("wndc-combatDistanceToolWindow", new Coord(sz.x / 2 - combatDistanceTool.sz.x / 2, sz.y / 2 - combatDistanceTool.sz.y / 2 - 200)));
+	    combatDistanceToolThread = new Thread(combatDistanceTool, "CombatDistanceTool");
+	    combatDistanceToolThread.start();
+	} else if(combatDistanceTool != null) {
+	    combatDistanceTool.stop();
+	    combatDistanceTool.reqdestroy();
+	    combatDistanceTool = null;
+	    combatDistanceToolThread = null;
+	}
     }
     
     public DraggedItem hand() {

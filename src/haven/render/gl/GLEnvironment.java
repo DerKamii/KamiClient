@@ -398,15 +398,22 @@ public abstract class GLEnvironment implements Environment {
 	    gcmd.dispose();
 	    return;
 	}
+	boolean inv;
 	synchronized(submitted) {
-	    if(!invalid) {
-		submitted.add(gcmd);
-		submitted.notifyAll();
-		return;
+	    inv = invalid;
+	    if(gcmd.gl != null) {
+		if(!inv) {
+		    submitted.add(gcmd);
+		    submitted.notifyAll();
+		} else {
+		    gcmd.gl.abort();
+		}
+	    } else {
+		gcmd.dispose();
 	    }
 	}
-	gcmd.gl.abort();
-	gcmd.dispose();
+	if(inv)
+	    gcmd.dispose();
     }
 
     public void submitwait() throws InterruptedException {

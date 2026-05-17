@@ -127,7 +127,7 @@ public class Text implements Disposable {
         
     public static abstract class Furnace {
 	public abstract Text render(String text);
-    
+ 
 	public Text i10n_label(String text) {
 	    return render(L10N.label(text));
 	}
@@ -243,6 +243,26 @@ public class Text implements Disposable {
 	    Line line = render(text, c);
 	    BufferedImage img = Utils.outline2(line.img, s, true);
 	    return new Line(text, img, line.m);
+	}
+
+	public static Font fontpxsz(Font font, int pxsz) {
+	    int h = 12, l = 1;
+	    while(new Foundry(font.deriveFont((float)h)).height() < pxsz) {
+		l = h;
+		h *= 2;
+	    }
+	    while(h > l + 1) {
+		int m = (l + h) / 2;
+		int th = new Foundry(font.deriveFont((float)m)).height();
+		if(th < pxsz) {
+		    l = m;
+		} else if(th > pxsz) {
+		    h = m;
+		} else {
+		    return(font.deriveFont((float)m));
+		}
+	    }
+	    return(font.deriveFont((float)l));
 	}
     }
 

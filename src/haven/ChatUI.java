@@ -488,7 +488,7 @@ public class ChatUI extends Widget {
 	}
 
 	public boolean mousewheel(MouseWheelEvent ev) {
-	    sb.ch(ev.a * 45);
+	    sb.ch(ev.s * 45);
 	    return(true);
 	}
 

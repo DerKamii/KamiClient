@@ -1,4 +1,4 @@
-$size[14]{$u{update on 14.05.2026:}
+$size[14]{$u{update on 17.05.2026:}
 * Merged loftar's code
 * Changed how ender's marker work to incorporate new vanilla logic
 * Added new character name identification (for Integrations V5)

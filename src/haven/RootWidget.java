@@ -73,8 +73,6 @@ public class RootWidget extends ConsoleHost implements UI.Notice.Handler, Widget
 		   if((gi != null) && (gi.map != null))
 		   add(new Profwnd(gi.map.prof, "Map profile"), UI.scale(100, 250));
 		*/
-	    }
-	    if(UIPanel.profilegpu.get()) {
 		add(new Profwnd(ggprof, "GPU profile"), UI.scale(500, 250));
 	    }
 	    return(true);
@@ -139,13 +137,13 @@ public class RootWidget extends ConsoleHost implements UI.Notice.Handler, Widget
 	    double vol = (args.length > a) ? Utils.dv(args[a++]) : 1.0;
 	    double spd = (args.length > a) ? Utils.dv(args[a++]) : 1.0;
 	    ui.sess.glob.loader.defer(() -> {
-		Audio.CS clip = Audio.fromres(resid.get());
-		if(spd != 1.0)
-		    clip = new Audio.Resampler(clip).sp(spd);
-		if(vol != 1.0)
-		    clip = new Audio.VolAdjust(clip, vol);
-		Audio.play(clip);
-	    }, null);
+		    Audio.CS clip = Audio.fromres(resid.get());
+		    if(spd != 1.0)
+			clip = new Audio.Resampler(clip).sp(spd);
+		    if(vol != 1.0)
+			clip = new Audio.VolAdjust(clip, vol);
+		    ui.sfx(clip);
+		}, null);
 	} else if(msg == "bgm") {
 	    int a = 0;
 	    Indir<Resource> resid = (args.length > a) ? ui.sess.getresv(args[a++]) : null;

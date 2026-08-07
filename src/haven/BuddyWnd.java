@@ -294,7 +294,6 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 		    {dshow = true;}
 		    public void activate(String text) {
 			buddy.chname(text);
-			commit();
 		    }
 		}, margin2, ava.c.y + ava.sz.y + margin2);
 	    this.grp = add(new GroupSelector(buddy.group) {

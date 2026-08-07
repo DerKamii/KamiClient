@@ -37,11 +37,13 @@ public class HelpWnd extends WindowX {
 	pack();
     }
 
+    /* KamiClient: Dismiss has to do what the X button does — a help window we
+     * popped up ourselves (HelpWnd.show) has no server-side widget to tell. */
     private void tryClose() {
 	if(justclose) {
 	    this.close();
 	} else {
-	    this.wdgmsg("close");
+	    this.reqclose();
 	}
     }
 

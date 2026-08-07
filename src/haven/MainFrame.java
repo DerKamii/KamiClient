@@ -462,6 +462,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
     private static void main2(String[] args) {
 	initfullscreen.set(CFG.VIDEO_FULL_SCREEN.get());
 	Config.cmdline(args);
+	haven.error.ErrorHandler.setprop("jar.config", Config.confid);
 	status("start");
 	me.ender.LegacyBGM.onGameStart();
 	try {

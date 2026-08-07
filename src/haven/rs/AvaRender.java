@@ -34,6 +34,7 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import haven.Composited.ED;
 import haven.Composited.MD;
+import static haven.PType.*;
 
 public class AvaRender {
     public static class ServerRes implements Resource.Resolver {
@@ -104,12 +105,18 @@ public class AvaRender {
 
     public static final Server.Command call = new Server.Command() {
 	    public Object[] run(Server.Client cl, Object... args) throws InterruptedException {
-		Coord sz = UI.scale((Coord)args[0]);
+		Coord sz = COORD.of(args[0]);
 		Resource.Resolver rr = new ServerRes(Resource.remote());
-		Composited.Desc desc = Composited.Desc.decode(rr, Utils.oav(args[1]));
-		Resource.Resolver map = new Resource.Resolver.ResourceMap(rr, Utils.oav(args[2]));
-		String camnm = Utils.sv(args[3]);
-		BufferedImage ava = render(sz.mul(4), desc, map, camnm);
+		Composited.Desc desc = Composited.Desc.decode(rr, OBJS.of(args[1]));
+		Resource.Resolver map = new Resource.Resolver.ResourceMap(rr, OBJS.of(args[2]));
+		String camnm = STR.of(args[3]);
+		BufferedImage ava;
+		try {
+		    ava = render(sz.mul(4), desc, map, camnm);
+		} catch(Resource.BadResourceException e) {
+		    new Warning(e, "bad resource reference to " + e.name);
+		    return(new Object[] {"err", e.getMessage()});
+		}
 		ava = PUtils.convolvedown(ava, sz, new PUtils.Lanczos(2));
 		ByteArrayOutputStream buf = new ByteArrayOutputStream();
 		try {

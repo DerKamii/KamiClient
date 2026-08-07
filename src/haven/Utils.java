@@ -125,7 +125,11 @@ public class Utils {
 	    throw(new IllegalArgumentException(String.valueOf(cl) + " has a malformed location", e));
 	}
     }
-    
+
+    public static <T> T nonconst(T val) {
+	return(val);
+    }
+
     public static SocketChannel connect(String host, int port) throws IOException {
 	double DELAY = 0.25, TIMEOUT = 5;
 	InetAddress[] haddrs = InetAddress.getAllByName(host);

@@ -48,7 +48,7 @@ public class Config {
     public static final File HOMEDIR = getHomeDir();
     public static final String confid = get().getprop("config.client-id", "KamiClient");
     public static final Variable<Boolean> par = Variable.def(() -> true);
-    public final Properties localprops = getlocalprops();
+    public final Properties localprops = getlocalprops(), userprops = getuserprops();
 
     
     
@@ -97,9 +97,17 @@ public class Config {
     private static File getHomeDir() {
 	String dir = get().getprop("config.homedir", "workdir");
 	if("hashdir".equals(dir)) {
-	    File file = new File(HashDirCache.findbase().getParent() + File.separator + "kami-client");
-	    file.mkdirs();
-	    return file.getAbsoluteFile();
+	    /* KamiClient: upstream yanked the local-dir lookup out of HashDirCache
+	     * and into Config.localdir(), dropping the trailing "data" bit on the
+	     * way. localdir() is exactly what findbase().getParent() gave us
+	     * before, so hashdir mode still lands in ~/.haven/kami-client. It can
+	     * hand back null though, so fall through to the workdir if it does. */
+	    Path base = localdir();
+	    if(base != null) {
+		File file = new File(base + File.separator + "kami-client");
+		file.mkdirs();
+		return file.getAbsoluteFile();
+	    }
 	}
 	
 	return new File("").getAbsoluteFile();
@@ -195,6 +203,60 @@ public class Config {
 	}
     }
 
+    private static Path findlocaldir() {
+	try {
+	    windows: {
+		String path = System.getenv("APPDATA");
+		if(path == null)
+		    break windows;
+		Path appdata = Utils.path(path);
+		if(!Files.exists(appdata) || !Files.isDirectory(appdata) || !Files.isReadable(appdata) || !Files.isWritable(appdata))
+		    break windows;
+		Path base = Utils.pj(appdata, "Haven and Hearth");
+		if(!Files.exists(base)) {
+		    try {
+			Files.createDirectories(base);
+		    } catch(IOException e) {
+			break windows;
+		    }
+		}
+		return(base);
+	    }
+	    fallback: {
+		String path = System.getProperty("user.home", null);
+		if(path == null)
+		    break fallback;
+		Path home = Utils.path(path);
+		if(!Files.exists(home) || !Files.isDirectory(home) || !Files.isReadable(home) || !Files.isWritable(home))
+		    break fallback;
+		Path base = Utils.pj(home, ".haven");
+		if(!Files.exists(base)) {
+		    try {
+			Files.createDirectories(base);
+		    } catch(IOException e) {
+			break fallback;
+		    }
+		}
+		return(base);
+	    }
+	} catch(SecurityException e) {
+	}
+	Warning.warn("found no reasonable place to store local files");
+	return(null);
+    }
+
+    private static Path localdir;
+    private static boolean haslocaldir = false;
+    public static Path localdir() {
+	synchronized(Config.class) {
+	    if(!haslocaldir) {
+		localdir = findlocaldir();
+		haslocaldir = true;
+	    }
+	    return(localdir);
+	}
+    }
+
     private static Properties getjarprops() {
 	Properties ret = new Properties();
 	try(InputStream fp = Config.class.getResourceAsStream("boot-props")) {
@@ -225,11 +287,30 @@ public class Config {
 	return(ret);
     }
 
+    private static Properties getuserprops() {
+	Properties ret = new Properties();
+	try {
+	    Path base = localdir();
+	    if(base != null) {
+		try(InputStream fp = Files.newInputStream(Utils.pj(base, "haven-config.properties"))) {
+		    ret.load(fp);
+		} catch(NoSuchFileException exc) {
+		    /* That's quite alright. */
+		}
+	    }
+	} catch(Exception exc) {
+	    new Warning(exc, "unexpected error occurred when loading user properties").issue();
+	}
+	return(ret);
+    }
+
     public String getprop(String name, String def) {
 	String ret;
 	if((ret = Utils.getprop(name, null)) != null)
 	    return(ret);
 	if((ret = localprops.getProperty(name)) != null)
+	    return(ret);
+	if((ret = userprops.getProperty(name)) != null)
 	    return(ret);
 	if((ret = jarprops.getProperty(name)) != null)
 	    return(ret);

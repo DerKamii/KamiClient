@@ -28,20 +28,43 @@ package haven.render;
 
 import java.util.*;
 import java.util.function.*;
+
+import haven.CFG;
+import haven.Composited;
 import haven.Config;
 
 public class TickList implements RenderList<TickList.TickNode> {
+    private static volatile boolean cachedHideTrees = CFG.HIDE_TREES.get();
+    static { CFG.HIDE_TREES.observe(cfg -> cachedHideTrees = cfg.get()); }
+    private static volatile boolean cachedParallelTick = CFG.PARALLEL_TICK.get();
+    static { CFG.PARALLEL_TICK.observe(cfg -> cachedParallelTick = cfg.get()); }
+    private static volatile boolean cachedDisableYulelights = CFG.DISABLE_YULELIGHTS_FX.get();
+    static { CFG.DISABLE_YULELIGHTS_FX.observe(cfg -> cachedDisableYulelights = cfg.get()); }
+
+    private static boolean isYuleAnimFlare(Entry ent) {
+	if(!cachedDisableYulelights) return false;
+	if(!ent.isAnimFlare || !(ent.tick instanceof haven.Sprite)) return false;
+	haven.Sprite spr = (haven.Sprite)ent.tick;
+	try {
+	    return spr.res != null && spr.res.name != null && spr.res.name.contains("yule");
+	} catch(Throwable t) { return false; }
+    }
+
     private final Map<Ticking, Entry> cur = new HashMap<>();
+    private List<Entry> snapshot = new ArrayList<>();
+    private boolean snapshotDirty = true;
 
     private static class Entry {
 	final Ticking tick;
 	final Object mon;
+	final boolean isAnimFlare;
 	int rc = 0;
 	Object users = null;
 
 	public Entry(Ticking tick, Object mon) {
 	    this.tick = tick;
 	    this.mon = mon;
+	    this.isAnimFlare = tick.getClass().getName().contains("AnimFlare");
 	}
 
 	public void get(TickNode user) {
@@ -107,6 +130,7 @@ public class TickList implements RenderList<TickList.TickNode> {
 		    throw(new RuntimeException("cannot specify different monitors for one tick"));
 	    }
 	    ent.get(slot.obj());
+	    snapshotDirty = true;
 	}
     }
 
@@ -116,6 +140,7 @@ public class TickList implements RenderList<TickList.TickNode> {
 	    Entry ent = cur.get(tick);
 	    if(ent.put(slot.obj()))
 		cur.remove(tick);
+	    snapshotDirty = true;
 	}
     }
 
@@ -123,29 +148,47 @@ public class TickList implements RenderList<TickList.TickNode> {
     public void update(Pipe group, int[] statemask) {}
 
     public void tick(double dt) {
-	List<Entry> copy;
-	synchronized(cur) {
-	    copy = new ArrayList<>(cur.values());
-	}
-	Consumer<Entry> task = ent -> {
-	    if(ent.mon == null) {
-		ent.tick.autotick(dt);
-	    } else {
-		synchronized(ent.mon) {
-		    ent.tick.autotick(dt);
+	Composited.animTickFrame++;
+	try {
+	    List<Entry> copy;
+	    synchronized(cur) {
+		if(snapshotDirty) {
+		    snapshot = new ArrayList<>(cur.values());
+		    snapshotDirty = false;
 		}
+		copy = snapshot;
 	    }
-	};
-	if(!Config.par.get())
-	    copy.forEach(task);
-	else
-	    copy.parallelStream().forEach(task);
+	    Consumer<Entry> task = ent -> {
+		if(isYuleAnimFlare(ent))
+		    return;
+		if(ent.mon == null) {
+		    ent.tick.autotick(dt);
+		} else {
+		    if(!ent.isAnimFlare || !cachedHideTrees)
+			synchronized(ent.mon) {
+			    ent.tick.autotick(dt);
+			}
+		}
+	    };
+	    if(!Config.par.get() || !cachedParallelTick)
+		copy.forEach(task);
+	    else
+		copy.parallelStream().forEach(task);
+	}
+	catch(Exception ignore)
+	{
+	    // What happens inside a tick, stays inside the tick.
+	}
     }
 
     public void gtick(Render g) {
 	List<Entry> copy;
 	synchronized(cur) {
-	    copy = new ArrayList<>(cur.values());
+	    if(snapshotDirty) {
+		snapshot = new ArrayList<>(cur.values());
+		snapshotDirty = false;
+	    }
+	    copy = snapshot;
 	}
 	BiConsumer<Entry, Render> task = (ent, out) -> {
 	    if(ent.mon == null) {
@@ -156,7 +199,7 @@ public class TickList implements RenderList<TickList.TickNode> {
 		}
 	    }
 	};
-	if(!Config.par.get()) {
+	if(!Config.par.get() || !cachedParallelTick) {
 	    copy.forEach(ent -> task.accept(ent, g));
 	} else {
 	    Collection<Render> subs = new ArrayList<>();

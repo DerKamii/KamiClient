@@ -16,6 +16,7 @@ import java.util.List;
 
 public class CFG<T> {
     public static final CFG<String> VERSION = new CFG<>("version", "");
+    public static final CFG<Integer> VERSION_NUM = new CFG<>("version_num", 0);
     public static final CFG<Boolean> VIDEO_FULL_SCREEN = new CFG<>("video.full_screen", false);
 //    public static final CFG<Boolean> DISPLAY_KINNAMES = new CFG<>("display.kinnames", true);
     public static final CFG<Boolean> DISPLAY_KINSFX = new CFG<>("display.kinsfx", true);
@@ -39,15 +40,16 @@ public class CFG<T> {
     public static final CFG<Boolean> UI_INSTANT_LONG_TIPS = new CFG<>("ui.instant_long_tips", false);
     public static final CFG<Boolean> SHOW_GOB_RADIUS = new CFG<>("display.show_gob_radius", false);
     public static final CFG<Boolean> SHOW_MINESWEEPER_OVERLAY = new CFG<>("display.minesweeper_overlay", false);
-    public static final CFG<Boolean> SHOW_MINE_SUPPORT_AS_OVERLAY = new CFG<>("display.mine_support_overlay", true);
     public static final CFG<Boolean> SHOW_CONTAINER_FULLNESS = new CFG<>("display.container_status", false);
     public static final CFG<Boolean> SHOW_PROGRESS_COLOR = new CFG<>("display.progress_coloring", false);
     public static final CFG<Boolean> SIMPLE_CROPS = new CFG<>("display.simple_crops", false);
     public static final CFG<Boolean> NO_TILE_TRANSITION = new CFG<>("display.no_tile_transition", false);
     public static final CFG<Boolean> FLAT_TERRAIN = new CFG<>("display.flat_terrain", false);
+    public static final CFG<Boolean> FLAT_CAVE_WALLS = new CFG<>("display.flat_cave_walls", false);
     public static final CFG<Boolean> DISPLAY_RIDGE_BOX = new CFG<>("display.ridge_box", false);
     public static final CFG<Boolean> COLORIZE_DEEP_WATER = new CFG<>("display.colored_deep_water", true);
     public static final CFG<Integer> DISPLAY_SCALE_CUPBOARDS = new CFG<>("display.scale.cupboards", 100);
+    public static final CFG<Integer> MINE_SUPPORT_DANGER_THRESHOLD = new CFG<>("display.mine_support_danger_threshold", 50);
     public static final CFG<Integer> DISPLAY_SCALE_WALLS = new CFG<>("display.scale.walls", 100);
     public static final CFG<Boolean> DISPLAY_DECALS_ON_TOP = new CFG<>("display.decals_on_top", false);
     public static final CFG<Boolean> DISPLAY_NO_MAT_CUPBOARDS = new CFG<>("display.no_mat.cupboards", false);
@@ -99,7 +101,7 @@ public class CFG<T> {
     public static final CFG<Boolean> MMAP_VIEW = new CFG<>("ui.mmap_view", false);
     public static final CFG<Boolean> MMAP_GRID = new CFG<>("ui.mmap_grid", false);
     public static final CFG<Boolean> MMAP_POINTER = new CFG<>("ui.mmap_pointer", false);
-    public static final CFG<Boolean> MMAP_SHOW_BIOMES = new CFG<>("ui.mmap_biomes", true);
+    public static final CFG<Boolean> MMAP_SHOW_BIOMES = new CFG<>("ui.mmap_biomes", false);
     public static final CFG<Boolean> MMAP_SHOW_PATH = new CFG<>("ui.mmap_path", false);
     public static final CFG<Boolean> MMAP_SHOW_MARKER_NAMES = new CFG<>("ui.mmap_mnames", false);
     public static final CFG<Boolean> MMAP_SHOW_PARTY_NAMES = new CFG<>("ui.mmap_party_names", false);
@@ -126,8 +128,10 @@ public class CFG<T> {
     public static final CFG<Boolean> SHOW_BOT_MESSAGES = new CFG<>("ui.hide_bot_messages", true);
     
     //Color settings
-    public static final CFG<Color> COLOR_MINE_SUPPORT_OVERLAY = new CFG<>("colors.mine_support_overlay", new Color(149, 246, 194));
-    public static final CFG<Color> COLOR_MINE_SUPPORT_DAMAGED_OVERLAY = new CFG<>("colors.damaged_mine_support_overlay", new Color(253, 44, 70));
+        public static final CFG<Color> COLOR_MINE_SUPPORT_SINGLE_OVERLAY = new CFG<>("colors.mine_support_single_overlay", new Color(10, 211, 188, 70));
+    public static final CFG<Color> COLOR_MINE_SUPPORT_OVERLAY = new CFG<>("colors.mine_support_overlay", new Color(15, 227, 120, 70));
+    public static final CFG<Color> COLOR_MINE_SUPPORT_DAMAGED_OVERLAY = new CFG<>("colors.damaged_mine_support_overlay", new Color(253, 44, 70, 75));
+    public static final CFG<Color> COLOR_MINE_SUPPORT_VIRTUAL_OVERLAY = new CFG<>("colors.mine_support_overlay_virtual", new Color(190, 27, 255, 64));    
     public static final CFG<Color> COLOR_TILE_GRID = new CFG<>("colors.tile_grid", new Color(255, 255, 255, 48));
     public static final CFG<Color> COLOR_HBOX_FILLED = new CFG<>("colors.hit_box_filled", new Color(178, 71, 178, 160));
     public static final CFG<Color> COLOR_HBOX_SOLID = new CFG<>("colors.hit_box_solid", new Color(178, 71, 178, 255));
@@ -188,6 +192,7 @@ public class CFG<T> {
     public static final CFG<Coord> OFFSET_OPENINGS = new CFG<>("combat.offset_openings", new Coord(0,0));
     public static final CFG<Coord> OFFSET_ACTIONS = new CFG<>("combat.offset_actions", new Coord(0,0));
     public static final CFG<Boolean> IGNORE_CERTAIN_REMOTE_UI = new CFG("display.ignore_certain_remote_ui", false);
+    public static final CFG<Boolean> IGNORE_EXCEPTIONS = new CFG("experimental.ignore_exceptions", false);
     public static final CFG<Boolean> DISABLE_WINDOW_ANIMATION = new CFG("ui.disable_window_animation", false);
     public static final CFG<Boolean> REMOVE_BIOME_BORDER_FROM_MINIMAP = new CFG("map.remove_biome_border", false);
     public static final CFG<Boolean> DRAW_OPENINGS_OVER_GOBS = new CFG<>("combat.draw_openings_over_gobs", false);
@@ -199,7 +204,27 @@ public class CFG<T> {
     public static final CFG<Integer> AUTO_DRINK_DELAY = new CFG<>("automation.autodrink.delay", 250);
     public static final CFG<Integer> AUTO_DRINK_FORCED_INTERVAL = new CFG<>("automation.autodrink.forced_interval", 15000);
     public static final CFG<Boolean> ENABLE_PURGE_BUTTON_IN_KIN_LIST = new CFG<>("ui.enable_purge_button_kin_list", false);
-    
+    public static final CFG<Boolean> SHOW_FEP_NUMBERS_ON_FOOD = new CFG<>("ui.show_fep_numbers_on_food", false);
+    public static final CFG<Boolean> EXTEND_ZOOM_ON_ORTHO = new CFG<>("cam.extend_zoom_on_ortho", false);
+    public static final CFG<Boolean> EXTENDED_ORTHO_VIEW = new CFG<>("cam.extended_ortho_view", false);
+    public static final CFG<Boolean> CAMERA_SMOOTH_JITTER = new CFG<>("cam.smooth_jitter", true);
+    public static final CFG<Integer> CAMERA_SMOOTH_STRENGTH = new CFG<>("cam.smooth_strength", 0);
+    public static final CFG<Integer> CAMERA_ROTATION_SMOOTHING_MS = new CFG<>("cam.rotation_smoothing_ms", 0);
+    public static final CFG<Integer> ANIM_FRAME_SKIP = new CFG<>("perf.anim_frame_skip", 0);
+    public static final CFG<Double> GOB_INFO_TICK_INTERVAL = new CFG<>("perf.gob_info_tick_interval", 0.25, new com.google.gson.reflect.TypeToken<Double>(){});
+    public static final CFG<Boolean> FREEZE_DOMESTIC_ANIM = new CFG<>("perf.freeze_domestic_anim", false);
+    public static final CFG<Boolean> HIDE_DOMESTIC_ANIMALS = new CFG<>("perf.hide_domestic_animals", false);
+    public static final CFG<Boolean> PARALLEL_TICK = new CFG<>("perf.parallel_tick", true);
+    public static final CFG<Integer> GL_DISPOSE_PER_FRAME = new CFG<>("perf.gl_dispose_per_frame", 64);
+    public static final CFG<Boolean> DISABLE_YULELIGHTS_FX = new CFG<>("display.disable_yulelights_fx", true);
+    public static final CFG<Boolean> HIDE_GAMEUI_PORTRAIT = new CFG<>("display.hide_gameui_portrait", false);
+    public static final CFG<Boolean> MAP_COMPACT_LOCKED = new CFG<>("map.compact_locked", false);
+    public static final CFG<Boolean> HIDE_ANIMAL_WARNING_IN_COMBAT = new CFG<>("ui.combat.hide_animal_warning_in_combat", false);
+    public static final CFG<Boolean> BLOCK_ATTACK_TAMED_HORSE = new CFG<>("ui.combat.block_attack_tamed_horse", false);
+    public static final CFG<Boolean> LEGACY_BGM_ENABLED = new CFG<>("audio.legacy_bgm.enabled", false);
+    public static final CFG<Boolean> LEGACY_BGM_NO_COOLDOWN = new CFG<>("audio.legacy_bgm.no_cooldown", false);
+    public static final CFG<Double> LEGACY_BGM_VOLUME = new CFG<>("audio.legacy_bgm.volume", 0.5, new com.google.gson.reflect.TypeToken<Double>(){});
+
     private static final String CONFIG_JSON = "config.json";
     private static final Map<Object, Object> cfg;
     private static final Map<String, Object> cache = new HashMap<>();
@@ -229,6 +254,25 @@ public class CFG<T> {
 	    new CFG<>("display.buffs." + toggle.action, true),
 	    new CFG<>("general.start_toggle." + toggle.action, false)
 	));
+	processVersions();
+    }
+
+    private static final int LATEST = 1;
+    private static void processVersions() {
+	int version = VERSION_NUM.get();
+	
+	if(version < LATEST) {
+	    
+	    //Reset mine support colors
+	    if(version < 1) {
+		COLOR_MINE_SUPPORT_OVERLAY.reset(false);
+		COLOR_MINE_SUPPORT_SINGLE_OVERLAY.reset(false);
+		COLOR_MINE_SUPPORT_DAMAGED_OVERLAY.reset(false);
+		COLOR_MINE_SUPPORT_VIRTUAL_OVERLAY.reset(false);
+	    }
+	    
+	    VERSION_NUM.set(LATEST);
+	}
     }
 
     public interface Observer<T> {
@@ -250,7 +294,7 @@ public class CFG<T> {
     }
 
     public void set(T value) {
-	CFG.set(this, value);
+	CFG.set(this, value, true);
 	observe();
     }
 
@@ -259,6 +303,15 @@ public class CFG<T> {
 	if(observe) {observe();}
     }
 
+	private void set(T value, boolean observe, boolean store) {
+	CFG.set(this, value, store);
+	if(observe) {observe();}
+    }
+
+    private void reset(boolean store) {
+	set(def, true, store);
+    }
+    
     public Disposable observe(Observer<T> observer) {
 	this.observers.add(observer);
 	return new ObserverHolder<>(this, observer);
@@ -311,7 +364,7 @@ public class CFG<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public static synchronized <E> void set(CFG<E> name, E value) {
+    private static synchronized <E> void set(CFG<E> name, E value, boolean store) {
 	cache.put(name.path, value);
 	if(name.path == null) {return;}
 	String[] parts = name.path.split("\\.");
@@ -333,7 +386,7 @@ public class CFG<T> {
 	    Map<Object, Object> map = (Map<Object, Object>) cur;
 	    map.put(parts[parts.length - 1], value);
 	}
-	store();
+	if(store) {store();}
     }
 
     private static synchronized void store() {

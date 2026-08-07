@@ -60,7 +60,9 @@ public enum GobTag {
     };
     
     private static final String[] BIG_PARTS = {
-        "/orca/orcabeef", "/spermwhale/spermwhaleskull", "/spermwhale/spermwhalesteak", "/spermwhale/spermwhaleheart", "/spermwhale/spermwhaleskeleton"
+        "/orca/orcabeef", "/spermwhale/spermwhaleskull",
+        "/spermwhale/spermwhalesteak", "/spermwhale/spermwhaleheart",
+        "/spermwhale/spermwhaleskeleton", "/mammoth/mammothskull"
     };
     private static final String[] ANIMALS = {
         "/fox", "/swan", "/bat", "/beaver", "/reddeer"
@@ -439,6 +441,8 @@ public enum GobTag {
                 tags.add(MARE);
             } else if(name.contains("/stallion")) {
                 tags.add(STALLION);
+            } else if (name.contains("/horse/horse")) {
+                return false;
             }
             return true;
         } else if(name.contains("/pig/")) {

@@ -32,7 +32,7 @@ public class Music {
     private static Player player;
     public static boolean enabled = true;
     private static boolean debug = false;
-    
+
     static {
 	enabled = Utils.parsebool(Utils.getpref("bgmen", "true"), true);
     }
@@ -49,14 +49,14 @@ public class Music {
 	private Synthesizer synth;
 	private boolean done;
 	private boolean loop = false;
-	
+
 	private Player(Indir<Resource> res, Thread waitfor) {
 	    super("Music player");
 	    setDaemon(true);
 	    this.res = res;
 	    this.waitfor = waitfor;
 	}
-	
+
 	public void run() {
 	    try {
 		if(waitfor != null)
@@ -134,7 +134,7 @@ public class Music {
 	    }
 	}
     }
-    
+
     public static void play(Indir<Resource> res, boolean loop) {
 	synchronized(Music.class) {
 	    if(player != null)
@@ -146,13 +146,13 @@ public class Music {
 	    }
 	}
     }
-    
+
     public static void main(String[] args) throws Exception {
 	debug = true;
 	play(Resource.remote().load(args[0]), (args.length > 1)?args[1].equals("y"):false);
 	player.join();
     }
-    
+
     public static void enable(boolean enabled) {
 	if(!enabled)
 	    play(null, false);
@@ -179,7 +179,7 @@ public class Music {
 			Music.play(Resource.remote().load(resnm, ver), loop);
 		    } else {
 			Music.play(null, false);
-		    }		
+		    }
 		}
 	    });
 	Console.setscmd("bgmsw", new Console.Command() {
@@ -188,6 +188,25 @@ public class Music {
 			enable(!enabled);
 		    else
 			enable(Utils.parsebool(args[1], true));
+		}
+	    });
+	Console.setscmd("lbgm", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    if(args.length < 2) {
+			me.ender.LegacyAudioPlayer.stop();
+			return;
+		    }
+		    boolean loop = false;
+		    int i = 1;
+		    while(i < args.length && args[i].startsWith("-")) {
+			if(args[i].equals("-l")) loop = true;
+			i++;
+		    }
+		    if(i >= args.length) return;
+		    String name = args[i];
+		    double vol = CFG.LEGACY_BGM_VOLUME.get();
+		    if(!me.ender.LegacyAudioPlayer.play(name, loop, vol))
+			cons.out.println("legacy bgm not found: " + name);
 		}
 	    });
     }

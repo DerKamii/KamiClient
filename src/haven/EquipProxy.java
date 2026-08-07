@@ -59,7 +59,9 @@ public class EquipProxy extends DraggableWidget implements DTarget {
 		boolean wasNull = g.hovering_pos == null;
 		boolean hovered = w.mousehover(zev, on);
 		if(hovered && wasNull && (g.contents != null)) {
-		    g.hovering_pos = parentpos(parent, sqroff(ev.c).add(1, 1).mul(sqsz).sub(5, 5).sub(GItem.HoverDeco.hovermarg));
+		    int popupW = g.contents.sz.x + 2 * GItem.HoverDeco.hovermarg.x;
+		    Coord slotBL = sqroff(ev.c).mul(sqsz).add(0, sqsz.y);
+		    g.hovering_pos = parentpos(parent, slotBL.add(-popupW + 5 + GItem.HoverDeco.hovermarg.x, -5 - GItem.HoverDeco.hovermarg.y));
 		}
 		if(!hovered) {
 		    g.hovering_pos = null;

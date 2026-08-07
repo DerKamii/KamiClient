@@ -30,4 +30,11 @@ public class WindowX extends Window {
     protected Deco makedeco() {
 	return(new DecoX(this.large));
     }
+	@Override
+    public void chdeco(Deco deco) {
+	super.chdeco(deco);
+	for (ExtInventory child : children(ExtInventory.class)) {
+	    child.decoChanged(this);
+	}
+    }
 }

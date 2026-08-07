@@ -536,7 +536,7 @@ public class DynresWindow extends WindowX {
 	}
 	
 	public static Indir<Resource> consres(TexL tex) {
-	    Resource.Virtual cons = new Resource.Virtual("dyn/" + key, 1);
+	    Resource.Virtual cons = new Resource.Virtual(Resource.remote(), "dyn/" + key, 1);
 	    cons.add(new TexR.Image(cons, tex));
 	    return(() -> cons);
 	}
@@ -744,7 +744,7 @@ public class DynresWindow extends WindowX {
 	    @SuppressWarnings("deprecation") public Resource getres() {throw(new UnsupportedOperationException());}
 	    
 	    public boolean mousewheel(MouseWheelEvent ev) {
-		tfield += ev.a * 10;
+		tfield += ev.s * 10;
 		return(true);
 	    }
 	    

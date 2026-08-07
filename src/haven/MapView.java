@@ -44,13 +44,15 @@ import haven.render.*;
 import haven.MCache.OverlayInfo;
 import haven.render.sl.Uniform;
 import haven.render.sl.Type;
+import haven.res.gfx.fx.mscover.Global;
+import haven.res.gfx.fx.mscover.ShowCover;
 import haven.res.gfx.fx.msrad.MSRad;
 import haven.rx.Reactor;
 import me.ender.ChatCommands;
 import me.ender.CustomCursors;
 import me.ender.minimap.Minesweeper;
 
-public class MapView extends PView implements DTarget, Console.Directory, Widget.CursorQuery.Handler {
+public class MapView extends PView implements DTarget, Console.Directory {
     public static boolean clickdb = false;
     public long plgob = -1;
     public Coord2d cc;
@@ -106,7 +108,7 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	}
 	public void drag(Coord sc) {}
 	public void release() {}
-	public boolean wheel(Coord sc, int amount) {
+	public boolean wheel(MouseWheelEvent ev) {
 	    return(false);
 	}
 	
@@ -117,9 +119,9 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	public void resized() {
 	    float field = 0.5f;
 	    float aspect = ((float)sz.y) / ((float)sz.x);
-	    proj = Projection.frustum(-field, field, -aspect * field, aspect * field, 1, 2000);
+	    proj = Projection.frustum(-field, field, -aspect * field, aspect * field, 1, 5000);
 	}
-	
+
 	public void apply(Pipe p) {
 	    proj.apply(p);
 	    view.apply(p);
@@ -173,7 +175,7 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	public void rotate(Coord r) {
 	    tangl = tangl + (25 * r.x / 100.0f);
 	    tangl = tangl % ((float)Math.PI * 2.0f);
-	    wheel(Coord.z, 5 * r.y);
+	    wheel(new MouseWheelEvent(Coord.z, 5 * r.y, 5 * r.y));
 	}
 	
 	@Override
@@ -248,7 +250,7 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	    
 	    float field = field(elev);
 	    view = haven.render.Camera.pointed(curc.add(camoff).add(0.0f, 0.0f, h), dist(elev), elev, angl);
-	    proj = Projection.frustum(-field, field, -ca * field, ca * field, 1, 2000);
+	    proj = Projection.frustum(-field, field, -ca * field, ca * field, 1, 5000);
 	}
 	
 	public float angle() {
@@ -257,9 +259,9 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	
 	private static final float maxang = (float)(Math.PI / 2 - 0.1);
 	private static final float mindist = 50.0f;
-	public boolean wheel(Coord c, int amount) {
+	public boolean wheel(MouseWheelEvent ev) {
 	    float fe = telev;
-	    telev += amount * telev * 0.02f;
+	    telev += ev.s * telev * 0.02f;
 	    if(telev > maxang)
 		telev = maxang;
 	    if(dist(telev) < mindist)
@@ -304,9 +306,9 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	    angl = anglorig + ((float)(c.x - dragorig.x) / 100.0f);
 	    angl = angl % ((float)Math.PI * 2.0f);
 	}
-	
-	public boolean wheel(Coord c, int amount) {
-	    float d = dist + (amount * 25);
+
+	public boolean wheel(MouseWheelEvent ev) {
+	    float d = dist + (float)(ev.s * 25);
 	    if(d < 5)
 		d = 5;
 	    dist = d;
@@ -361,7 +363,8 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	private Coord3f cc = null;
 	
 	public void tick(double dt) {
-	    float cf = (1f - (float)Math.pow(500, -dt * 3));
+	    int smoothMs = CFG.CAMERA_ROTATION_SMOOTHING_MS.get();
+	    float cf = (smoothMs <= 0) ? 1f : 1f - (float)Math.pow(0.5, dt / (smoothMs / 1000.0));
 	    angl = angl + ((tangl - angl) * cf);
 	    while(angl > pi2) {angl -= pi2; tangl -= pi2; anglorig -= pi2;}
 	    while(angl < 0)   {angl += pi2; tangl += pi2; anglorig += pi2;}
@@ -433,9 +436,9 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	    if(telev > (Math.PI / 2.0)) telev = (float)Math.PI / 2.0f;
 	    tangl = anglorig + ((float)(c.x - dragorig.x) / 100.0f);
 	}
-	
-	public boolean wheel(Coord c, int amount) {
-	    float d = tdist + (amount * 25);
+
+	public boolean wheel(MouseWheelEvent ev) {
+	    float d = tdist + (float)(ev.s * 25);
 	    if(d < 5)
 		d = 5;
 	    tdist = d;
@@ -474,7 +477,9 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 		vm = Location.makexlate(new Matrix4f(), corr).mul1(vm);
 	    }
 	    view = new haven.render.Camera(vm);
-	    proj = Projection.ortho(-field, field, -field * aspect, field * aspect, 1, 5000);
+	    float far = Math.max(5000, field * 20);
+	    float near = Math.min(1, -(field * aspect / (float)Math.tan(elev)));
+	    proj = Projection.ortho(-field, field, -field * aspect, field * aspect, near, far);
 	}
 	
 	public float angle() {
@@ -580,13 +585,14 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	
 	protected void chfield(float nf) {
 	    tfield = nf;
-	    tfield = Math.max(Math.min(tfield, sz.x * (float)Math.sqrt(2) / 8f), 50);
+	    float maxZoom = (CFG.EXTEND_ZOOM_ON_ORTHO.get() ? 4f : 8f);
+	    tfield = Math.max(Math.min(tfield, sz.x * (float)Math.sqrt(2) / maxZoom), 50);
 	    if(tfield > 100)
 		release();
 	}
-	
-	public boolean wheel(Coord c, int amount) {
-	    chfield(tfield + amount * 10);
+
+	public boolean wheel(MouseWheelEvent ev) {
+	    chfield(tfield + (float)ev.s * 10);
 	    return(true);
 	}
 	
@@ -686,12 +692,14 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	disposables.add(CFG.DISPLAY_GOB_HITBOX.observe(this::updatePlobDrawable));
 	disposables.add(CFG.DISPLAY_GOB_HITBOX_TOP.observe(this::updatePlobDrawable));
 	disposables.add(CFG.SHOW_GOB_RADIUS.observe(this::updateSupportOverlay));
-	disposables.add(CFG.SHOW_MINE_SUPPORT_AS_OVERLAY.observe(this::updateSupportOverlay));
 	disposables.add(CFG.COLOR_MINE_SUPPORT_OVERLAY.observe(this::updateSupportOverlayColor));
+	disposables.add(CFG.COLOR_MINE_SUPPORT_SINGLE_OVERLAY.observe(this::updateSupportOverlayColor));
+	disposables.add(CFG.COLOR_MINE_SUPPORT_DAMAGED_OVERLAY.observe(this::updateSupportOverlayColor));
+	disposables.add(CFG.COLOR_MINE_SUPPORT_VIRTUAL_OVERLAY.observe(this::updateSupportOverlayColor));
 	disposables.add(CFG.COLOR_TILE_GRID.observe(this::updateGridMat));
 	disposables.add(CFG.DISPLAY_FLAVOR.observe(terrain::updateFlavor));
 	disposables.add(CFG.SHOW_MINESWEEPER_OVERLAY.observe(terrain::updateMinesweeper));
-	updateSupportOverlay(null);
+	updateSupportOverlay();
 	updateGridMat(null);
     }
     
@@ -710,16 +718,29 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
     }
     
     private void updateSupportOverlayColor(CFG<Color> cfg) {
-	Overlay o = ols.remove(MSRad.safeol);
+	Overlay o = ols.remove(Global.ol_1);
+	if(o != null) {o.remove();}
+
+	o = ols.remove(Global.ol_m);
+	if(o != null) {o.remove();}
+
+	o = ols.remove(Global.ol_v);
+	if(o != null) {o.remove();}
+
+	o = ols.remove(Global.ol_d);
 	if(o != null) {o.remove();}
     }
     
     private void updateSupportOverlay(CFG<Boolean> cfg) {
-	boolean show = CFG.SHOW_GOB_RADIUS.get() && CFG.SHOW_MINE_SUPPORT_AS_OVERLAY.get();
-	if(show && !visol(MSRad.OL_TAG)) {
-	    enol(MSRad.OL_TAG);
-	} else if(!show && visol(MSRad.OL_TAG)) {
-	    disol(MSRad.OL_TAG);
+	updateSupportOverlay();
+    }
+    
+    public void updateSupportOverlay() {
+	boolean show = CFG.SHOW_GOB_RADIUS.get() || ShowCover.show;
+	if(show && !visol(Global.OL_TAG)) {
+	    enol(Global.OL_TAG);
+	} else if(!show && visol(Global.OL_TAG)) {
+	    disol(Global.OL_TAG);
 	}
     }
     
@@ -732,9 +753,12 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
     }
     
     public void dispose() {
-	gobs.slot.remove();
-	clmaplist.dispose();
-	clobjlist.dispose();
+	if (gobs.slot != null)
+	    gobs.slot.remove();
+	if (clmaplist != null)
+	    clmaplist.dispose();
+	if (clobjlist != null)
+	    clobjlist.dispose();
 	super.dispose();
     }
     
@@ -1380,10 +1404,91 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
     
     public Coord3f getcc() {
 	Gob pl = player();
+	Coord3f raw;
 	if(pl != null)
-	    return(pl.getc());
+	    raw = pl.getc();
 	else
-	    return(glob.map.getzp(cc));
+	    raw = glob.map.getzp(cc);
+	return(camfilter.filter(raw));
+    }
+
+    private final CamJitterFilter camfilter = new CamJitterFilter();
+
+    private static class CamJitterFilter {
+	// Critically-damped spring. OMEGA controls how fast the camera reaches
+	// the target — roughly 4/OMEGA seconds to settle from rest. OMEGA=6
+	// gives ~0.65s settle on big jumps with smooth ease-in-out.
+	private static final float OMEGA = 6f;
+	private double lastTime = Double.NaN;
+	private Coord3f filtered;
+	private float vx, vy;
+
+	Coord3f filter(Coord3f raw) {
+	    if(!CFG.CAMERA_SMOOTH_JITTER.get()) {
+		lastTime = Double.NaN;
+		return(raw);
+	    }
+	    double now = System.nanoTime() / 1e9;
+	    if(Double.isNaN(lastTime) || filtered == null) {
+		lastTime = now;
+		filtered = raw;
+		vx = vy = 0f;
+		return(raw);
+	    }
+	    float dt = (float)(now - lastTime);
+	    if(dt <= 0) return(filtered);
+	    lastTime = now;
+	    if(dt > 0.1f) dt = 0.1f;
+
+	    // Teleport detection: if the player jumped a huge distance (e.g. zoning
+	    // indoors, fast-travel), don't try to spring across it — that overshoots
+	    // and bounces. Snap the camera and reset velocity.
+	    if(Math.hypot(filtered.x - raw.x, filtered.y - raw.y) > 1000f) {
+		filtered = raw;
+		vx = vy = 0f;
+		return(raw);
+	    }
+
+	    float leash = Utils.clip(CFG.CAMERA_SMOOTH_STRENGTH.get(), 0, 50);
+
+	    // Critically-damped spring integration (semi-implicit). Produces
+	    // ease-in-out: accelerates from rest, decelerates into the target,
+	    // no overshoot, no exponential tail.
+	    float dx = filtered.x - raw.x;
+	    float dy = filtered.y - raw.y;
+	    float ax = -2f * OMEGA * vx - OMEGA * OMEGA * dx;
+	    float ay = -2f * OMEGA * vy - OMEGA * OMEGA * dy;
+	    vx += ax * dt;
+	    vy += ay * dt;
+	    float fx = filtered.x + vx * dt;
+	    float fy = filtered.y + vy * dt;
+
+	    // Clamp offset to leash radius. Pinning at the boundary kills any
+	    // outward velocity component so the camera tracks at player speed.
+	    float ox = fx - raw.x;
+	    float oy = fy - raw.y;
+	    float dist = (float)Math.hypot(ox, oy);
+	    if(dist > leash && dist > 0f) {
+		float scale = leash / dist;
+		fx = raw.x + ox * scale;
+		fy = raw.y + oy * scale;
+		float radial = (vx * ox + vy * oy) / dist;
+		if(radial > 0f) {
+		    vx -= radial * (ox / dist);
+		    vy -= radial * (oy / dist);
+		}
+	    }
+
+	    // Snap when essentially home — kills sub-pixel drift.
+	    if(Math.hypot(fx - raw.x, fy - raw.y) < 0.05f && Math.hypot(vx, vy) < 0.5f) {
+		fx = raw.x;
+		fy = raw.y;
+		vx = vy = 0f;
+	    }
+
+	    filtered = new Coord3f(fx, fy, raw.z);
+	    return(filtered);
+	}
     }
     
     public static class Clicklist implements RenderList<Rendered>, RenderList.Adapter {
@@ -1917,6 +2022,7 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
     
     public void tick(double dt) {
 	super.tick(dt);
+	me.ender.LegacyBGM.tick(this);
 	checkload();
 	camload = null;
 	try {
@@ -1926,6 +2032,15 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	    camoff.y = (float)((Math.random() - 0.5) * shake);
 	    camoff.z = (float)((Math.random() - 0.5) * shake);
 	    camera.tick(dt);
+	    if(CFG.EXTENDED_ORTHO_VIEW.get() && camera instanceof OrthoCam) {
+		OrthoCam oc = (OrthoCam)camera;
+		float chunksz = MCache.cutsz.x * (float)MCache.tilesz.x;
+		float groundreach = oc.field / (float)Math.sin(oc.elev);
+		int nview = (int)Math.ceil(groundreach / chunksz) + 2;
+		view = Math.max(2, nview);
+	    } else {
+		view = 2;
+	    }
 	} catch(Loading e) {
 	    e.boostprio(5);
 	    camload = e;
@@ -1957,7 +2072,8 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
     
     public static interface PlobAdjust {
 	public void adjust(Plob plob, Coord pc, Coord2d mc, int modflags);
-	public boolean rotate(Plob plob, int amount, int modflags);
+	public default boolean rotate(Plob plob, MouseWheelEvent data, int modflags) {return(rotate(plob, data.a, modflags));}
+	@Deprecated public default boolean rotate(Plob plob, int amount, int modflags) {return(false);}
     }
     
     public static class StdPlace implements PlobAdjust {
@@ -1977,16 +2093,16 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	    else
 		plob.move(nc);
 	}
-	
-	public boolean rotate(Plob plob, int amount, int modflags) {
+
+	public boolean rotate(Plob plob, MouseWheelEvent data, int modflags) {
 	    if((modflags & (UI.MOD_CTRL | UI.MOD_SHIFT)) == 0)
 		return(false);
 	    freerot = true;
 	    double na;
 	    if((modflags & UI.MOD_SHIFT) == 0)
-		na = (Math.PI / 4) * Math.round((plob.a + (amount * Math.PI / 4)) / (Math.PI / 4));
+		na = (Math.PI / 4) * (Math.round(plob.a / (Math.PI / 4)) + data.a);
 	    else
-		na = plob.a + amount * Math.PI / plobagran;
+		na = plob.a + data.s * Math.PI / plobagran;
 	    na = Utils.cangle(na);
 	    plob.move(na);
 	    return(true);
@@ -2069,6 +2185,7 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 		    Plob ob = placing.get();
 		    synchronized(ob) {
 			ob.slot.remove();
+			ob.removed();
 		    }
 		}
 		this.placing = null;
@@ -2109,6 +2226,7 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 		    Plob ob = placing.get();
 		    synchronized(ob) {
 			ob.slot.remove();
+			ob.removed();
 		    }
 		}
 		this.placing = null;
@@ -2221,7 +2339,7 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	protected abstract void hit(Coord pc, Coord2d mc, ClickData inf);
 	protected void nohit(Coord pc) {}
     }
-    
+
     private class Click extends Hittest {
 	int clickb;
 	
@@ -2238,12 +2356,14 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 		args = Utils.extend(args, inf.clickargs());
 		Gob gob = Gob.from(inf.ci);
 		if(gob != null) {
+		    if(clickb == 1 && CFG.BLOCK_ATTACK_TAMED_HORSE.get()
+			&& ui.isCursor("gfx/hud/curs/atk")
+			&& gob.is(GobTag.HORSE) && gob.is(GobTag.DOMESTIC)) {
+			ui.message("Blocked attack on tamed horse.", GameUI.MsgType.BAD);
+			return;
+		    }
 		    if(clickb == 3) {
 			Reactor.GOB_INTERACT.onNext(gob);
-		    }
-		    if(ui.gui.mapfile.domark) {
-			ui.gui.mapfile.addMarker(gob);
-			return;
 		    }
 		    if(clickb == 3) {FlowerMenu.lastGob(gob);}
 		    if(ui.modflags(UI.MOD_CTRL_ALT) && clickb == 1) {
@@ -2251,9 +2371,6 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 			return;
 		    }
 		}
-	    } else if(ui.gui.mapfile.domark) {
-		ui.gui.mapfile.addMarker(mc.floor(tilesz));
-		return;
 	    } else if(ui.modflags(UI.MOD_CTRL_ALT) && clickb == 1) {
 		Coord gc = mc.floor(tilesz).div(MCache.cmaps);
 		MCache.Grid grid = MapView.this.ui.sess.glob.map.getgrid(gc);
@@ -2321,12 +2438,6 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	parent.setfocus(this);
 	Loader.Future<Plob> placing_l = this.placing;
 	if(CustomCursors.processDown(this, ev)){return true;}
-	if(ev.b == 3) {
-	    if(ui.gui.mapfile.domark) {
-		ui.gui.mapfile.domark = false;
-		return true;
-	    }
-	}
 	if(ev.b == 2) {
 	    if(camdrag == null && camera.click(ev.c)) {
 		camdrag = ui.grabmouse(this);
@@ -2379,10 +2490,10 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	    return(true);
 	if((placing_l != null) && placing_l.done()) {
 	    Plob placing = placing_l.get();
-	    if(placing.adjust.rotate(placing, ev.a, ui.modflags()))
+	    if(placing.adjust.rotate(placing, ev, ui.modflags()))
 		return(true);
 	}
-	return(camera.wheel(ev.c, ev.a));
+	return(camera.wheel(ev));
     }
     
     public boolean drop(final Coord cc, Coord ul) {
@@ -2418,9 +2529,9 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	Loader.Future<Plob> placing_l = this.placing;
 	if((placing_l != null) && placing_l.done()) {
 	    Plob placing = placing_l.get();
-	    if((ev.code == KeyEvent.VK_LEFT) && placing.adjust.rotate(placing, -1, ui.modflags()))
+	    if((ev.code == KeyEvent.VK_LEFT) && placing.adjust.rotate(placing, new MouseWheelEvent(Coord.z, -1, -1), ui.modflags()))
 		return(true);
-	    if((ev.code == KeyEvent.VK_RIGHT) && placing.adjust.rotate(placing, 1, ui.modflags()))
+	    if((ev.code == KeyEvent.VK_RIGHT) && placing.adjust.rotate(placing, new MouseWheelEvent(Coord.z, 1, 1), ui.modflags()))
 		return(true);
 	}
 	if(camera.keydown(ev))
@@ -2513,7 +2624,7 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	public final Coord max;
 	public Coord sc;
 	public int modflags;
-	private MCache.Overlay ol;
+	private MCache.RectOverlay ol;
 	private UI.Grab mgrab;
 	private Text tt;
 	final GrabXL xl = new GrabXL(this) {
@@ -2540,14 +2651,15 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 		if(selection != this)
 		    return(false);
 		if(sc != null) {
-		    ol.destroy();
+		    glob.map.remove(ol);
 		    mgrab.remove();
 		}
 		sc = mc.div(MCache.tilesz2);
 		modflags = ui.modflags();
 		xl.mv = true;
 		mgrab = ui.grabmouse(MapView.this);
-		ol = glob.map.new Overlay(Area.sized(sc, new Coord(1, 1)), selol);
+		ol = glob.map.new RectOverlay(selol, Area.sized(sc, new Coord(1, 1)));
+		glob.map.add(ol);
 		return(true);
 	    }
 	}
@@ -2568,7 +2680,7 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 		    Coord ec = getec(mc);
 		    xl.mv = false;
 		    tt = null;
-		    ol.destroy();
+		    glob.map.remove(ol);
 		    mgrab.remove();
 		    wdgmsg("sel", sc, ec, modflags);
 		    sc = null;
@@ -2596,7 +2708,7 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	public void destroy() {
 	    synchronized(MapView.this) {
 		if(sc != null) {
-		    ol.destroy();
+		    glob.map.remove(ol);
 		    mgrab.remove();
 		}
 		release(xl);
@@ -2714,7 +2826,7 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	});
     }
     
-    public void zoomCamera(int amount) { camera.wheel(Coord.z, amount); }
+    public void zoomCamera(int amount) { camera.wheel(new MouseWheelEvent(Coord.z, amount, amount)); }
     
     public void rotateCamera(Coord r) {
 	camera.rotate(r.mul(
@@ -2745,15 +2857,6 @@ public class MapView extends PView implements DTarget, Console.Directory, Widget
 	    otip = null;
 	}
 	stip = tip;
-    }
-    
-    @Override
-    public boolean getcurs(CursorQuery ev) {
-	if(ui.gui.mapfile != null && ui.gui.mapfile.domark) {
-	    ev.set(MapWnd.markcurs);
-	    return true;
-	}
-	return false;
     }
     
     public CompletableFuture<Coord2d> hit(Coord c) {

@@ -43,10 +43,21 @@ public enum Action {
     AGGRO_ONE_PVE(Actions::aggroOnePVE, "Aggro closest non-player to cursor", "Will try to aggro (or switch target to) one non-player target closest to cursor"),
     AGGRO_ONE_PVP(Actions::aggroOnePVP, "Aggro closest player to cursor", "Will try to aggro (or switch target to) one player closest to cursor"),
     AGGRO_ALL(Actions::aggroAll, "Aggro all creatures near player", "Will try to aggro all creatures near player that are not in party"),
-    
+    COMBAT_DISTANCE_TOOL(GameUI::toggleCombatDistanceTool, "Combat Distancing Tool", "Open a window that shows the current distance to your combat target and can auto-move you to the perfect distance for the animal/player."),
+    COMBAT_DISTANCE_AUTO(gui -> new haven.bot.CombatDistancerLite(gui).run(), "Auto-distance combat target", "One-shot: move to the perfect distance for the current combat target."),
+
     EQUIP_BOW(gui -> Equip.twoHanded(gui, Equip.BOW), "Equip Bow"),
     EQUIP_SPEAR(gui -> Equip.twoHanded(gui, Equip.SPEAR), "Equip Boar Spear"),
     EQUIP_SWORD_N_BOARD(gui -> Equip.twoItems(gui, Equip.SHIELD, Equip.SWORD), "Equip Sword & Shield"),
+    EQUIP_TRAVELERS_SACKS(gui -> Equip.twoSame(gui, Equip.TRAVELERS_SACK), "Equip Traveller's Sacks", "Takes two traveller's sacks from your belt and puts one in each hand."),
+    EQUIP_WANDERERS_BINDLES(gui -> Equip.twoSame(gui, Equip.WANDERERS_BINDLE), "Equip Wanderer's Bindles", "Takes two wanderer's bindles from your belt and puts one in each hand."),
+    EQUIP_B12(gui -> Equip.twoHanded(gui, Equip.B12), "Equip B12 Axe"),
+    EQUIP_CUTBLADE(gui -> Equip.twoHanded(gui, Equip.CUTBLADE), "Equip Cutblade"),
+    EQUIP_GIANT_NEEDLE(gui -> Equip.twoHanded(gui, Equip.GIANT_NEEDLE), "Equip Giant Needle"),
+    EQUIP_PICKAXE(gui -> Equip.twoHanded(gui, Equip.PICKAXE), "Equip Pickaxe"),
+    EQUIP_SLEDGEHAMMER(gui -> Equip.twoHanded(gui, Equip.SLEDGEHAMMER), "Equip Sledgehammer"),
+    EQUIP_SCYTHE(gui -> Equip.twoHanded(gui, Equip.SCYTHE), "Equip Scythe"),
+    EQUIP_SHOVEL(gui -> Equip.twoHanded(gui, Equip.SHOVEL), "Equip Shovel", "Equips a shovel from your belt — metal, tinker's, or wooden."),
     
     //Camera controls
     CAM_ZOOM_IN(gui -> gui.map.zoomCamera(-1), "Camera zoom in"),
@@ -81,8 +92,12 @@ public enum Action {
         LoginScreen.authmech = Config.Variable.prop("nothing", (LoginScreen.authmech.get() == "steam" ? "native" : "steam"));
         gui.act("lo");
     }),
-    TOGGLE_FLAT_TERRAIN(CFG.FLAT_TERRAIN, "Flat terrain", "Toggles terrain flattening on and off.");
-    
+    TOGGLE_FLAT_TERRAIN(CFG.FLAT_TERRAIN, "Flat terrain", "Toggles terrain flattening on and off."),
+    SELECT_DECK_1(FightWndEx.selectDeck(0), "Select deck 1"),
+    SELECT_DECK_2(FightWndEx.selectDeck(1), "Select deck 2"),
+    SELECT_DECK_3(FightWndEx.selectDeck(2), "Select deck 3"),
+    SELECT_DECK_4(FightWndEx.selectDeck(3), "Select deck 4"),
+    SELECT_DECK_5(FightWndEx.selectDeck(4), "Select deck 5");
     
     public final String name;
     private final Do action;

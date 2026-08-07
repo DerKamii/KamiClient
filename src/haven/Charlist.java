@@ -169,6 +169,17 @@ public class Charlist extends Widget {
 		}
 	    }
 	}, UI.scale(200, 553));
+	for (Widget wdg : parent.children(Widget.class)) {
+	    if (wdg instanceof Img) {
+		if (wdg.tooltip instanceof KeyboundTip) {
+		    String tooltip = ((KeyboundTip) wdg.tooltip).base;
+		    if (tooltip.startsWith("Verified"))
+			GameUI.verifiedAccount = true;
+		    else if (tooltip.startsWith("Subscribed"))
+			GameUI.subscribedAccount = true;
+		}
+	    }
+	}
     }
 
     @Override

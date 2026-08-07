@@ -20,6 +20,7 @@ public class WindowDetector {
     public static final String WND_SMELTER = "Ore Smelter";
     public static final String WND_FINERY_FORGE = "Finery Forge";
     public static final String WND_STACK_FURNACE = "Stack furnace";
+    public static final String WND_CHANGE_NAME = "Change Name";
     
     private static final Object lock = new Object();
     private static final Set<Window> toDetect = new HashSet<>();
@@ -32,6 +33,11 @@ public class WindowDetector {
     public static void process(Widget wdg, Widget parent) {
 	if(wdg instanceof Window) {
 	    detect((Window) wdg);
+	    // Namechange never fires ON_PACK so recognize() can't catch it —
+	    // install the watcher straight from process().
+	    if(WND_CHANGE_NAME.equals(((Window) wdg).caption())) {
+		CharNameCapture.install((Window) wdg);
+	    }
 	}
 	untranslate(wdg, parent);
     }
@@ -49,6 +55,11 @@ public class WindowDetector {
 		String eventName = event.b;
 		switch (eventName) {
 		    case Window.ON_DESTROY:
+			// Wizard closed → name committed; promote before any
+			// first-spawn events.
+			if(WND_CHANGE_NAME.equals(window.caption())) {
+			    CharNameCapture.promote();
+			}
 			toDetect.remove(window);
 			detected.remove(window);
 			break;

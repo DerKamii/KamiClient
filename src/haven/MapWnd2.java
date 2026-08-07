@@ -1,6 +1,7 @@
 package haven;
 
 
+import haven.MapFile.Marker;
 import me.ender.minimap.*;
 
 import java.awt.*;
@@ -60,24 +61,15 @@ public class MapWnd2 extends MapWnd {
 	super.setCfg();
 	cfg.sz = sz;
     }
-
-    public void addMarker(Gob gob) {
-	addMarker(gob.rc.floor(tilesz), gob.tooltip());
-    }
-
-    public void addMarker(Coord at) {
-	addMarker(at, "New marker");
-    }
-
+    
     public void addMarker(Coord at, String name) {
 	at = at.add(view.sessloc.tc);
-	Marker nm = new PMarker(view.sessloc.seg.id, at, name, BuddyWnd.gc[new Random().nextInt(BuddyWnd.gc.length)]);
+	Marker nm = new PMarker(view.file, view.sessloc.seg.id, at, name, BuddyWnd.gc[new Random().nextInt(BuddyWnd.gc.length)], false);
 	file.add(nm);
 	focus(nm);
 	if(ui.modctrl) {
 	    ui.gui.track(nm);
 	}
-	domark = false;
     }
 
     public void removeMarker(Marker marker) {
@@ -110,7 +102,6 @@ public class MapWnd2 extends MapWnd {
 	    }
 	}
 	ui.gui.track(marker);
-	domark = false;
     }
 
     public void untrack(long gobid) {
@@ -140,7 +131,7 @@ public class MapWnd2 extends MapWnd {
 			}
 		    }
 
-		    final Marker mark = new CustomMarker(info.seg, sc, name, Color.WHITE, new Resource.Spec(Resource.remote(), icon));
+		    final Marker mark = new CustomMarker(view.file, info.seg, sc, name, Color.WHITE, new Resource.Spec(Resource.remote(), icon));
 		    view.file.add(mark);
 		} finally {
 		    view.file.lock.writeLock().unlock();
@@ -153,14 +144,14 @@ public class MapWnd2 extends MapWnd {
 	markobj(mark.res, mark.name, mc);
     }
 
-    public class GobMarker extends Marker {
+    public class GobMarker extends MapFile.Marker {
 	public final long gobid;
 	public final Indir<Resource> res;
 	private Coord2d rc = null;
 	public final Color col;
 
 	public GobMarker(Gob gob) {
-	    super(0, gob.rc.floor(tilesz), gob.tooltip());
+	    super(view.file, 0, gob.rc.floor(tilesz), gob.tooltip());
 	    this.gobid = gob.id;
 	    GobIcon icon = gob.getattr(GobIcon.class);
 	    res = (icon == null) ? null : icon.res;

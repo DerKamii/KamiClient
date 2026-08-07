@@ -123,7 +123,7 @@ public class FightWnd extends Widget {
 	    }
 	    Resource.Pagina pag = res.get().layer(Resource.pagina);
 	    if(pag != null)
-		l.add(new ItemInfo.Pagina(this, pag.text));
+		l.add(new ItemInfo.Pagina(this, resdoc(pag.getres(), pag.text)));
 	    return(l.render());
 	}
     }
@@ -658,7 +658,7 @@ public class FightWnd extends Widget {
 	if(nm == "avail") {
 	    List<Action> acts = new ArrayList<Action>();
 	    int a = 0;
-	    while(true) {
+	    while(args[a] != null) {
 		int resid = Utils.iv(args[a++]);
 		if(resid < 0)
 		    break;

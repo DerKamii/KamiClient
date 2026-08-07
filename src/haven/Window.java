@@ -26,6 +26,7 @@
 
 package haven;
 
+import haven.resutil.FoodInfo;
 import haven.rx.Reactor;
 import me.ender.WindowDetector;
 
@@ -34,6 +35,8 @@ import haven.render.*;
 import java.util.function.*;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static haven.PUtils.*;
 
@@ -64,12 +67,8 @@ public class Window extends Widget {
     public static final Coord dlmrgn = UI.scale(23, 14);
     public static final Coord dsmrgn = UI.scale(9, 9);
     public static final BufferedImage ctex = Resource.loadsimg("gfx/hud/fonttex");
-    public static final Text.Furnace cf = new Text.Imager(new PUtils.TexFurn(new Text.Foundry(Text.serif.deriveFont(Font.BOLD, UI.scale(16))).aa(true), ctex)) {
-	    protected BufferedImage proc(Text text) {
-		// return(rasterimg(blurmask2(text.img.getRaster(), 1, 1, Color.BLACK)));
-		return(rasterimg(blurmask2(text.img.getRaster(), UI.rscale(0.75), UI.rscale(1.0), Color.BLACK)));
-	    }
-	};
+	@Deprecated public static final Text.Furnace cf = DefaultDeco.cf;
+    @Deprecated public static final Text.Furnace ncf = DefaultDeco.ncf;
     public static final IBox wbox = new IBox.Scaled("gfx/hud/wnd", "tl", "tr", "bl", "br", "extvl", "extvr", "extht", "exthb") {
 	    final Coord co = UI.scale(3, 3), bo = UI.scale(2, 2);
 
@@ -102,7 +101,7 @@ public class Window extends Widget {
     public boolean skipSavePos = false;
     private boolean closed = false;
     private String title;
-    protected Text.Furnace rcf = cf;
+	protected Text.Furnace rcf = cf;
 
     @RName("wnd")
     public static class $_ implements Factory {
@@ -252,9 +251,13 @@ public class Window extends Widget {
     }
 
     public static class DefaultDeco extends DragDeco {
+	public static final Text.Forge cf =  new PUtils.BlurFurn(new PUtils.TexFurn(new Text.Foundry(Text.fraktur, 15).aa(true), ctex),
+								   UI.rscale(0.75), UI.rscale(1.0), new Color(96, 96, 0));
+	public static final Text.Forge ncf = new PUtils.BlurFurn(new PUtils.TexFurn(new Text.Foundry(Text.fraktur, 15).aa(true), ctex),
+								   UI.rscale(0.75), UI.rscale(1.0), Color.BLACK);
 	public final boolean lg;
 	public final IButton cbtn;
-	public boolean dragsize;
+	public boolean dragsize, cfocus;
 	public Area aa, ca;
 	public Coord cptl = Coord.z, cpsz = Coord.z;
 	public int cmw;
@@ -319,8 +322,8 @@ public class Window extends Widget {
 
 	protected void drawframe(GOut g) {
 	    Window wnd = (Window)parent;
-	    if((cap == null) || (cap.text != wnd.cap)) {
-		cap = (wnd.cap == null) ? null : cf.render(wnd.cap);
+	    if((cap == null) || (cap.text != wnd.cap) || (cfocus != wnd.hasfocus)) {
+		cap = (wnd.cap == null) ? null : ((cfocus = wnd.hasfocus) ? cf : ncf).render(wnd.cap);
 		cmw = (cap == null) ? 0 : cap.sz().x;
 		cmw = Math.max(cmw, this.sz.x / 4);
 		cptl = Coord.of(ca.ul.x, 0);
@@ -408,6 +411,43 @@ public class Window extends Widget {
 	public boolean checkhit(Coord c) {
 	    Coord cpc = c.sub(cptl);
 	    return(ca.contains(c) || (c.isect(cptl, cpsz) && (cm.back.getRaster().getSample(cpc.x % cm.back.getWidth(), cpc.y, 3) >= 128)));
+	}
+    }
+    
+    private static Pattern febre = Pattern.compile("Food event bonus: (\\d+)%");
+    private static final java.util.WeakHashMap<Button, Boolean> hookedFeastBtns = new java.util.WeakHashMap<>();
+    protected void CheckForDinnerTable() {
+	int tablefep = -1;
+	boolean feast = false;
+	for (Widget w = this.lchild; w != null; w = w.prev) {
+	    if(w instanceof Label) {
+		Label l = (Label) w;
+		try {
+		    Matcher m = febre.matcher(l.texts);
+		    if(m.find())
+			tablefep = Integer.parseInt(m.group(1));
+		} catch (Exception e) {
+		    new Warning(e).issue();
+		}
+	    }
+	    if(w instanceof Button) {
+		Button b = (Button) w;
+		if(b.text.text.equals("Feast!")) {
+		    feast = true;
+		    if(!hookedFeastBtns.containsKey(b)) {
+			hookedFeastBtns.put(b, Boolean.TRUE);
+			Runnable orig = b.action;
+			b.action = () -> {
+			    if(CFG.LEGACY_BGM_ENABLED.get())
+				me.ender.LegacyAudioPlayer.play("symbel", false, CFG.LEGACY_BGM_VOLUME.get());
+			    if(orig != null) orig.run();
+			};
+		    }
+		}
+	    }
+	}
+	if(feast) {
+	    FoodInfo.tablefep = Math.max(tablefep, 0);
 	}
     }
 

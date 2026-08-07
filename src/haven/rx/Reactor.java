@@ -7,6 +7,7 @@ import haven.Window;
 import rx.Subscription;
 import rx.functions.Action0;
 import rx.functions.Action1;
+import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
 
 public class Reactor {
@@ -16,8 +17,9 @@ public class Reactor {
     /** Publishes all 'info' messages from server*/
     public static final PublishSubject<String> IMSG = PublishSubject.create();
     
-    /** Publishes changes to player name */
-    public static final PublishSubject<String> PLAYER = PublishSubject.create();
+    /** Publishes changes to player name. BehaviorSubject so late subscribers
+     *  get the current value at subscribe-time. */
+    public static final BehaviorSubject<String> PLAYER = BehaviorSubject.create();
  
     public static final PublishSubject<FlowerMenu> FLOWER = PublishSubject.create();
     

@@ -35,11 +35,12 @@ import java.security.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
-public class Connection {
+public class Connection implements Transport {
     public static final Config.Variable<Boolean> encrypt = Config.Variable.propb("haven.hcrypt", false);
     private static final double ACK_HOLD = 0.030;
     private static final double OBJACK_HOLD = 0.08, OBJACK_HOLD_MAX = 0.5;
     public final SocketAddress server;
+    public final Stats stats = new Stats();
     private final Collection<Callback> cbs = new ArrayList<>();
     private final DatagramChannel sk;
     private final Selector sel;
@@ -66,62 +67,6 @@ public class Connection {
 	    key = sk.register(sel, SelectionKey.OP_READ);
 	} catch(IOException e) {
 	    throw(new RuntimeException(e));
-	}
-    }
-
-    public static interface Callback {
-	public default void closed() {};
-	public default void handle(PMessage msg) {};
-	public default void handle(OCache.ObjDelta delta) {};
-	public default void mapdata(Message msg) {};
-
-	public static class Dumper implements Callback {
-	    public final Writer out;
-	    private final double epoch;
-
-	    public Dumper(Writer out) {
-		this.out = out;
-		this.epoch = Utils.rtime();
-	    }
-
-	    private void printf(String format, Object... args) {
-		try {
-		    out.write(String.format(format, args));
-		} catch(IOException e) {
-		    throw(new RuntimeException(e));
-		}
-	    }
-
-	    public void closed() {
-		printf("%4.6f close\n", Utils.rtime() - epoch);
-		try {
-		    out.close();
-		} catch(IOException e) {
-		    throw(new RuntimeException(e));
-		}
-	    }
-
-	    public void handle(PMessage msg) {
-		printf("%4.6f rmsg %d %s\n", Utils.rtime() - epoch, msg.type, Utils.bprint.enc(msg.bytes()));
-	    }
-
-	    public void handle(OCache.ObjDelta msg) {
-		printf("%4.6f objd", Utils.rtime() - epoch);
-		String fl = "";
-		if(msg.initframe > 0) fl += "i";
-		if((msg.fl & 2) != 0) fl += "v";
-		if((msg.fl & 4) != 0) fl += "o";
-		if(msg.rem) fl += "d";
-		printf(" %s %d %d", (fl == "") ? "n" : fl, msg.id, msg.frame);
-		if(msg.initframe > 0) printf(" %d", msg.initframe);
-		for(OCache.AttrDelta attr : msg.attrs)
-		    printf(" %d:%s", attr.type, Utils.bprint.enc(attr.bytes()));
-		printf("\n");
-	    }
-
-	    public void mapdata(Message msg) {
-		printf("%4.6f map %s\n", Utils.rtime() - epoch, Utils.b64.enc(msg.bytes()));
-	    }
 	}
     }
 
@@ -231,6 +176,59 @@ public class Connection {
 	}
     }
 
+    public static class Stats {
+	private final double[] rpltimes = new double[32];
+	private long ptx, prx, pretx;
+	private long btx, brx, prerx, prorx;
+	private int rplhead = 0, nrpls = 0;
+	private double srtt, rttv;
+
+	private void addreply(double time) {
+	    rpltimes[rplhead] = time;
+	    rplhead = (rplhead + 1) % rpltimes.length;
+	    if(nrpls < rpltimes.length)
+		nrpls++;
+	    {
+		double s = 0;
+		for(int i = 0; i < nrpls; i++)
+		    s += rpltimes[i];
+		srtt = s / nrpls;
+	    }
+	    {
+		double v = 0;
+		for(int i = 0; i < nrpls; i++) {
+		    double d = rpltimes[i] - srtt;
+		    v += d * d;
+		}
+		rttv = Math.sqrt(v / nrpls);
+	    }
+	}
+
+	private static final String[] apfx = {"", "k", "M", "G", "T"};
+	private String abbr(String fmt, double n) {
+	    int pi = 0;
+	    while((n >= 1000) && (pi < apfx.length - 1)) {
+		n /= 1000;
+		pi++;
+	    }
+	    return(String.format(fmt, n, apfx[pi]));
+	}
+
+	public String toString() {
+	    StringBuilder buf = new StringBuilder();
+	    buf.append(String.format("RTT %.2f\u00b1%.2f ms", srtt * 1000, rttv * 1000));
+	    buf.append(String.format(", RX %s/%s", abbr("%.0f %sB", brx), abbr("%.0f %sP", prx)));
+	    if((prerx > 0) || (prorx > 0)) {
+		buf.append(String.format(" (R %s, O %s)", abbr("%.0f%s", prerx), abbr("%.0f%s", prorx)));
+	    }
+	    buf.append(String.format(", TX %s/%s", abbr("%.0f %sB", btx), abbr("%.0f %sP", ptx)));
+	    if(pretx > 0) {
+		buf.append(String.format(" (R %s)", abbr("%.0f%s", pretx)));
+	    }
+	    return(buf.toString());
+	}
+    }
+
     private class Worker extends HackThread {
 	private Task init;
 	
@@ -294,13 +292,18 @@ public class Connection {
 	    byte type = recvbuf.get();
 	    byte[] buf = new byte[recvbuf.remaining()];
 	    recvbuf.get(buf);
+	    stats.prx++;
+	    stats.brx += buf.length;
 	    return(new PMessage(type, buf));
 	}
     }
 
     public void send(ByteBuffer msg) {
 	try {
+	    long sz = msg.remaining();
 	    sk.write(msg);
+	    stats.ptx++;
+	    stats.btx += sz;
 	} catch(IOException e) {
 	    /* Generally assume errors are transient and treat them as
 	     * packet loss, but are there perhaps errors that
@@ -402,6 +405,7 @@ public class Connection {
 				    if((crypt == null) || cr) {
 					result = 0;
 					Connection.this.crypt = crypt;
+					stats.addreply(Utils.rtime() - last);
 					return(new Main());
 				    }
 				} else {
@@ -497,7 +501,12 @@ public class Connection {
 		} while(msg != null);
 		sendack(lastack);
 	    } else if(sd > 0) {
-		waiting.put((short)msg.seq, msg);
+		if(waiting.put((short)msg.seq, msg) == null)
+		    stats.prorx++;
+		else
+		    stats.prerx++;
+	    } else {
+		stats.prerx++;
 	    }
 	}
 
@@ -512,10 +521,12 @@ public class Connection {
 		for(Iterator<RMessage> i = pending.iterator(); i.hasNext();) {
 		    RMessage msg = i.next();
 		    short sd = (short)(msg.seq - seq);
-		    if(sd <= 0)
+		    if(sd <= 0) {
+			stats.addreply(now - msg.first);
 			i.remove();
-		    else
+		    } else {
 			break;
+		    }
 		}
 	    }
 	}
@@ -638,6 +649,10 @@ public class Connection {
 			rmsg.adduint16(msg.seq).adduint8(msg.type).addbytes(msg.fin());
 			send(rmsg);
 			msg.last = now;
+			if(msg.retx == 0)
+			    msg.first = now;
+			else
+			    stats.pretx++;
 			msg.retx++;
 			lasttx = now;
 		    } else {

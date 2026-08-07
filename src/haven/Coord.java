@@ -164,6 +164,10 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
 	return(of(Utils.floormod(x, d.x), Utils.floormod(y, d.y)));
     }
 
+    public boolean isect2(Coord ul, Coord br) {
+	return((x >= ul.x) && (y >= ul.y) && (x < br.x) && (y < br.y));
+    }
+
     public boolean isect(Coord c, Coord s) {
 	return((x >= c.x) && (y >= c.y) && (x < c.x + s.x) && (y < c.y + s.y));
     }
@@ -285,11 +289,10 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
     }
     public Coord max(Coord c) {return(max(c.x, c.y));}
 
+    public int max() {return(Math.max(x, y));}
+    public int min() {return(Math.min(x, y));}
+    
     public int manhattan2(Coord c) {
 	return Math.max(Math.abs(c.x - x), Math.abs(c.y - y));
-    }
-
-    public Coord rotate(double angle) {
-	return new Coord((int) (x * Math.cos(angle) - y * Math.sin(angle)), (int) (x * Math.sin(angle) + y * Math.cos(angle)));
     }
 }

@@ -33,6 +33,10 @@ import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
 
 public class Composited implements RenderTree.Node, EquipTarget {
+    public static int animTickFrame = 0;
+    public static volatile int cachedAnimSkip = CFG.ANIM_FRAME_SKIP.get();
+    static { CFG.ANIM_FRAME_SKIP.observe(cfg -> cachedAnimSkip = cfg.get()); }
+    public volatile boolean frozen = false;
     public final Skeleton skel;
     public final Pose pose;
     public final OwnerContext eqowner;
@@ -196,10 +200,18 @@ public class Composited implements RenderTree.Node, EquipTarget {
 	}
 
 	public TickList.Ticking ticker() {return(this);}
+	private Pipe.Op lastMorphState = null;
 	public void autotick(double dt) {
+	    if(frozen) return;
+	    int skip = cachedAnimSkip;
+	    if(skip > 0 && (animTickFrame % (skip + 1)) != 0)
+		return;
 	    Pipe.Op nst = morph.state();
-	    for(RenderTree.Slot slot : slots)
-		slot.ostate(nst);
+	    if(nst != lastMorphState) {
+		for(RenderTree.Slot slot : slots)
+		    slot.ostate(nst);
+		lastMorphState = nst;
+	    }
 	}
     }
 
@@ -363,14 +375,14 @@ public class Composited implements RenderTree.Node, EquipTarget {
 	    this.base = base;
 	}
 
-	public static Desc decode(Session sess, Object[] args) {
+	public static Desc decode(Resource.Resolver sess, Object[] args) {
 	    Desc ret = new Desc();
 	    ret.base = sess.getresv(args[0]);
-	    Object[] ma = (Object[])args[1];
+	    Object[] ma = Utils.oav(args[1]);
 	    for(int i = 0; i < ma.length; i += 2) {
 		List<ResData> tex = new ArrayList<ResData>();
 		Indir<Resource> mod = sess.getresv(ma[i]);
-		Object[] ta = (Object[])ma[i + 1];
+		Object[] ta = Utils.oav(ma[i + 1]);
 		for(int o = 0; o < ta.length; o++) {
 		    Indir<Resource> tr = sess.getresv(ta[o]);
 		    Message sdt = Message.nil;
@@ -380,12 +392,12 @@ public class Composited implements RenderTree.Node, EquipTarget {
 		}
 		ret.mod.add(new MD(mod, tex));
 	    }
-	    Object[] ea = (Object[])args[2];
+	    Object[] ea = Utils.oav(args[2]);
 	    for(int i = 0; i < ea.length; i++) {
-		Object[] qa = (Object[])ea[i];
+		Object[] qa = Utils.oav(ea[i]);
 		int n = 0;
 		int t = Utils.iv(qa[n++]);
-		String at = (String)qa[n++];
+		String at = Utils.sv(qa[n++]);
 		Indir<Resource> res = sess.getresv(qa[n++]);
 		Message sdt = Message.nil;
 		if(qa[n] instanceof byte[])
@@ -534,6 +546,7 @@ public class Composited implements RenderTree.Node, EquipTarget {
     }
     
     public void tick(double dt) {
+	if(frozen) return;
 	if(poses != null)
 	    poses.tick((float)dt);
 	for(Equipped equ : this.equ)

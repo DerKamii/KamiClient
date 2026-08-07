@@ -146,28 +146,45 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 		}
 	    }
 	}
-
+	
 	private void setbase(float[][] bv) {
-	    for(int y = vs.ul.y; y < vs.br.y - 1; y++) {
-		for(int x = vs.ul.x; x < vs.br.x - 1; x++) {
-		    fall: {
-			for(int i = var.length - 1; i >= 0; i--) {
-			    Var v = var[i];
-			    double n = 0;
-			    for(double s = 64; s >= 8; s /= 2)
-				n += noise.get(s, x + m.ul.x, y + m.ul.y, v.nz);
-			    if(((n / 2) >= v.thrl) && ((n / 2) <= v.thrh)) {
-				bv[i + 1][vs.o(x, y)] = 1;
-				bv[i + 1][vs.o(x + 1, y)] = 1;
-				bv[i + 1][vs.o(x, y + 1)] = 1;
-				bv[i + 1][vs.o(x + 1, y + 1)] = 1;
-				break fall;
+	    if (CFG.ENABLE_TERRAIN_BLEND.get()) {
+		for (int y = vs.ul.y; y < vs.br.y - 1; y++) {
+		    for (int x = vs.ul.x; x < vs.br.x - 1; x++) {
+			fall: {
+			    for (int i = var.length - 1; i >= 0; i--) {
+				Var v = var[i];
+				double n = 0;
+				for (double s = 64; s >= 8; s /= 2)
+				    n += noise.get(s, x + m.ul.x, y + m.ul.y, v.nz);
+				if (((n / 2) >= v.thrl) && ((n / 2) <= v.thrh)) {
+				    bv[i + 1][vs.o(x, y)] = 1;
+				    bv[i + 1][vs.o(x + 1, y)] = 1;
+				    bv[i + 1][vs.o(x, y + 1)] = 1;
+				    bv[i + 1][vs.o(x + 1, y + 1)] = 1;
+				    break fall;
+				}
 			    }
+			    bv[0][vs.o(x, y)] = 1;
+			    bv[0][vs.o(x + 1, y)] = 1;
+			    bv[0][vs.o(x, y + 1)] = 1;
+			    bv[0][vs.o(x + 1, y + 1)] = 1;
 			}
-			bv[0][vs.o(x, y)] = 1;
-			bv[0][vs.o(x + 1, y)] = 1;
-			bv[0][vs.o(x, y + 1)] = 1;
-			bv[0][vs.o(x + 1, y + 1)] = 1;
+		    }
+		}
+	    } else {
+		for (int y = vs.ul.y; y < vs.br.y - 1; y++) {
+		    for (int x = vs.ul.x; x < vs.br.x - 1; x++) {
+			bv[0][vs.o(x, y)] = 1.0F;
+			bv[0][vs.o(x + 1, y)] = 1.0F;
+			bv[0][vs.o(x, y + 1)] = 1.0F;
+			bv[0][vs.o(x + 1, y + 1)] = 1.0F;
+			for (int i = var.length - 1; i >= 0; i--) {
+			    bv[i + 1][vs.o(x, y)] = 1.0F;
+			    bv[i + 1][vs.o(x + 1, y)] = 1.0F;
+			    bv[i + 1][vs.o(x, y + 1)] = 1.0F;
+			    bv[i + 1][vs.o(x + 1, y + 1)] = 1.0F;
+			}
 		    }
 		}
 	    }
@@ -280,6 +297,15 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	for(Var v : this.var = var)
 	    v.draw = Pipe.Op.compose(new MapMesh.MLOrder(0, z++), VertexColor.instance);
 	this.transset = transset;
+    }
+
+    public TerrainTile(int id, TerrainTile from) {
+	super(id);
+	this.noise = from.noise;
+	this.base = from.base;
+	this.draw = from.draw;
+	this.var = from.var;
+	this.transset = from.transset;
     }
 
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
@@ -408,6 +434,12 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	    super(id, noise, base, var, transset);
 	    this.rth = rth;
 	    this.rcons = new Ridges.TexCons(rmat, texh);
+	}
+
+	public RidgeTile(int id, RidgeTile from) {
+	    super(id, from);
+	    this.rcons = from.rcons;
+	    this.rth = from.rth;
 	}
 
 	public double breakz() {return(rth);}

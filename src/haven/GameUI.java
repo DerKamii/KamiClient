@@ -27,6 +27,7 @@
 package haven;
 
 import haven.Equipory.SLOTS;
+import haven.MapFile.Marker;
 import haven.bot.AutoDrink;
 import haven.res.ui.locptr.Pointer;
 import haven.rx.BuffToggles;
@@ -50,6 +51,7 @@ import static haven.ItemFilter.*;
 import haven.render.Location;
 import me.ender.alchemy.AlchemyWnd;
 import static haven.Inventory.invsq;
+import static haven.PType.*;
 
 public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.Handler {
     private static final int blpw = UI.scale(142), brpw = UI.scale(142);
@@ -67,6 +69,9 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
     public MiniMap mmap;
     public Fightview fv;
     public Fightsess fsess;
+    // KamiClient: combat distancing tool, yoinked from Hurricane.
+    public haven.bot.CombatDistanceTool combatDistanceTool;
+    public Thread combatDistanceToolThread;
     private List<Widget> meters = new LinkedList<Widget>();
     private List<Widget> cmeters = new LinkedList<Widget>();
     private Text lastmsg;
@@ -108,6 +113,9 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
     public TimerPanel timers;
     public StudyWnd studywnd;
     private Widget questPanel;
+    
+    public static boolean verifiedAccount = false;
+    public static boolean subscribedAccount = false;
     
     public static abstract class BeltSlot {
 	public final int idx;
@@ -299,6 +307,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
     private final Coord minimapc;
     private final Coord menugridc;
     public GameUI(String chrid, long plid, String genus) {
+	me.ender.LegacyBGM.onEnterGame();
 	this.chrid = chrid;
 	this.plid = plid;
 	this.genus = genus;
@@ -375,7 +384,11 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
 	menupanel.add(new MainMenu(), 0, 0);
 	menubuttons(rbtnimg);
 	foldbuttons();
-	portrait = ulpanel.add(Frame.with(new Avaview(Avaview.dasz, plid, "avacam"), false), UI.scale(10, 10));
+	if(CFG.HIDE_GAMEUI_PORTRAIT.get()) {
+	    portrait = ulpanel.add(new Widget(Avaview.dasz.add(Window.wbox.bisz())), UI.scale(10, 10));
+	} else {
+	    portrait = ulpanel.add(Frame.with(new Avaview(Avaview.dasz, plid, "avacam"), false), UI.scale(10, 10));
+	}
 	buffs = ulpanel.add(new Bufflist(), portrait.c.x + portrait.sz.x + UI.scale(10), portrait.c.y + ((IMeter.fsz.y + UI.scale(2)) * 2) + UI.scale(5 - 2));
 	calendar = umpanel.add(new Cal(), Coord.z);
 	eqproxyHandBelt = add(new EquipProxy(CFG.UI_SHOW_EQPROXY_HAND, SLOTS.HAND_LEFT, SLOTS.HAND_RIGHT, SLOTS.BELT), UI.scale(420, 5));
@@ -969,6 +982,21 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
     
     public void toggleQuestHelper() {
 	questHelper.toggle();
+    }
+
+    // KamiClient: open/close the combat distancing tool (yoinked from Hurricane).
+    public void toggleCombatDistanceTool() {
+	if(combatDistanceTool == null && combatDistanceToolThread == null) {
+	    combatDistanceTool = new haven.bot.CombatDistanceTool(this);
+	    add(combatDistanceTool, Utils.getprefc("wndc-combatDistanceToolWindow", new Coord(sz.x / 2 - combatDistanceTool.sz.x / 2, sz.y / 2 - combatDistanceTool.sz.y / 2 - 200)));
+	    combatDistanceToolThread = new Thread(combatDistanceTool, "CombatDistanceTool");
+	    combatDistanceToolThread.start();
+	} else if(combatDistanceTool != null) {
+	    combatDistanceTool.stop();
+	    combatDistanceTool.reqdestroy();
+	    combatDistanceTool = null;
+	    combatDistanceToolThread = null;
+	}
     }
     
     public DraggedItem hand() {
@@ -1696,14 +1724,15 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
 	    if(help == null)
 		help = adda(new HelpWnd(res), 0.5, 0.25);
 	    else
-		help.res = res;
+		help.set(res);
 	} else if(msg == "map-mark") {
-	    long gobid = Utils.uiv(args[0]);
-	    long oid = ((Number)args[1]).longValue();
+	    long gobid = UINT.of(args[0]);
+	    UID oid = UNIQID.of(args[1]);
 	    Indir<Resource> res = ui.sess.getresv(args[2]);
-	    String nm = (String)args[3];
+	    String nm = STR.of(args[3]);
+	    byte[] data = BYTES.opt(args, 4).or(new byte[0]);
 	    if(mapfile != null)
-		mapfile.markobj(gobid, oid, res, nm);
+		mapfile.markobj(gobid, oid, res, data, nm);
 	} else if(msg == "map-icons") {
 	    GobIcon.Settings conf = this.iconconf;
 	    int tag = Utils.iv(args[0]);

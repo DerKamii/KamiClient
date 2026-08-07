@@ -1,9 +1,100 @@
+$size[14]{$u{update on 28.05.2026:}
+* Merged loftar's code
+`
+$size[14]{$u{update on 18.05.2026:}
+* Fixed inventory.
+`
+$size[14]{$u{update on 17.05.2026 v2:}
+* Merged loftar's code
+`
+$size[14]{$u{update on 17.05.2026:}
+* Merged loftar's code
+* Changed how ender's marker work to incorporate new vanilla logic
+* Added new character name identification (for Integrations V5)
+* Yoinked Equip shortcuts from Hurricane / Thunder
+* Fixed domestic horse block
+* Switched to jogl 2.6.0 on standalone to support mac but dropped support for x86 (32bit).
+* Yoinked combat istance tooling from hurricane.
+`
+$size[14]{$u{update on 03.05.2026:}
+* Merged loftar's code
+`
+$size[14]{$u{update on 01.05.2026:}
+* Added toggle to block domesticated horses from being attacked.
+* Switched stack and equipory openings to bottom left to match tooltips
+* Added legacy bgm's on certain triggers. Might not be perfect. Taking feedback. Clientside triggers aren't perfect and cooldown makes it a song can't be played within 5 minutes.
+`
+$size[14]{$u{update on 28.04.2026:}
+* Fixed Ortho cams. Sorry guys.
+`
+$size[14]{$u{update on 27.04.2026:}
+* Fixed NPE on leftclick cave icons
+* Added the ability to turn off warning highlights while in combat
+* Added rotation smoothing
+* Changed smoothing defaults to 0, so you gotta set this yourself
+`
+$size[14]{$u{update on 26.04.2026:}
+* Fixed small UI texture problem
+* Fixed status widget texture problem
+* Added disable yule light + fx toggle. enabled by default.
+* Fixed a major stutter source
+* Added the possibility to disable parallel tick processing
+* Switching to ZGC now
+`
+$size[14]{$u{update on 25.04.2026:}
+* Fixed container highlight
+* Buff toggle on login (restart required)
+* Fixed cupboard size
+* Fixed wall size
+* Added compact mode map window lock
+* Changed tooltip position to bottom right of mouse.
+* Merged Loftar code.
+`
+$size[14]{$u{update on 23.04.2026:}
+* Fixed aggro rings on mammoth skulls.
+* Added a couple of performance optimizations that hopefully will help
+* More zoom without clipping. You're welcome.
+* Fixe NPE on cave click to move (Minimap)
+* Merged PR to fix a Nullpointer error (Thanks onefuncman)
+* Added hide domestic animal option in experimental options.
+* Fixed near clipping for ortho
+* Added additional view to ortho, for screenshots. (Tanks FPS! You're warned)
+* Added jitter smoothing options
+* Added flat cave-walls from Hurricane (Thanks ND)
+* Merged loftar code.
+`
+$size[14]{$u{update on 12.04.2026:}
+* Merged all changes up to now.
+* Fixed gilding and added it to this update.
+`
+$size[14]{$u{update on 23.01.2026:}
+* Merged with newest updates.
+* Added higher zoom out for ortho cam.
+* Added hotkeys and icons for deck switching.
+* Started to ignore certain throws, which can be enabled under experimental features.
+* Keksdose.
+`
+$size[14]{$u{update on 23.12.2025:}
+* Fep number on food must be enabled in ui options now.
+* Position for that has changed to the left.
+`
+$size[14]{$u{update on 21.12.2025:}
+* Added a way to import multiple hearthsecrets from clipboard.
+* You can also set a color if you put any of the following inside the list:
+* white, gree, blue, yellow, red, purple, orange, cyan
+* Added a colored fep counter to foods. If you sit down on a table and observe the numbers on the food,
+* you should be able to tell if it will one shot your stats or not.
+* Added a bandaid for christmas crash. I hope it will actually work, it's hard to produce.
+`
+$size[14]{$u{update on 15.12.2025:}
+* added loftar's update. New Slots.
+`
 $size[14]{$u{update on 13.12.2025:}
 * Synced Alchemy stuff fixes
 * Synced Loftar code.
 * Synced missing changes and fixes, like adding new biomes to tile highlight.
 * Added new Map-Upload feature. Please wait for Sunday (14.12.2025) to try it. Backend update not published yet.
-
+`
 $size[14]{$u{update on 29.11.2025:}
 * Merged with all the changes of the past year.
 * Merged remaining stuff from ender.
@@ -11,19 +102,19 @@ $size[14]{$u{update on 29.11.2025:}
 * updated mapping client for upcoming mapper changes (Multiworld support)
 * mapper will send inspect information on localized resources if tracking is enabled
 * Added autodrink function (Thanks to Vladichka)
-
+`
 $size[14]{$u{update on 22.12.2024:}
   * Fixed (tree) log size.
   * Fixed log out to native / steam buttons for steam.
-
+`
 $size[14]{$u{update on 21.12.2024:}
   * Fixed Combat UI scaling issues and positioning when chat is hidden.
   * Fixed color selection for marker upload. Not selected colors don't get uploaded.
-
+`
 $size[14]{$u{update on 18.12.2024:}
   * another big merge with both ender and loftar to fix crashing
   * removed inventory sorting from ard in favor of inventory sorting from ender
-
+`
 $size[14]{$u{update on 23.11.2024:}
   * Short form: massive merge with Ender and all the loftar code
   * Inventory proxies have now a little handle at the right side for easier dragging
@@ -34,20 +125,20 @@ $size[14]{$u{update on 23.11.2024:}
     Whenever gardenpots need soil or water, it will displayed accordingly.
     If nothing is planted, it will show an empty pot.
     If they are ready to be harvested, it will show a flower symbol.
-
+`
 $size[14]{$u{update on 16.11.2024:}
   * fixed bugs
   * fixed steam launch
   * image upload preview is always showing default entry (should be village banner)
   * fixed bug in marker upload
   * changed food upload to fix hunger
-
+`
 $size[14]{$u{update on 13.11.2024:}
   * fixed some crashes, ignored other causes
   * improved image upload. Fixed close button. Added preview to uploaded pictures
   * kind of fixed refill but. It still says cancelled tho...
   * I think there was more but i don't remember.
-
+`
 $size[14]{$u{update on 01.11.2024:}
   * fixed map upload features:
     you are now able to upload maptiles / markers / location all individually
@@ -55,55 +146,55 @@ $size[14]{$u{update on 01.11.2024:}
   * merged loftars changes
   * If you experience crashes, please reach out to me on the forums
     My client logs errors in it's own folder
-
+`
 $size[14]{$u{update on 16.06.2024:}
   * added metal plow to radar
   * minor crash fixes
-
+`
 $size[14]{$u{update on 12.06.2024:}
   * added critter aura from havoc
   * added option to spread container windows from ender
   * minor crash fixes
-
+`
 $size[14]{$u{update on 06.06.2024:}
   * fixed decal click on chests
   * added disable window animation option
   * grid tickness is based on render scale now. (You need to re-enable grid after changing the scale)
-
+`
 $size[14]{$u{update on 04.06.2024:}
   * fixed compact mode map resizing
   * maybe fixed a login crash with quest helper.. Can't reproduce on will
-
+`
 $size[14]{$u{update on 03.06.2024:}
   * merged loftar's code
   * merged ender's code
   * small bug fixes
-
+`
 $size[14]{$u{update on 11.02.2024:}
   * merged loftar's code
   * small bug fixes
-
+`
 $size[14]{$u{update on 21.12.2023:}
   * merged loftar's code
   * small bug fixes
   * placing error crashes in a folder with a timestamp.
-
+`
 $size[14]{$u{update on 15.11.2023:}
   * merged loftar's code
   * added option to turn off enhanced waterfall
   * added cart to minimap icons
-
+`
 $size[14]{$u{update on 14.11.2023:}
   * option to turn bring back vanilla chat / minimap layout
   * From Ender: decal placing.
   * Option to prevent right click on decal (Options->General)
   * Option to disable cracking texture
   * From Ender: fixed hardware cursor.
-
+`
 $size[14]{$u{update on 13.11.2023:}
   * fixed alert resources
   * fixed compact mode resize
-
+`
 $size[14]{$u{update on 12.11.2023:}
   * re-merged all loftar code for new repository
   * re-added all the previous features
@@ -121,7 +212,7 @@ $size[14]{$u{update on 12.11.2023:}
   * Fixed gilding window not showing (From Ender)
   * Update filters fix (From Ender)
   * Some minor tweaks from Ender
-
+`
 $size[14]{$u{update on 01.11.2023:}
   * changed default renderer to jogl to fix smoke
   * supplied additional batch files for lwjgl
@@ -130,8 +221,7 @@ $size[14]{$u{update on 01.11.2023:}
   * fixed a potential infinite loop for marker upload
   * very deep ocean is now visible
   * added stones to map filter and highlight
-
-
+`
 $size[14]{$u{Initial release on 30.10.2023:}
   * initial release of my version
   * based on ender

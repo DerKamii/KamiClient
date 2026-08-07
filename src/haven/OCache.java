@@ -66,6 +66,8 @@ public class OCache implements Iterable<Gob> {
     private MultiMap<Long, Gob> objs = new HashMultiMap<Long, Gob>();
     private Glob glob;
     private final Collection<ChangeCallback> cbs = new WeakList<ChangeCallback>();
+    private List<Gob> gobSnapshot = new ArrayList<>();
+    private boolean gobSnapshotDirty = true;
     public final PathVisualizer paths = new PathVisualizer();
     private final List<Disposable> disposables = new LinkedList<>();
     
@@ -86,6 +88,7 @@ public class OCache implements Iterable<Gob> {
 	disposables.add(CFG.COLOR_HBOX_PASSABLE.observe(cfg -> gobAction(Gob::hitboxUpdated)));
 	disposables.add(CFG.HIDE_TREES.observe(cfg -> gobAction(Gob::visibilityUpdated)));
 	disposables.add(CFG.SKIP_HIDING_RADAR_TREES.observe(cfg -> gobAction(Gob::visibilityUpdated)));
+	disposables.add(CFG.HIDE_DOMESTIC_ANIMALS.observe(cfg -> gobAction(Gob::visibilityUpdated)));
 	disposables.add(CFG.DISPLAY_GOB_INFO.observe(cfg -> gobAction(Gob::infoUpdated)));
 	disposables.add(CFG.DISPLAY_GOB_INFO_DISABLED_PARTS.observe(cfg -> gobAction(Gob::infoUpdated)));
 	disposables.add(CFG.DISPLAY_GOB_INFO_TREE_ENABLED_PARTS.observe(cfg -> gobAction(Gob::infoUpdated)));
@@ -97,6 +100,7 @@ public class OCache implements Iterable<Gob> {
 	disposables.add(CFG.HIGHLIGHT_SELF_IN_COMBAT.observe(cfg -> gobAction(Gob::colorUpdated)));
 	disposables.add(CFG.HIGHLIGHT_ENEMY_IN_COMBAT.observe(cfg -> gobAction(Gob::colorUpdated)));
 	disposables.add(CFG.FLAT_TERRAIN.observe(cfg -> gobAction(Gob::markerUpdated)));
+	disposables.add(CFG.FLAT_TERRAIN.observe(cfg -> gobAction(Gob::placementDirty)));
 	disposables.add(CFG.DISPLAY_AURA_SPEED_BUFF.observe(cfg -> gobAction(Gob::markerUpdated)));
 	disposables.add(CFG.DISPLAY_AURA_RABBIT.observe(cfg -> gobAction(Gob::markerUpdated)));
 	disposables.add(CFG.DISPLAY_AURA_CRITTERS.observe(cfg -> gobAction(Gob::markerUpdated)));
@@ -150,6 +154,7 @@ public class OCache implements Iterable<Gob> {
 	    synchronized(this) {
 		cbs = new ArrayList<>(this.cbs);
 		objs.put(ob.id, ob);
+		gobSnapshotDirty = true;
 	    }
 	    for(ChangeCallback cb : cbs) {
 		cb.added(ob);
@@ -165,6 +170,7 @@ public class OCache implements Iterable<Gob> {
 	    if((old != null) && (old != ob))
 		throw(new RuntimeException(String.format("object %d removed wrong object", ob.id)));
 	    cbs = new ArrayList<>(this.cbs);
+	    gobSnapshotDirty = true;
 	}
 	if(old != null) {
 	    synchronized(old) {
@@ -175,12 +181,20 @@ public class OCache implements Iterable<Gob> {
 	}
     }
     
-    public void ctick(double dt) {
-	ArrayList<Gob> copy = new ArrayList<Gob>();
+    private List<Gob> getGobSnapshot() {
 	synchronized(this) {
-	    for(Gob g : this)
-		copy.add(g);
+	    if(gobSnapshotDirty) {
+		gobSnapshot = new ArrayList<>();
+		for(Gob g : this)
+		    gobSnapshot.add(g);
+		gobSnapshotDirty = false;
+	    }
+	    return gobSnapshot;
 	}
+    }
+
+    public void ctick(double dt) {
+	List<Gob> copy = getGobSnapshot();
 	Consumer<Gob> task = g -> {
 	    synchronized(g) {
 		g.ctick(dt);
@@ -197,11 +211,7 @@ public class OCache implements Iterable<Gob> {
     }
     
     public void gtick(Render g) {
-	ArrayList<Gob> copy = new ArrayList<Gob>();
-	synchronized(this) {
-	    for(Gob ob : this)
-		copy.add(ob);
-	}
+	List<Gob> copy = getGobSnapshot();
 	if(!Config.par.get()) {
 	    copy.forEach(ob -> {
 		synchronized(ob) {
@@ -267,26 +277,6 @@ public class OCache implements Iterable<Gob> {
     
     public synchronized Gob getgob(long id) {
 	return(objs.get(id));
-    }
-    
-    private final List<SquareRadiiOverlay> msols = new LinkedList<>();
-    public boolean dirtyMSOls = true;
-    
-    /**Returns list of mine support overlays*/
-    public List<SquareRadiiOverlay> msols() {
-	if(!dirtyMSOls) {return msols;}
-	synchronized (msols) {
-	    dirtyMSOls = false;
-	    msols.clear();
-	    synchronized (this) {
-		for (Gob gob : objs.values()) {
-		    MSRad spr = gob.findsprol(MSRad.class);
-		    if(spr == null) {continue;}
-		    msols.add(spr.overlay);
-		}
-	    }
-	}
-	return msols;
     }
     
     private java.util.concurrent.atomic.AtomicLong nextvirt = new java.util.concurrent.atomic.AtomicLong(-1);
@@ -582,12 +572,16 @@ public class OCache implements Iterable<Gob> {
     
     public static class AttrDelta extends PMessage {
 	public boolean old;
-	
-	public AttrDelta(ObjDelta od, int type, Message blob, int len) {
-	    super(type, blob, len);
+
+	public AttrDelta(ObjDelta od, int type, byte[] blob) {
+	    super(type, blob);
 	    this.old = ((od.fl & 4) != 0);
 	}
-	
+
+	public AttrDelta(ObjDelta od, int type, Message blob, int len) {
+	    this(od, type, blob.bytes(len));
+	}
+
 	public AttrDelta(AttrDelta from) {
 	    super(from);
 	    this.old = from.old;

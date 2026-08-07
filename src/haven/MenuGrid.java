@@ -670,6 +670,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    change(r.pag);
 	} else {
 	    r.pag.anew = r.pag.tnew = 0;
+	    me.ender.LegacyBGM.onPaginaUse(r.res != null ? r.res.name : null);
 	    r.use(iact);
 	    if(reset)
 		change(null);
@@ -725,10 +726,10 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		    if((fl & 2) != 0)
 			pag = paginafor(id = args[a++], null);
 		    else
-			id = (pag = paginafor(ui.sess.getres((Integer)args[a++], -2))).res;
+			id = (pag = paginafor(ui.sess.getres(Utils.iv(args[a++]), -2))).res;
 		    if((fl & 1) != 0) {
 			if((fl & 2) != 0) {
-			    Indir<Resource> res = ui.sess.getres((Integer)args[a++], -2);
+			    Indir<Resource> res = ui.sess.getres(Utils.iv(args[a++]), -2);
 			    if(pag == null) {
 				pag = paginafor(id, res);
 			    } else if(pag.res != res) {
@@ -903,6 +904,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	makeLocal("paginae/add/auto/aggro_one", Action.AGGRO_ONE_PVE);
 	makeLocal("paginae/add/auto/aggro_one_pvp", Action.AGGRO_ONE_PVP);
 	makeLocal("paginae/add/auto/aggro_all", Action.AGGRO_ALL);
+	makeLocal("paginae/add/auto/distance_tool_wnd", Action.COMBAT_DISTANCE_TOOL);
 	makeLocal("paginae/add/auto/mount_horse", Action.BOT_MOUNT_HORSE);
 	makeLocal("paginae/add/info/plant-growth", Action.TOGGLE_GOB_INFO_PLANTS, () -> GobInfoOpts.enabled(InfoPart.PLANT_GROWTH));
 	makeLocal("paginae/add/info/tree-growth", Action.TOGGLE_GOB_INFO_TREE_GROWTH, () -> GobInfoOpts.enabled(InfoPart.TREE_GROWTH));
@@ -918,6 +920,21 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	makeLocal("paginae/add/equip/sword-n-board", Action.EQUIP_SWORD_N_BOARD);
 	makeLocal("paginae/add/equip/bow", Action.EQUIP_BOW);
 	makeLocal("paginae/add/equip/spear", Action.EQUIP_SPEAR);
+	makeLocal("paginae/add/equip/travellerssacks", Action.EQUIP_TRAVELERS_SACKS);
+	makeLocal("paginae/add/equip/wanderersbindles", Action.EQUIP_WANDERERS_BINDLES);
+	makeLocal("paginae/add/equip/b12axe", Action.EQUIP_B12);
+	makeLocal("paginae/add/equip/cutblade", Action.EQUIP_CUTBLADE);
+	makeLocal("paginae/add/equip/giantneedle", Action.EQUIP_GIANT_NEEDLE);
+	makeLocal("paginae/add/equip/pickaxe", Action.EQUIP_PICKAXE);
+	makeLocal("paginae/add/equip/sledgehammer", Action.EQUIP_SLEDGEHAMMER);
+	makeLocal("paginae/add/equip/scythe", Action.EQUIP_SCYTHE);
+	makeLocal("paginae/add/equip/shovel", Action.EQUIP_SHOVEL);
+	
+	makeLocal("paginae/add/decks/deck1", Action.SELECT_DECK_1, () -> FightWndEx.isCurrentDeck(0));
+	makeLocal("paginae/add/decks/deck2", Action.SELECT_DECK_2, () -> FightWndEx.isCurrentDeck(1));
+	makeLocal("paginae/add/decks/deck3", Action.SELECT_DECK_3, () -> FightWndEx.isCurrentDeck(2));
+	makeLocal("paginae/add/decks/deck4", Action.SELECT_DECK_4, () -> FightWndEx.isCurrentDeck(3));
+	makeLocal("paginae/add/decks/deck5", Action.SELECT_DECK_5, () -> FightWndEx.isCurrentDeck(4));
     }
     
     private void makeLocal(String path, CustomPaginaAction action, Supplier<Boolean> toggleState) {

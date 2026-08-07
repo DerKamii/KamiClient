@@ -176,31 +176,43 @@ public class Resource implements Serializable {
 	    return(() -> {throw(new NoSuchResourceException(String.format("dyn/%x", uid.longValue()), 1, null));});
 	}
 
+	public static class Descriptor<R extends Resolver> implements PType<Indir<Resource>> {
+	    public final R rr;
+
+	    public Descriptor(R rr) {this.rr = rr;}
+
+	    public Maybe<Indir<Resource>> opt(Object desc) {
+		if(desc instanceof UID)
+		    return(Maybe.of(rr.dynres((UID)desc)));
+		if(desc instanceof Number) {
+		    int id = ((Number)desc).intValue();
+		    if(id < 0)
+			return(Maybe.of(null));
+		    return(Maybe.of(rr.getres(id)));
+		}
+		if(desc instanceof Resource)
+		    return(Maybe.of(((Resource)desc).indir()));
+		if(desc instanceof Indir) {
+		    @SuppressWarnings("unchecked") Indir<Resource> ret = (Indir<Resource>)desc;
+		    return(Maybe.of(ret));
+		}
+		return(Maybe.not(() -> new ValueFormatException("res-desc", desc)));
+	    }
+	}
+
+	public default PType<Indir<Resource>> desc() {
+	    return(new Descriptor<>(this));
+	}
+
 	public default Indir<Resource> getresv(Object desc) {
-	    if(desc == null)
-		return(null);
-	    if(desc instanceof UID)
-		return(dynres((UID)desc));
-	    if(desc instanceof Number) {
-		int id = ((Number)desc).intValue();
-		if(id < 0)
-		    return(null);
-		return(this.getres(id));
-	    }
-	    if(desc instanceof Resource)
-		return(((Resource)desc).indir());
-	    if(desc instanceof Indir) {
-		@SuppressWarnings("unchecked") Indir<Resource> ret = (Indir<Resource>)desc;
-		return(ret);
-	    }
-	    throw(new Utils.ArgumentFormatException("res-desc: ", desc));
+	    return(desc().of(desc));
 	}
 
 	public class ResourceMap implements Resource.Resolver {
 	    public final Resource.Resolver bk;
-	    public final Map<Integer, Integer> map;
+	    public final Map<Integer, ? extends Object> map;
 
-	    public ResourceMap(Resource.Resolver bk, Map<Integer, Integer> map) {
+	    public ResourceMap(Resource.Resolver bk, Map<Integer, ? extends Object> map) {
 		this.bk = bk;
 		this.map = map;
 	    }
@@ -223,17 +235,17 @@ public class Resource implements Serializable {
 		return(ret);
 	    }
 
-	    public static Map<Integer, Integer> decode(Object[] args) {
+	    public static Map<Integer, ? extends Object> decode(Object[] args) {
 		if(args.length == 0)
 		    return(Collections.emptyMap());
-		Map<Integer, Integer> ret = new HashMap<>();
+		Map<Integer, Object> ret = new HashMap<>();
 		for(int a = 0; a < args.length; a += 2)
-		    ret.put(Utils.iv(args[a]), Utils.iv(args[a + 1]));
+		    ret.put(Utils.iv(args[a]), args[a + 1]);
 		return(ret);
 	    }
 
 	    public Indir<Resource> getres(int id) {
-		return(bk.getres(map.get(id)));
+		return(bk.getresv(map.get(id)));
 	    }
 
 	    public Indir<Resource> dynres(UID uid) {
@@ -250,15 +262,12 @@ public class Resource implements Serializable {
 	this.pool = pool;
 	this.name = name;
 	this.ver = ver;
+	//System.out.println(name);
     }
 
     public static class Virtual extends Resource {
 	public Virtual(Pool pool, String name, int ver) {
 	    super(pool, name, ver);
-	}
-
-	public Virtual(String name, int ver) {
-	    this(remote(), name, ver);
 	}
 
 	public void add(Layer layer) {
@@ -1068,6 +1077,10 @@ public class Resource implements Serializable {
 	}
     }
 
+    public interface Metadata {
+	public Map<?, ?> info();
+    }
+
     public interface IDLayer<T> {
 	public T layerid();
     }
@@ -1088,7 +1101,7 @@ public class Resource implements Serializable {
     }
 
     @LayerName("image")
-    public class Image extends Layer implements IDLayer<Integer> {
+    public class Image extends Layer implements IDLayer<Integer>, Metadata {
 	public transient BufferedImage img;
 	private transient BufferedImage scaled;
 	private transient Tex tex, rawtex;
@@ -1228,9 +1241,8 @@ public class Resource implements Serializable {
 	    return(tex);
 	}
 
-	public Integer layerid() {
-	    return(id);
-	}
+	public Integer layerid() {return(id);}
+	public Map<String, Object> info() {return(info);}
 		
 	public void init() {}
     }
@@ -1858,21 +1870,34 @@ public class Resource implements Serializable {
     }
 
     @LayerName("audio2")
-    public class Audio extends Layer implements haven.Audio.Clip {
+    public class Audio extends Layer implements haven.Audio.Clip, Metadata {
 	transient public byte[] coded;
 	public final String id;
+	public final Map<String, Object> info;
 	public double bvol = 1.0;
 
 	public Audio(Message buf) {
 	    int ver = buf.uint8();
-	    if((ver >= 1) && (ver <= 2)) {
+	    Map<String, Object> info = new HashMap<>();
+	    if((ver >= 1) && (ver <= 3)) {
 		this.id = buf.string();
-		if(ver >= 2)
+		if(ver == 2)
 		    bvol = buf.uint16() * 0.001;
+		if(ver >= 3) {
+		    while(true) {
+			String key = buf.string();
+			if(key.equals(""))
+			    break;
+			Object val = buf.tto(resmapper());
+			info.put(key, val);
+		    }
+		    bvol = Utils.dv(Utils.pop(info, "vol", 1.0));
+		}
 		this.coded = buf.bytes();
 	    } else {
 		throw(new UnknownFormatException(getres(), "audio layer version", ver));
 	    }
+	    this.info = info.isEmpty() ? Collections.emptyMap() : info;
 	}
 
 	public void init() {}
@@ -1886,6 +1911,7 @@ public class Resource implements Serializable {
 	}
 
 	public String layerid() {return(id);}
+	public Map<String, Object> info() {return(info);}
 	public double bvol() {return(bvol);}
     }
 
@@ -2008,7 +2034,7 @@ public class Resource implements Serializable {
 	for(Layer l : layers) {
 	    if(cl.isInstance(l)) {
 		L ll = cl.cast(l);
-		if(ll.layerid().equals(id))
+		if((id == null) || ll.layerid().equals(id))
 		    return(ll);
 	    }
 	}

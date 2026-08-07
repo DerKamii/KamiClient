@@ -19,6 +19,7 @@ import java.util.regex.Pattern;
 public class StatusWdg extends Widget {
     private static Tex players = Text.renderstroked("Players: ?", Color.WHITE, Color.BLACK).tex();
     private static Tex pingtime = Text.renderstroked("ping: ?", Color.WHITE, Color.BLACK).tex();
+    private static Tex fpstext = Text.renderstroked("FPS: ?", Color.WHITE, Color.BLACK).tex();
     private static String ping = "?";
     private static ThreadGroup tg = new ThreadGroup("StatusUpdaterThreadGroup");
     private static long lastUpdateTime = System.currentTimeMillis();
@@ -33,7 +34,12 @@ public class StatusWdg extends Widget {
 	if(!CFG.SHOW_STATS.get() || System.currentTimeMillis() - lastUpdateTime < 1000) return;
 
 	lastUpdateTime = System.currentTimeMillis();
+	Tex oldPlayers = players;
 	players = Text.renderstroked(String.format("Players: %s", httpStatus.users), Color.WHITE, Color.BLACK).tex();
+	if(oldPlayers != null) oldPlayers.dispose();
+	Tex oldFps = fpstext;
+	fpstext = Text.renderstroked(String.format("FPS: %d", GLPanel.Loop.currentFps), Color.WHITE, Color.BLACK).tex();
+	if(oldFps != null) oldFps.dispose();
 
 	updatePing();
     }
@@ -87,7 +93,10 @@ public class StatusWdg extends Widget {
 	    if(ping.isEmpty())
 		ping = "?";
 
-	    pingtime = Text.renderstroked(String.format("Ping: %s ms", ping), Color.WHITE, Color.BLACK).tex();
+	    Tex newPing = Text.renderstroked(String.format("Ping: %s ms", ping), Color.WHITE, Color.BLACK).tex();
+	    Tex oldPing = pingtime;
+	    pingtime = newPing;
+	    if(oldPing != null) oldPing.dispose();
 	    updatePingPending = false;
 	}, "PingUpdater");
 	pingUpdaterThread.start();
@@ -98,9 +107,8 @@ public class StatusWdg extends Widget {
 	if (!CFG.SHOW_STATS.get()) return;
 	g.image(players, Coord.z);
 	g.image(pingtime, new Coord(0, players.sz().y));
-	int w = players.sz().x;
-	if (pingtime.sz().x > w)
-	    w = pingtime.sz().x;
-	this.sz = new Coord(w,  players.sz().y + pingtime.sz().y + FastText.h);
+	g.image(fpstext, new Coord(0, players.sz().y + pingtime.sz().y));
+	int w = Math.max(players.sz().x, Math.max(pingtime.sz().x, fpstext.sz().x));
+	this.sz = new Coord(w, players.sz().y + pingtime.sz().y + fpstext.sz().y);
     }
 }

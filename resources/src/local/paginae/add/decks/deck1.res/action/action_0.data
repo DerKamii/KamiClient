@@ -1,0 +1,12 @@
+#String pr
+paginae/act/deckselection
+#uint16 pver
+1
+#String name
+Deck 1 (Hunting)
+#String preq
+
+#uint16 hk
+86
+#uint16 ad length
+0

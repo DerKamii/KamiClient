@@ -19,7 +19,8 @@ public abstract class RichUText<T> implements Indir<Tex> {
     public RichUText(RichText.Foundry fnd) {this(fnd, null);}
     
     protected TexI render(String text) {
-	BufferedImage img = fnd.render(text).img;
+	BufferedImage img;
+	try {img = fnd.render(text).img;} catch (Loading e) {return null;}
 	img = process(img);
 	if(bg == null) {
 	    return new TexI(img);

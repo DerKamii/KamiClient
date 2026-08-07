@@ -38,7 +38,6 @@ import java.awt.dnd.*;
 public interface UIPanel extends Runnable {
     public static final Config.Variable<Boolean> dbtext = Config.Variable.propb("haven.dbtext", false);
     public static final Config.Variable<Boolean> profile = Config.Variable.propb("haven.profile", false);
-    public static final Config.Variable<Boolean> profilegpu = Config.Variable.propb("haven.profilegpu", false);
     public static final Cursor emptycurs = Toolkit.getDefaultToolkit().createCustomCursor(TexI.mkbuf(new Coord(1, 1)), new java.awt.Point(), "");
 
     public UI newui(UI.Runner fun);
@@ -79,9 +78,8 @@ public interface UIPanel extends Runnable {
 		    } else if(me.getID() == MouseEvent.MOUSE_RELEASED) {
 			ui.mouseup(me, new Coord(me.getX(), me.getY()), me.getButton());
 		    } else if(me instanceof MouseWheelEvent) {
-			int amount = ((MouseWheelEvent)me).getWheelRotation();
-			if(amount != 0)
-			    ui.mousewheel(me, new Coord(me.getX(), me.getY()), amount);
+			MouseWheelEvent we = (MouseWheelEvent)me;
+			ui.mousewheel(me, new Coord(me.getX(), me.getY()), we.getWheelRotation(), we.getPreciseWheelRotation());
 		    }
 		} else if(e instanceof KeyEvent) {
 		    KeyEvent ke = (KeyEvent)e;

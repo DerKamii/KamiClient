@@ -40,6 +40,10 @@ public class GobWarning extends GAttrib implements RenderTree.Node {
 	if(gob.is(GobTag.FOE) && !gob.anyOf(GobTag.DEAD, GobTag.KO)) {
 	    return player;
 	} else if(gob.is(GobTag.AGGRESSIVE) && !gob.anyOf(GobTag.DEAD, GobTag.KO)) {
+	    if(CFG.HIDE_ANIMAL_WARNING_IN_COMBAT.get()
+		&& (gob.is(GobTag.IN_COMBAT) || System.currentTimeMillis() - gob.lastInCombat < 1500)) {
+		return null;
+	    }
 	    return animal;
 	} else if(gob.is(GobTag.GEM)) {
 	    return gem;

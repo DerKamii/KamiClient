@@ -160,8 +160,17 @@ public class GeneralGobInfo extends GobInfo {
 	}
     }
     
+    private double tickAccum = 0;
+    private static volatile double cachedTickInterval = CFG.GOB_INFO_TICK_INTERVAL.get();
+    static { CFG.GOB_INFO_TICK_INTERVAL.observe(cfg -> cachedTickInterval = cfg.get()); }
     @Override
     public void ctick(double dt) {
+	if(cachedTickInterval > 0) {
+	    tickAccum += dt;
+	    if(tickAccum < cachedTickInterval)
+		return;
+	    tickAccum = 0;
+	}
 	if(enabled() && timer.update()) {dirty();}
 	super.ctick(dt);
     }
@@ -174,9 +183,14 @@ public class GeneralGobInfo extends GobInfo {
     
     private BufferedImage quality() {
 	if(GobInfoOpts.disabled(InfoPart.QUALITY)) {return null;}
+	Text text;
 	if(q != 0) {
-	    String text = String.format("$img[gfx/hud/gob/quality,c]%s", RichText.color(String.valueOf(q), Q_COL));
-	    return Utils.outline2(RichText.stdf.render(text).img, Color.BLACK);
+	    try {
+		text = RichText.stdf.render(String.format("$img[gfx/hud/gob/quality,c]%s", RichText.color(String.valueOf(q), Q_COL)));
+	    } catch (Loading ignore) {
+		text = Text.renderf(Color.WHITE, String.valueOf(q));
+	    }
+	    return Utils.outline2(text.img, Color.BLACK);
 	}
 	return null;
     }

@@ -38,6 +38,7 @@ import java.security.SecureRandom;
 import java.math.BigInteger;
 
 public class AuthClient implements Closeable {
+    public static final int DEFPORT = 1871;
     public static final Config.Variable<Boolean> strictcert = Config.Variable.propb("haven.auth-cert-strict", true);
     private static final SslHelper ssl;
     private SocketChannel sk;
@@ -96,28 +97,28 @@ public class AuthClient implements Closeable {
 	public void close() throws IOException {bk.close();}
 	public boolean isOpen() {return(bk.isOpen());}
     }
-    
-    private void connect(String host, int port, boolean obf) throws IOException {
+
+    private void connect(NamedSocketAddress srv, boolean obf) throws IOException {
 	boolean fin = false;
-	sk = Utils.connect(host, port);
+	sk = Utils.connect(srv);
 	try {
-	    ssk = new SslChannel(obf ? new Obfuscation(sk) : sk, ssl.engine(host, port));
+	    ssk = new SslChannel(obf ? new Obfuscation(sk) : sk, ssl.engine(srv.host, srv.port));
 	    ssk.handshake();
 	    if(strictcert.get())
-		ssk.checkname(host);
+		ssk.checkname(srv.host);
 	    fin = true;
 	} finally {
 	    if(!fin)
 		sk.close();
 	}
     }
-    
-    public AuthClient(String host, int port) throws IOException {
+
+    public AuthClient(NamedSocketAddress srv) throws IOException {
 	try {
-	    connect(host, port, false);
+	    connect(srv, false);
 	} catch(IOException e) {
 	    try {
-		connect(host, port, true);
+		connect(srv, true);
 	    } catch(Throwable t) {
 		t.addSuppressed(e);
 		throw(t);
@@ -192,7 +193,30 @@ public class AuthClient implements Closeable {
 	    throw(new RuntimeException("Unexpected reply `" + stat + "' from auth server"));
 	}
     }
-    
+
+    public List<Map<?, ?>> gethosts() throws IOException {
+	Message rpl = cmd("hosts");
+	String stat = rpl.string();
+	if(stat.equals("ok")) {
+	    List<Map<?, ?>> ret = new ArrayList<>();
+	    for(Object spec : rpl.list())
+		ret.add((Map<?, ?>)spec);
+	    return(ret);
+	} else {
+	    return(Collections.emptyList());
+	}
+    }
+
+    public List<NamedSocketAddress> gethosts(NamedSocketAddress defaults) throws IOException {
+	List<NamedSocketAddress> ret = new ArrayList<>();
+	for(Map<?, ?> rspec : gethosts()) {
+	    Map<Object, Object> spec = Collections.unmodifiableMap(rspec);
+	    ret.add(new NamedSocketAddress(Utils.sv(spec.getOrDefault("host", defaults.host)),
+					   Utils.iv(spec.getOrDefault("port", defaults.port))));
+	}
+	return(ret);
+    }
+
     public static class TokenInfo {
 	public byte[] id = new byte[] {};
 	public String desc = "";
@@ -494,25 +518,25 @@ public class AuthClient implements Closeable {
     
     public static void main(final String[] args) throws Exception {
 	Thread t = new HackThread(new Runnable() {
-	    public void run() {
-		try {
-		    AuthClient test = new AuthClient("127.0.0.1", 1871);
+		public void run() {
 		    try {
-			String acct = new NativeCred(args[0], args[1]).tryauth(test);
-			if(acct == null) {
-			    System.err.println("failed");
-			    return;
+			AuthClient test = new AuthClient(new NamedSocketAddress("localhost", DEFPORT));
+			try {
+			    String acct = new NativeCred(args[0], args[1]).tryauth(test);
+			    if(acct == null) {
+				System.err.println("failed");
+				return;
+			    }
+			    System.out.println(acct);
+			    System.out.println(Utils.hex.enc(test.getcookie()));
+			} finally {
+			    test.close();
 			}
-			System.out.println(acct);
-			System.out.println(Utils.hex.enc(test.getcookie()));
-		    } finally {
-			test.close();
+		    } catch(Exception e) {
+			throw(new RuntimeException(e));
 		    }
-		} catch(Exception e) {
-		    throw(new RuntimeException(e));
 		}
-	    }
-	}, "Test");
+	    }, "Test");
 	t.start();
 	t.join();
     }

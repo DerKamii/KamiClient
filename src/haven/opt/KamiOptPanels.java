@@ -8,15 +8,6 @@ import static haven.OptWnd.*;
 
 
 public interface KamiOptPanels {
-	static int addSlider(CFG<Integer> cfg, int min, int max, String format, String tip, OptWnd.Panel panel, int x, int y, int STEP) {
-		final Label label = panel.add(new Label(""), x, y);
-		label.settip(tip);
-
-		y += STEP;
-		panel.add(new CFGSlider(UI.scale(200), min, max, cfg, label, format), x, y).settip(tip);
-
-		return y;
-	}
 
 	static void initMinimapPanel(OptWnd wnd, OptWnd.Panel panel) {
 		int STEP = UI.scale(25);
@@ -68,6 +59,90 @@ public interface KamiOptPanels {
 		y = START;
 		//first row
 		panel.add(new CFGBox("Disable certain remote UI calls", CFG.IGNORE_CERTAIN_REMOTE_UI, "RemoteUI's of the type 'ui/rinit:3' are ignored if the first parameter matches the character name. Prevents the display of Realm invites. Might prevent other things too."), x, y);
+	    
+	    	y += STEP;
+	    	panel.add(new CFGBox("Ignore exceptions", CFG.IGNORE_EXCEPTIONS, "The client contains a couple of porpusefully crafted exceptions that will crash the client. Some of them can be ignored with this enabled."), x, y);
+
+		y += STEP;
+		y += STEP;
+		panel.add(new Label("Performance tuning:"), x, y);
+
+		y += STEP;
+		{
+			Label adpy = new Label.Untranslated("");
+			String[] anames = {"Off", "Skip 1", "Skip 2", "Skip 3"};
+			panel.add(new Label("Animation frame skip"), x, y);
+			y += UI.scale(15);
+			panel.addhlp(new Coord(x, y), UI.scale(5),
+				new HSlider(UI.scale(160), 0, 3, CFG.ANIM_FRAME_SKIP.get()) {
+					protected void added() {dpy();}
+					void dpy() {adpy.settext(anames[this.val]);}
+					public void changed() {
+						CFG.ANIM_FRAME_SKIP.set(this.val);
+						dpy();
+					}
+				},
+				adpy);
+			y += STEP;
+		}
+
+		{
+			Label idpy = new Label.Untranslated("");
+			String[] inames = {"Off", "4/sec", "2/sec", "1/sec"};
+			double[] ivals = {0.0, 0.25, 0.5, 1.0};
+			int curidx = 1;
+			double curval = CFG.GOB_INFO_TICK_INTERVAL.get();
+			for(int i = 0; i < ivals.length; i++) {
+				if(Math.abs(ivals[i] - curval) < 0.01) {curidx = i; break;}
+			}
+			panel.add(new Label("Info overlay update rate"), x, y);
+			y += UI.scale(15);
+			panel.addhlp(new Coord(x, y), UI.scale(5),
+				new HSlider(UI.scale(160), 0, inames.length - 1, curidx) {
+					protected void added() {dpy();}
+					void dpy() {idpy.settext(inames[this.val]);}
+					public void changed() {
+						CFG.GOB_INFO_TICK_INTERVAL.set(ivals[this.val]);
+						dpy();
+					}
+				},
+				idpy);
+			y += STEP;
+		}
+
+		y += STEP;
+		panel.add(new CFGBox("Parallel scene tick", CFG.PARALLEL_TICK, "Runs scene-tick processing across multiple threads. Off = single-threaded (less variance, slower average). Useful when stutters feel worse than baseline FPS."), x, y);
+
+		y += STEP;
+		{
+			Label ddpy = new Label.Untranslated("");
+			String[] dnames = {"Unlimited", "16", "32", "64", "128", "256"};
+			int[] dvals = {0, 16, 32, 64, 128, 256};
+			int curidx = 3;
+			int curval = CFG.GL_DISPOSE_PER_FRAME.get();
+			for(int i = 0; i < dvals.length; i++) {
+				if(dvals[i] == curval) {curidx = i; break;}
+			}
+			panel.add(new Label("GL disposes per frame"), x, y);
+			y += UI.scale(15);
+			panel.addhlp(new Coord(x, y), UI.scale(5),
+				new HSlider(UI.scale(160), 0, dnames.length - 1, curidx) {
+					protected void added() {dpy();}
+					void dpy() {ddpy.settext(dnames[this.val]);}
+					public void changed() {
+						CFG.GL_DISPOSE_PER_FRAME.set(dvals[this.val]);
+						dpy();
+					}
+				},
+				ddpy);
+			y += STEP;
+		}
+
+		y += STEP;
+		panel.add(new CFGBox("Freeze domestic animal animations", CFG.FREEZE_DOMESTIC_ANIM, "Stops animation ticking for domesticated animals. Reduces CPU usage when many animals are on screen."), x, y);
+
+		y += STEP;
+		panel.add(new CFGBox("Hide domestic animals", CFG.HIDE_DOMESTIC_ANIMALS, "Completely hides domesticated animals from rendering. Reduces GPU workload when many animals are on screen."), x, y);
 
 		//second row
 		my = Math.max(my, y);

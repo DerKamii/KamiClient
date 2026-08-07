@@ -63,19 +63,23 @@ public class AlchemyData {
 	if(Objects.equals(initializedElixirs, genus)) {return;}
 	initializedElixirs = genus;
 	ELIXIRS.clear();
-	
-	loadElixirs(Config.loadFile(ELIXIRS_JSON));
+
+	// KamiClient: saves go through saveFile(..., genus) which writes to world-<genus>/elixirs.json,
+	// so the read must be genus-scoped too. Upstream used loadFile() here, which only ever looked
+	// at the root path and silently dropped per-world elixirs across restarts.
+	loadElixirs(Config.loadFSFile(ELIXIRS_JSON, genus));
     }
-    
+
     private static void initCombos(String genus) {
 	if(Objects.equals(initializedCombos, genus)) {return;}
 	initializedCombos = genus;
 	INGREDIENT_LIST.clear();
 	COMBOS.clear();
-	
+
 	loadIngredientList(Config.loadJarFile(ALL_INGREDIENTS_JSON));
 	loadIngredientList(Config.loadFSFile(ALL_INGREDIENTS_JSON, genus));
-	loadCombos(Config.loadFile(COMBOS_JSON));
+	// KamiClient: same fix as initElixirs — combos are saved per-genus, so read them per-genus.
+	loadCombos(Config.loadFSFile(COMBOS_JSON, genus));
     }
     
     private static void initEffects(String genus) {

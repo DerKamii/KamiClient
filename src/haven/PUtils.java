@@ -72,7 +72,9 @@ public class PUtils {
 	return(new BufferedImage(cm_rgba, img, false, null));
     }
 
-    public static BufferedImage coercergba(BufferedImage img) {
+    public static BufferedImage coercergba(BufferedImage img, boolean copy) {
+	if(!copy && img.getColorModel().equals(cm_rgba))
+	    return(img);
 	int w = img.getWidth(), h = img.getHeight();
 	WritableRaster buf = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, w, h, 4, null);
 	BufferedImage tgt = new BufferedImage(cm_rgba, buf, false, null);
@@ -80,6 +82,28 @@ public class PUtils {
 	g.drawImage(img, 0, 0, w, h, 0, 0, w, h, null);
 	g.dispose();
 	return(tgt);
+    }
+    public static BufferedImage coercergba(BufferedImage img) {
+	return(coercergba(img, true));
+    }
+
+    public static Area alphabounds(Raster img, int thres) {
+	int w = img.getWidth(), h = img.getHeight();
+	int l = w, u = h, r = 0, b = 0;
+	for(int y = 0; y < h; y++) {
+	    for(int x = 0; x < w; x++) {
+		if(img.getSample(x, y, 3) > thres) {
+		    l = Math.min(l, x); u = Math.min(u, y);
+		    r = Math.max(r, x); b = Math.max(b, y);
+		}
+	    }
+	}
+	if((l > r) || (u > b))
+	    return(null);
+	return(Area.corni(Coord.of(l, u), Coord.of(r, b)));
+    }
+    public static Area alphabounds(BufferedImage img, int thres) {
+	return(alphabounds(img.getRaster(), thres));
     }
 
     public static WritableRaster imggrow(WritableRaster img, int rad) {
@@ -304,34 +328,50 @@ public class PUtils {
 	return(rasterimg(buf));
     }
 
-    public static class BlurFurn extends Text.Imager {
+    public static class BlurFurn extends Text.OffsetForge {
 	public final int grad, brad;
 	public final Color col;
 
-	public BlurFurn(Text.Furnace bk, int grad, int brad, Color col) {
+	public BlurFurn(Text.Forge bk, int grad, int brad, Color col) {
 	    super(bk);
 	    this.grad = grad;
 	    this.brad = brad;
 	    this.col = col;
 	}
 
-	public BufferedImage proc(Text text) {
+	@Deprecated
+	public BlurFurn(Text.Furnace bk, int grad, int brad, Color col) {
+	    this((Text.Forge)bk, grad, brad, col);
+	}
+
+	public BufferedImage proc(Text.Slug text) {
 	    return(rasterimg(blurmask2(text.img.getRaster(), grad, brad, col)));
 	}
+
+	public Coord tloff() {return(Coord.of(grad + brad));}
+	public Coord broff() {return(Coord.of(grad + brad));}
     }
 
-    public static class TexFurn extends Text.Imager {
+    public static class TexFurn extends Text.OffsetForge {
 	public final BufferedImage tex;
 
-	public TexFurn(Text.Furnace bk, BufferedImage tex) {
-	    super(bk);
+	public TexFurn(Text.Forge bk, BufferedImage tex) {
+	    super((Text.Forge)bk);
 	    this.tex = tex;
 	}
 
-	public BufferedImage proc(Text text) {
+	@Deprecated
+	public TexFurn(Text.Furnace bk, BufferedImage tex) {
+	    this((Text.Forge)bk, tex);
+	}
+
+	public BufferedImage proc(Text.Slug text) {
 	    tilemod(text.img.getRaster(), tex.getRaster(), Coord.z);
 	    return(text.img);
 	}
+
+	public Coord tloff() {return(Coord.z);}
+	public Coord broff() {return(Coord.z);}
     }
 
     public static void dumpband(Raster img, int band) {
@@ -449,18 +489,24 @@ public class PUtils {
 		for(; si < ci; si++)
 		    cf[si] *= wa;
 	    }
+	    int[] rowIn = new int[w * nb];
+	    int[] rowOut = new int[tsz.x * nb];
 	    for(int y = 0; y < h; y++) {
+		in.getPixels(0, y, w, 1, rowIn);
 		for(int x = 0, ci = 0; x < tsz.x; x++) {
 		    for(int b = 0; b < nb; b++)
 			ca[b] = 0.0;
 		    for(int sx = cl[x]; sx <= cr[x]; sx++) {
 			double fw = cf[ci++];
+			int base = sx * nb;
 			for(int b = 0; b < nb; b++)
-			    ca[b] += in.getSample(sx, y, b) * fw;
+			    ca[b] += rowIn[base + b] * fw;
 		    }
+		    int obase = x * nb;
 		    for(int b = 0; b < nb; b++)
-			buf.setSample(x, y, b, Utils.clip((int)ca[b], 0, 255));
+			rowOut[obase + b] = Utils.clip((int)ca[b], 0, 255);
 		}
+		buf.setPixels(0, y, tsz.x, 1, rowOut);
 	    }
 	}
 
@@ -484,18 +530,24 @@ public class PUtils {
 		for(; si < ci; si++)
 		    cf[si] *= wa;
 	    }
+	    int[] colIn = new int[h * nb];
+	    int[] colOut = new int[tsz.y * nb];
 	    for(int x = 0; x < tsz.x; x++) {
+		buf.getPixels(x, 0, 1, h, colIn);
 		for(int y = 0, ci = 0; y < tsz.y; y++) {
 		    for(int b = 0; b < nb; b++)
 			ca[b] = 0.0;
 		    for(int sy = cu[y]; sy <= cd[y]; sy++) {
 			double fw = cf[ci++];
+			int base = sy * nb;
 			for(int b = 0; b < nb; b++)
-			    ca[b] += buf.getSample(x, sy, b) * fw;
+			    ca[b] += colIn[base + b] * fw;
 		    }
+		    int obase = y * nb;
 		    for(int b = 0; b < nb; b++)
-			res.setSample(x, y, b, Utils.clip((int)ca[b], 0, 255));
+			colOut[obase + b] = Utils.clip((int)ca[b], 0, 255);
 		}
+		res.setPixels(x, 0, 1, tsz.y, colOut);
 	    }
 	}
 	return(res);
@@ -531,18 +583,24 @@ public class PUtils {
 		for(; si < ci; si++)
 		    cf[si] *= wa;
 	    }
+	    int[] rowIn = new int[w * nb];
+	    int[] rowOut = new int[tsz.x * nb];
 	    for(int y = 0; y < h; y++) {
+		in.getPixels(0, y, w, 1, rowIn);
 		for(int x = 0, ci = 0; x < tsz.x; x++) {
 		    for(int b = 0; b < nb; b++)
 			ca[b] = 0.0;
 		    for(int sx = cl[x]; sx <= cr[x]; sx++) {
 			double fw = cf[ci++];
+			int base = sx * nb;
 			for(int b = 0; b < nb; b++)
-			    ca[b] += in.getSample(sx, y, b) * fw;
+			    ca[b] += rowIn[base + b] * fw;
 		    }
+		    int obase = x * nb;
 		    for(int b = 0; b < nb; b++)
-			buf.setSample(x, y, b, Utils.clip((int)ca[b], 0, 255));
+			rowOut[obase + b] = Utils.clip((int)ca[b], 0, 255);
 		}
+		buf.setPixels(0, y, tsz.x, 1, rowOut);
 	    }
 	}
 
@@ -566,18 +624,24 @@ public class PUtils {
 		for(; si < ci; si++)
 		    cf[si] *= wa;
 	    }
+	    int[] colIn = new int[h * nb];
+	    int[] colOut = new int[tsz.y * nb];
 	    for(int x = 0; x < tsz.x; x++) {
+		buf.getPixels(x, 0, 1, h, colIn);
 		for(int y = 0, ci = 0; y < tsz.y; y++) {
 		    for(int b = 0; b < nb; b++)
 			ca[b] = 0.0;
 		    for(int sy = cu[y]; sy <= cd[y]; sy++) {
 			double fw = cf[ci++];
+			int base = sy * nb;
 			for(int b = 0; b < nb; b++)
-			    ca[b] += buf.getSample(x, sy, b) * fw;
+			    ca[b] += colIn[base + b] * fw;
 		    }
+		    int obase = y * nb;
 		    for(int b = 0; b < nb; b++)
-			res.setSample(x, y, b, Utils.clip((int)ca[b], 0, 255));
+			colOut[obase + b] = Utils.clip((int)ca[b], 0, 255);
 		}
+		res.setPixels(x, 0, 1, tsz.y, colOut);
 	    }
 	}
 	return(res);

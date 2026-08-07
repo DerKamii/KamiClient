@@ -14,9 +14,9 @@ public abstract class VarMats extends GAttrib implements Mod {
     public VarMats(Gob gob) {
 	super(gob);
     }
-    
+
     public abstract Material varmat(int id);
-    
+
     public void operate(Cons cons) {
 	if(CustomizeVarMat.NoMat(this.gob)) {return;}
 	for(Part part : cons.parts) {
@@ -32,7 +32,7 @@ public abstract class VarMats extends GAttrib implements Mod {
 	    }
 	}
     }
-    
+
     public int order() {return(100);}
 }
 

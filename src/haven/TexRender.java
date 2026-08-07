@@ -135,50 +135,24 @@ public abstract class TexRender implements Tex, Disposable {
 	}
     }
 
-    @Material.ResName("tex")
-    public static class $tex implements Material.ResCons2 {
+    @Material.SpecName("tex")
+    public static class $tex implements Material.Spec {
 	public static final boolean defclip = true;
 
-	public Material.Res.Resolver cons(final Resource res, Object... args) {
-	    Indir<Resource> tres;
-	    int tid, a = 0;
-	    if(args[a] instanceof Indir) {
-		tres = Utils.irv(args[a++]);
-		tid = (args.length > a) ? Utils.iv(args[a++]) : -1;
-	    } else if(args[a] instanceof String) {
-		tres = res.pool.load((String)args[a++], Utils.iv(args[a++]));
-		tid = (args.length > a) ? Utils.iv(args[a++]) : -1;
-	    } else {
-		tres = res.indir();
-		tid = Utils.iv(args[a]);
-		a += 1;
-	    }
-	    boolean tclip = defclip;
-	    while(a < args.length) {
-		String f = (String)args[a++];
-		if(f.equals("a"))
-		    tclip = false;
-		else if(f.equals("c"))
-		    tclip = true;
-	    }
-	    boolean clip = tclip; /* ¦] */
-	    return(new Material.Res.Resolver() {
-		    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf) {
-			TexRender tex;
-			TexR rt;
-			if(tid >= 0)
-			    rt = tres.get().layer(TexR.class, tid);
-			else
-			    rt = tres.get().layer(TexR.class);
-			if(rt != null) {
-			    tex = rt.tex();
-			} else {
-			    throw(new RuntimeException(String.format("Specified texture %d for %s not found in %s", tid, res, tres)));
-			}
-			buf.add(tex.draw);
-			buf.add(clip ? tex.clip : noclip);
-		    }
-		});
+	public void cons(Material.Buffer buf, Object... args) {
+	    KeywordArgs desc = new KeywordArgs(args, buf.res.pool, "?@res", "id", "flags");
+	    Indir<Resource> tres = Utils.irv(desc.get("res", buf.res.indir()));
+	    int tid = Utils.iv(desc.get("id", -1));
+	    String fl = Utils.sv(desc.get("flags", ""));
+	    boolean clip = desc.has("clip") ? Utils.bv(desc.get("clip")) : (fl.indexOf('a') >= 0) ? false : (fl.indexOf('c') >= 0) ? true : defclip;
+	    TexR rt;
+	    if(tid >= 0)
+		rt = tres.get().flayer(TexR.class, tid);
+	    else
+		rt = tres.get().flayer(TexR.class);
+	    TexRender tex = rt.tex();
+	    buf.states.add(tex.draw);
+	    buf.states.add(clip ? tex.clip : noclip);
 	}
     }
 }

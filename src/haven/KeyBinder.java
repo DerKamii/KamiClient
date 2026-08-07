@@ -105,10 +105,21 @@ public class KeyBinder {
 	add(AGGRO_ONE_PVE);
 	add(AGGRO_ONE_PVP);
 	add(AGGRO_ALL);
-	
+	add(COMBAT_DISTANCE_TOOL);
+	add(COMBAT_DISTANCE_AUTO);
+
 	add(EQUIP_BOW);
 	add(EQUIP_SPEAR);
 	add(EQUIP_SWORD_N_BOARD);
+	add(EQUIP_TRAVELERS_SACKS);
+	add(EQUIP_WANDERERS_BINDLES);
+	add(EQUIP_B12);
+	add(EQUIP_CUTBLADE);
+	add(EQUIP_GIANT_NEEDLE);
+	add(EQUIP_PICKAXE);
+	add(EQUIP_SLEDGEHAMMER);
+	add(EQUIP_SCYTHE);
+	add(EQUIP_SHOVEL);
 	
 	//Camera controls
 	add(KeyEvent.VK_ADD, NONE, CAM_ZOOM_IN);
@@ -122,6 +133,12 @@ public class KeyBinder {
 	add(KeyEvent.VK_UP, CTRL, CAM_SNAP_NORTH);
 	add(KeyEvent.VK_DOWN, CTRL, CAM_SNAP_SOUTH);
 	add(KeyEvent.VK_HOME, NONE, CAM_RESET);
+	
+	add(SELECT_DECK_1);
+	add(SELECT_DECK_2);
+	add(SELECT_DECK_3);
+	add(SELECT_DECK_4);
+	add(SELECT_DECK_5);
     }
     
     private static synchronized void store() {

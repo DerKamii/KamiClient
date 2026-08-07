@@ -42,7 +42,7 @@ public class Composite extends Drawable implements EquipTarget {
     public final Indir<Resource> base;
     public final Resource baseres;
     public final Composited comp;
-    public int pseq;
+    public int pseq = -1;
     public List<MD> nmod;
     public List<ED> nequ;
     private Collection<ResData> nposes = null, tposes = null;
@@ -53,6 +53,7 @@ public class Composite extends Drawable implements EquipTarget {
     boolean changed = true;
     private String resId = null;
     private List<String> poses = new LinkedList<>();
+    private double animAccumDt = 0;
     
     public Composite(Gob gob, Indir<Resource> base) {
 	super(gob);
@@ -137,7 +138,16 @@ public class Composite extends Drawable implements EquipTarget {
 	    updequ();
 	}
 	processResId();
-	comp.tick(dt);
+	int skip = Composited.cachedAnimSkip;
+	if(skip > 0) {
+	    animAccumDt += dt;
+	    if(((Composited.animTickFrame + 1) % (skip + 1)) == 0) {
+		comp.tick(animAccumDt);
+		animAccumDt = 0;
+	    }
+	} else {
+	    comp.tick(dt);
+	}
     }
     
     public void gtick(Render g) {
@@ -239,8 +249,9 @@ public class Composite extends Drawable implements EquipTarget {
 	    List<ResData> cposes = poses, ctposes = tposes;
 	    float cttime = ttime;
 	    Composite cmp = (Composite)g.getattr(Drawable.class);
-	    if(cmp == null)
-		throw(new RuntimeException(String.format("cmppose on non-composed object: %s %s %s %s", poses, tposes, interp, ttime)));
+	    if (!CFG.IGNORE_EXCEPTIONS.get())
+	    	if(cmp == null)
+		    throw(new RuntimeException(String.format("cmppose on non-composed object: %s %s %s %s", poses, tposes, interp, ttime)));
 	    if(cmp.pseq != pseq) {
 		cmp.pseq = pseq;
 		if(poses != null)
@@ -382,5 +393,9 @@ public class Composite extends Drawable implements EquipTarget {
 	    }
 	}
 	return false;
+    }
+
+    public List<String> getPoses() {
+	return new java.util.ArrayList<>(poses);
     }
 }

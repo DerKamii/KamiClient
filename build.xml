@@ -65,7 +65,7 @@
   </target>
 
   <target name="extlib/jogl" depends="extlib-env" unless="extlib/has-jogl">
-    <extlib name="jogl" path="lib/ext/jogl" url="${ext-lib-base}/jogl/current" />
+    <extlib name="jogl" path="lib/ext/jogl" url="${ext-lib-base}/jogl/2.6.0" />
   </target>
 
   <target name="extlib/lwjgl-base" depends="extlib-env" unless="extlib/has-lwjgl-base">
@@ -142,7 +142,7 @@
   </target>
 
   <target name="resources" depends="client-res-java">
-    <exec executable="java" failifexecutionfails="false">
+    <exec executable="java" failifexecutionfails="true">
       <arg line="-jar resources/LayerUtil.jar -re resources/src/local resources/compiled/res" />
     </exec>
     <exec executable="java" failifexecutionfails="false">
@@ -152,6 +152,7 @@
       <fileset dir="resources/compiled" />
       <fileset dir="resources/pre-compiled" />
       <fileset dir="resources" includes="item_data/**"/>
+      <fileset dir="resources" includes="sfx/legacy/**"/>
       <file file="etc/radar.json"/>
       <file file="etc/gob_contents.json5"/>
       <file file="etc/gob_path.json"/>

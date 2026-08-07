@@ -11,15 +11,15 @@ import java.util.WeakHashMap;
 import static haven.MapWnd.MarkerType.*;
 
 // Simple custom icons that are a combo of PMarker (color) and SMarker (Custom res)
-public class CustomMarker extends Marker {
+public class CustomMarker extends MapFile.Marker {
     private static final Map<String, Image> cache = new WeakHashMap<>();
     
     public Color color;
     public final Resource.Spec res;
     
-    public CustomMarker(final long seq, final Coord tc, final String nm,
+    public CustomMarker(final MapFile file, final long seq, final Coord tc, final String nm,
 			final Color color, final Resource.Spec res) {
-	super(seq, tc, nm);
+	super(file, seq, tc, nm);
 	this.color = color;
 	this.res = res;
     }
@@ -36,9 +36,9 @@ public class CustomMarker extends Marker {
     public boolean equals(Object o) {
 	if(this == o) return true;
 	if(o == null || getClass() != o.getClass()) return false;
-	if(!super.equals(o)) return false;
 	CustomMarker that = (CustomMarker) o;
-	return color.equals(that.color) && res.equals(that.res);
+	return seg == that.seg && tc.equals(that.tc) && nm.equals(that.nm)
+	    && color.equals(that.color) && res.equals(that.res);
     }
     
     @Override
@@ -75,7 +75,7 @@ public class CustomMarker extends Marker {
     
     @Override
     public int hashCode() {
-	return Objects.hash(super.hashCode(), color, res);
+	return Objects.hash(seg, tc, nm, color, res);
     }
     
     public static boolean equals(CustomMarker a, CustomMarker b) {

@@ -9,10 +9,10 @@ import haven.res.ui.polity.*;
 import static haven.BuddyWnd.width;
 
 /* >wdg: Realm */
-@haven.FromResource(name = "ui/realm", version = 30)
+@haven.FromResource(name = "ui/realm", version = 34)
 public class Realm extends Polity {
     public static final Map<String, Resource.Image> authimg = Utils.<String, Resource.Image>map().
-	put("t", Loading.waitfor(Resource.classres(Realm.class).pool.load("gfx/terobjs/mm/thingwall", 1)).layer(Resource.imgc)).
+	put("t", Loading.waitfor(Resource.classres(Realm.class).pool.load("gfx/terobjs/mm/thingwall", 4)).layer(Resource.imgc)).
 	map();
     final BuddyWnd.GroupSelector gsel;
     public final Map<String, Integer> authn = new HashMap<>();
@@ -110,7 +110,7 @@ public class Realm extends Polity {
     public void uimsg(String msg, Object... args) {
 	if(msg == "authn") {
 	    String tp = (String)args[0];
-	    int n = (Integer)args[1];
+	    int n = Utils.iv(args[1]);
 	    synchronized(authn) {
 		authn.put(tp, n);
 	    }

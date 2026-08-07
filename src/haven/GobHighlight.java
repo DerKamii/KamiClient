@@ -18,7 +18,13 @@ public class GobHighlight extends GAttrib implements Gob.SetupMod {
     public void start() {
 	start = System.currentTimeMillis();
     }
-    
+
+    @Override
+    public void ctick(double dt) {
+	if(System.currentTimeMillis() - start <= duration + cycle)
+	    gob.markStateDirty();
+    }
+
     public Pipe.Op gobstate() {
 	long active = System.currentTimeMillis() - start;
 	if(active > duration) {

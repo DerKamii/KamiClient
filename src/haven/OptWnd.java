@@ -43,7 +43,6 @@ import me.ender.ui.CFGSlider;
 import me.ender.ui.DrinkMeter;
 import me.ender.ui.TabStrip;
 import haven.opt.KamiOptPanels;
-import static haven.opt.KamiOptPanels.addSlider;
 
 import java.awt.event.KeyEvent;
 import java.util.Set;
@@ -348,7 +347,7 @@ public class OptWnd extends WindowX {
 				if(!done[0])
 				    return;
 				try {
-				    ui.setgprefs(prefs = prefs.update(null, prefs.syncmode, JOGLPanel.SyncMode.values()[btn]));
+				    ui.setgprefs(prefs = prefs.update(null, prefs.syncmode, GSettings.SyncMode.values()[btn]));
 				} catch(GSettings.SettingException e) {
 				    error(e.getMessage());
 				    return;
@@ -491,6 +490,22 @@ public class OptWnd extends WindowX {
 		prev.settip("Sets the size of the audio buffer. Smaller sizes are better, " +
 			    "but larger sizes can fix issues with broken sound.", true);
 	    }
+	    prev = add(new CFGBox("Use legacy BGM",
+				  CFG.LEGACY_BGM_ENABLED,
+				  "Plays nostalgic legacy MIDI music for client-side triggers (login, caves, fishing, etc.). Independent of server-pushed BGM."),
+		       prev.pos("bl").adds(0, 15));
+	    prev = add(new CFGBox("No cooldown",
+				  CFG.LEGACY_BGM_NO_COOLDOWN,
+				  "Disables the per-trigger cooldown so legacy tracks play every time their condition is met. For hardcore fans."),
+		       prev.pos("bl").adds(0, 2));
+	    prev = add(new Label("Legacy BGM volume"), prev.pos("bl").adds(0, 5));
+	    prev = add(new HSlider(UI.scale(200), 0, 1000, (int)(CFG.LEGACY_BGM_VOLUME.get() * 1000)) {
+		    public void changed() {
+			double v = val / 1000.0;
+			CFG.LEGACY_BGM_VOLUME.set(v);
+			me.ender.LegacyAudioPlayer.setVolume(v);
+		    }
+		}, prev.pos("bl").adds(0, 2));
 	    add(new PButton(UI.scale(200), "Back", 27, back), prev.pos("bl").adds(0, 30));
 	    pack();
 	}
@@ -838,7 +853,7 @@ public class OptWnd extends WindowX {
 	int y = 0;
 	mrow = Math.max(mrow, row);
 	Widget prev;
-	int x = PANEL_POS.mul(colum - 1, 0).x;
+	int x = UI.scale(PANEL_POS.mul(colum - 1, 0)).x;
 	
 	y += UI.scale((mrow + 1) * PANEL_POS.y);
 	if(gopts) {
@@ -947,7 +962,34 @@ public class OptWnd extends WindowX {
     
 	y += STEP;
 	camera.add(new CFGBox("Invert vertical camera rotation", CFG.CAMERA_INVERT_Y), x, y);
-    
+	
+	y += STEP;
+	camera.add(new CFGBox("Extend zoom for ortho", CFG.EXTEND_ZOOM_ON_ORTHO), x, y);
+
+	y += STEP;
+	camera.add(new CFGBox("Extended ortho view distance (Worse FPS)", CFG.EXTENDED_ORTHO_VIEW), x, y);
+
+	y += STEP;
+	camera.add(new CFGBox("Smooth camera", CFG.CAMERA_SMOOTH_JITTER), x, y);
+
+	y += STEP;
+	camera.add(new Label("Smoothing strength"), x, y);
+	y += UI.scale(15);
+	camera.add(new HSlider(UI.scale(200), 0, 50, CFG.CAMERA_SMOOTH_STRENGTH.get()) {
+	    public void changed() {
+		CFG.CAMERA_SMOOTH_STRENGTH.set(val);
+	    }
+	}, x, y);
+
+	y += STEP;
+	camera.add(new Label("Rotation smoothing (ms)"), x, y).settip("Only affects the free camera. The ortho cameras have their own built-in smoothing.");
+	y += UI.scale(15);
+	camera.add(new HSlider(UI.scale(200), 0, 200, CFG.CAMERA_ROTATION_SMOOTHING_MS.get()) {
+	    public void changed() {
+		CFG.CAMERA_ROTATION_SMOOTHING_MS.set(val);
+	    }
+	}, x, y).settip("Only affects the free camera. The ortho cameras have their own built-in smoothing.");
+
 	y += BIG_STEP;
 	my = Math.max(my, y);
 
@@ -1143,7 +1185,16 @@ public class OptWnd extends WindowX {
     
 	y += STEP;
 	panel.add(new CFGBox("Make terrain flat", CFG.FLAT_TERRAIN, null, true), x, y);
-	
+
+	y += STEP;
+	panel.add(new CFGBox("Disable yulelights flicker & sound", CFG.DISABLE_YULELIGHTS_FX, "Stops the bulb-flicker animation and silences the bell ambience on christmas-light decorations. Bulbs stay visible (static). Reduces stutter near decorated trees. Audio change requires reconnect."), x, y);
+
+	y += STEP;
+	panel.add(new CFGBox("Hide in-game character portrait", CFG.HIDE_GAMEUI_PORTRAIT, "Removes the live 3D character portrait from the top-left HUD. Reduces per-frame GPU/CPU cost. Requires reconnect to take effect."), x, y);
+
+	y += STEP;
+	panel.add(new CFGBox("Flat cave walls", CFG.FLAT_CAVE_WALLS, "Replaces cave walls with flat markers and paints the wall's stone type on the ground, useful for prospecting through walls"), x, y);
+
 	y += STEP;
 	panel.add(new CFGBox("Colorize ridge tiles", CFG.DISPLAY_RIDGE_BOX, "Makes it easier to properly approach ridge for climbing"), x, y);
 	
@@ -1196,7 +1247,7 @@ public class OptWnd extends WindowX {
 	panel.add(new CFGBox("Show object radius", CFG.SHOW_GOB_RADIUS, "Shows radius of mine supports, beehives etc.", true), x, y);
 	
 	y += STEP;
-	panel.add(new CFGBox("Show mine support radius as overlay", CFG.SHOW_MINE_SUPPORT_AS_OVERLAY, "Will highlight tiles covered by mine supports, instead of drawing radius around supports."), x, y);
+	y = addSlider(CFG.MINE_SUPPORT_DANGER_THRESHOLD, 0, 100, "Mine support danger threshold %d%% HP:", "Mine support with less than this HP threshold will be considered dangerous.", panel, x, y, STEP);
 
 	y += STEP;
 	panel.add(new Button(UI.scale(150), "Show as buffs", false) {
@@ -1256,12 +1307,21 @@ public class OptWnd extends WindowX {
 	panel.add(new CFGBox("Critters", CFG.DISPLAY_AURA_CRITTERS), x + tx + H_STEP, y);
     
 	my = Math.max(my, y);
-	
+
 	panel.add(new PButton(UI.scale(200), "Back", 27, main), new Coord(0, my + UI.scale(35)));
 	panel.pack();
 	title.c.x = (panel.sz.x - title.sz.x) / 2;
     }
 
+	public static int addSlider(CFG<Integer> cfg, int min, int max, String format, String tip, Panel panel, int x, int y, int STEP) {
+	final Label label = panel.add(new Label(""), x, y);
+	label.settip(tip);
+	
+	y += STEP;
+	panel.add(new CFGSlider(UI.scale(200), min, max, cfg, label, format), x, y).settip(tip);
+	
+	return y;
+    }
     private void initUIPanel(Panel panel) {
 	int STEP = UI.scale(25);
 	int START;
@@ -1392,6 +1452,9 @@ public class OptWnd extends WindowX {
     
 	y += 2*STEP;
 	panel.add(new CFGBox("Show item quality", CFG.Q_SHOW_SINGLE), x, y);
+	
+	y += STEP;
+	panel.add(new CFGBox("Show fep numbers on food.", CFG.SHOW_FEP_NUMBERS_ON_FOOD), x, y);
     
 	y += STEP;
 	panel.add(new CFGBox("Swap item quality and number", CFG.SWAP_NUM_AND_Q), x, y);

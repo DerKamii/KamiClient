@@ -246,7 +246,12 @@ public class Widget {
 	for(Widget ch = child; ch != null; ch = ch.next)
 	    ch.attached();
     }
-    
+
+    public UI ui() {
+	return(ui);
+    }
+
+
     private <T extends Widget> T add0(T child) {
 	if((child.ui == null) && (this.ui != null))
 	    ((Widget)child).attach(this.ui);

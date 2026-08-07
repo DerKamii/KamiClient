@@ -55,7 +55,22 @@ public class Utils {
     public static final java.nio.charset.Charset ascii = java.nio.charset.Charset.forName("US-ASCII");
     public static final java.awt.image.ColorModel rgbm = java.awt.image.ColorModel.getRGBdefault();
     private static Preferences prefs = null;
-    
+
+    public static void initlocale() {
+	try {
+	    /* XXX? Localization is nice and all, but the game as a
+	     * whole currently isn't internationalized, so using the
+	     * local settings for things like number formatting just
+	     * leads to inconsistency.
+	     *
+	     * The locale still seems to influence AWT default font
+	     * selection, though. This should be investigated. */
+	    Locale.setDefault(Locale.US);
+	} catch(Exception e) {
+	    new Warning(e, "locale initialization failed").issue();
+	}
+    }
+
     static Coord imgsz(BufferedImage img) {
 	return(new Coord(img.getWidth(), img.getHeight()));
     }
@@ -1489,7 +1504,21 @@ public class Utils {
     
     public static <E extends Comparable<? super E>> E max(Collection<E> from) {return(max(from, Function.identity()));}
     public static <E extends Comparable<? super E>> E min(Collection<E> from) {return(min(from, Function.identity()));}
-    
+
+    public static long gcd(long a, long b) {
+	a = Math.abs(a); b = Math.abs(b);
+	while(b != 0) {
+	    long t = b;
+	    b = a % b;
+	    a = t;
+	}
+	return(a);
+    }
+
+    public static long lcm(long a, long b) {
+	return(Math.abs(a * b) / gcd(a, b));
+    }
+
     public static float gcd(float x, float y, float E) {
 	float a = Math.max(x, y), b = Math.min(x, y);
 	while(b > E) {
@@ -1611,7 +1640,15 @@ public class Utils {
     public static boolean eq(Object a, Object b) {
 	return((a == b) || ((a != null) && a.equals(b)));
     }
-    
+
+    public static <T> T ifnull(T value, T orelse) {
+	return((value != null) ? value : orelse);
+    }
+
+    public static <T> T ifnull(T value, Supplier<? extends T> orelse) {
+	return((value != null) ? value : orelse.get());
+    }
+
     public static boolean parsebool(String s, boolean def) {
 	try {
 	    return(parsebool(s));
@@ -1970,7 +2007,32 @@ public class Utils {
 	    clean.accept(item);
 	c.clear();
     }
-    
+
+    @SuppressWarnings("unchecked")
+    public static <T> T waitfor(Consumer<Consumer<? super T>> promise) {
+	Object[] buf = {null, null};
+	promise.accept(value -> {
+	    synchronized(buf) {
+		buf[0] = value;
+		buf[1] = true;
+		buf.notifyAll();
+	    }
+	});
+	synchronized(buf) {
+	    boolean irq = false;
+	    while(buf[1] == null) {
+		try {
+		    buf.wait();
+		} catch(InterruptedException e) {
+		    irq = true;
+		}
+	    }
+	    if(irq)
+		Thread.currentThread().interrupt();
+	    return((T)buf[0]);
+	}
+    }
+
     public static <T> T construct(Constructor<T> cons, Object... args) {
 	try {
 	    return(cons.newInstance(args));
@@ -2083,7 +2145,55 @@ public class Utils {
     public static double rtime() {
 	return((System.nanoTime() - rtimeoff) / 1e9);
     }
-    
+
+    public static interface CheckedSupplier<T> {
+	public T get() throws Exception;
+    }
+
+    public static <T> Supplier<T> uncheck(CheckedSupplier<T> ch) {
+	return(() -> {
+	    try {
+		return(ch.get());
+	    } catch(Exception t) {
+		if(t instanceof RuntimeException)
+		    throw((RuntimeException)t);
+		throw(new RuntimeException(t));
+	    }
+	});
+    }
+
+    public static interface CheckedConsumer<T> {
+	public void accept(T val) throws Exception;
+    }
+
+    public static <T> Consumer<T> uncheck(CheckedConsumer<T> ch) {
+	return(val -> {
+	    try {
+		ch.accept(val);
+	    } catch(Exception t) {
+		if(t instanceof RuntimeException)
+		    throw((RuntimeException)t);
+		throw(new RuntimeException(t));
+	    }
+	});
+    }
+
+    public static interface CheckedFunction<P, R> {
+	public R apply(P par) throws Exception;
+    }
+
+    public static <P, R> Function<P, R> uncheck(CheckedFunction<P, R> ch) {
+	return(par -> {
+	    try {
+		return(ch.apply(par));
+	    } catch(Exception t) {
+		if(t instanceof RuntimeException)
+		    throw((RuntimeException)t);
+		throw(new RuntimeException(t));
+	    }
+	});
+    }
+
     public static class MapBuilder<K, V> {
 	private final Map<K, V> bk;
 	

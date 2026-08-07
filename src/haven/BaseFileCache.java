@@ -41,7 +41,14 @@ public class BaseFileCache implements ResCache {
 	Path home = Config.localdir();
 	if(home == null)
 	    throw(new UnsupportedOperationException("Found no reasonable place to store local files"));
-	Path root = pj(home, "data");
+	Path root = pj(home, "cache");
+	if(!Files.exists(root)) {
+	    try {
+		Files.createDirectories(root);
+	    } catch(IOException e) {
+		throw(new UnsupportedOperationException("Could not create cache directory", e));
+	    }
+	}
 	String idstr = id.toString();
 	int idhash = 0;
 	for(int i = 0; i < idstr.length(); i++)
@@ -123,7 +130,7 @@ public class BaseFileCache implements ResCache {
     }
 
     private String mangle(String el) {
-	if(Resource.FileSource.windows) {
+	if(Config.windows) {
 	    StringBuilder buf = new StringBuilder();
 	    for(int i = 0; i < el.length(); i++) {
 		char c = el.charAt(i);
@@ -139,7 +146,7 @@ public class BaseFileCache implements ResCache {
 	    }
 	    el = buf.toString();
 	}
-	if(Resource.FileSource.windows &&
+	if(Config.windows &&
 	   (el.startsWith("windows-special-") ||
 	    Resource.FileSource.wintraps.contains(el)))
 	{

@@ -28,6 +28,7 @@ package haven.rs;
 
 import haven.*;
 import haven.render.*;
+import haven.iosys.tk.*;
 import java.util.*;
 import java.io.*;
 import java.awt.Color;
@@ -93,7 +94,7 @@ public class AvaRender {
 		buf.prep(camoff.from(comp).get());
 		return(Camera.placed(buf.get(Homo3D.loc)));
 	    });
-	DrawBuffer buf = new DrawBuffer(Context.getdefault().env(), sz);
+	DrawBuffer buf = new DrawBuffer(Acephal.instance().env(), sz);
 
 	float field = 0.5f;
 	float aspect = ((float)buf.sz.y) / ((float)buf.sz.x);

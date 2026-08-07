@@ -43,6 +43,7 @@ import me.ender.ui.CFGSlider;
 import me.ender.ui.DrinkMeter;
 import me.ender.ui.TabStrip;
 import haven.opt.KamiOptPanels;
+import java.util.function.*;
 
 import java.awt.event.KeyEvent;
 import java.util.Set;
@@ -75,17 +76,27 @@ public class OptWnd extends WindowX {
     }
 
     public class PButton extends Button {
-	public final Panel tgt;
+	public final Supplier<Panel> tgt;
 	public final int key;
+	private Panel actual = null;
 
-	public PButton(int w, String title, int key, Panel tgt) {
+	public PButton(int w, String title, int key, Supplier<Panel> tgt) {
 	    super(w, title, false);
 	    this.tgt = tgt;
 	    this.key = key;
 	}
 
+	public PButton(int w, String title, int key, Panel tgt) {
+	    super(w, title, false);
+	    this.tgt = null;
+	    this.key = key;
+	    this.actual = tgt;
+	}
+
 	public void click() {
-	    chpanel(tgt);
+	    if(actual == null)
+		actual = OptWnd.this.add(tgt.get(), Coord.z);
+	    chpanel(actual);
 	}
 
 	public boolean keydown(KeyDownEvent ev) {
@@ -137,9 +148,10 @@ public class OptWnd extends WindowX {
 	private final Widget back;
 	private CPanel curcf;
 
-	public VideoPanel(Panel prev) {
+	public VideoPanel(UI ui, Panel prev) {
 	    super();
 	    back = add(new PButton(UI.scale(200), "Back", 27, prev));
+	    resetcf(ui);
 	}
 
 	public class CPanel extends Widget {
@@ -284,7 +296,7 @@ public class OptWnd extends WindowX {
 				    error(e.getMessage());
 				    return;
 				}
-				resetcf();
+				resetcf(ui);
 			    }
 			};
 		    prev = grp.add("Global", prev.pos("bl").adds(5, 2));
@@ -420,11 +432,11 @@ public class OptWnd extends WindowX {
 
 	public void draw(GOut g) {
 	    if((curcf == null) || (ui.gprefs != curcf.prefs))
-		resetcf();
+		resetcf(ui);
 	    super.draw(g);
 	}
 
-	private void resetcf() {
+	private void resetcf(UI ui) {
 	    if(curcf != null)
 		curcf.destroy();
 	    curcf = add(new CPanel(ui.gprefs), 0, 0);
@@ -434,11 +446,12 @@ public class OptWnd extends WindowX {
     }
 
     public class AudioPanel extends Panel {
-	public AudioPanel(Panel back) {
+	public AudioPanel(UI ui, Panel back) {
+	    Audio.Root sys = ui.audio.sys;
 	    prev = add(new Label("Master audio volume"), 0, 0);
-	    prev = add(new HSlider(UI.scale(200), 0, 1000, (int)(Audio.volume * 1000)) {
+	    prev = add(new HSlider(UI.scale(200), 0, 1000, (int)(sys.volume() * 1000)) {
 		    public void changed() {
-			Audio.setvolume(val / 1000.0);
+			sys.volume(val / 1000.0);
 		    }
 		}, prev.pos("bl").adds(0, 2));
 	    prev = add(new Label("Interface sound volume"), prev.pos("bl").adds(0, 15));
@@ -475,15 +488,15 @@ public class OptWnd extends WindowX {
 	    {
 		Label dpy = new Label("");
 		addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
-		       prev = new HSlider(UI.scale(160), 128, Math.round(Audio.fmt.getSampleRate() / 4), Audio.bufsize()) {
+		       prev = new HSlider(UI.scale(160), 128, Math.round(Audio.SAMPLE_RATE / 4), sys.bufsize()) {
 			       protected void added() {
 				   dpy();
 			       }
 			       void dpy() {
-				   dpy.settext(Math.round((this.val * 1000) / Audio.fmt.getSampleRate()) + " ms");
+				   dpy.settext(Math.round((this.val * 1000) / Audio.SAMPLE_RATE) + " ms");
 			       }
 			       public void changed() {
-				   Audio.bufsize(val, true);
+				   sys.bufsize(val);
 				   dpy();
 			       }
 			   }, dpy);
@@ -520,7 +533,7 @@ public class OptWnd extends WindowX {
 		final double smin = 1, smax = Math.floor(UI.maxscale() / gran) * gran;
 		final int steps = (int)Math.round((smax - smin) / gran);
 		addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
-		       prev = new HSlider(UI.scale(160), 0, steps, (int)Math.round(steps * (Utils.getprefd("uiscale", 1.0) - smin) / (smax - smin))) {
+		       prev = new HSlider(UI.scale(160), 0, steps, (int)Math.round(steps * (UI.scale(1.0) - smin) / (smax - smin))) {
 			       protected void added() {
 				   dpy();
 			       }
@@ -805,8 +818,9 @@ public class OptWnd extends WindowX {
     public OptWnd(boolean gopts) {
 	super(Coord.z, "Options", true);
 	main = add(new Panel());
-	Panel video = add(new VideoPanel(main));
-	Panel audio = add(new AudioPanel(main));
+	/* KamiClient: video/audio panels poke at ui in their constructors now,
+	 * and ui is still null this early, so these two have to go through the
+	 * lazy Supplier form. The rest are fine built eagerly. */
 	Panel iface = add(new InterfacePanel(main));
 	Panel keybind = add(new BindingPanel(main));
 	display = add(new Panel());
@@ -824,8 +838,8 @@ public class OptWnd extends WindowX {
 	int row = 0, colum = 0, mrow = 1;
     
 	addPanelButton("Interface settings", 'i', iface, colum, row++);
-	addPanelButton("Video settings", 'v', video, colum, row++);
-	addPanelButton("Audio settings", 'a', audio, colum, row++);
+	addPanelButton("Video settings", 'v', () -> new VideoPanel(ui, main), colum, row++);
+	addPanelButton("Audio settings", 'a', () -> new AudioPanel(ui, main), colum, row++);
 	addPanelButton("Camera settings", 'c', camera, colum, row++);
 	addPanelButton("Widget shortcuts", 'k', keybind, colum, row++);
 	addPanelButton("Global shortcuts", 's', shortcuts, colum, row++);
@@ -854,7 +868,7 @@ public class OptWnd extends WindowX {
 	mrow = Math.max(mrow, row);
 	Widget prev;
 	int x = UI.scale(PANEL_POS.mul(colum - 1, 0)).x;
-	
+
 	y += UI.scale((mrow + 1) * PANEL_POS.y);
 	if(gopts) {
 	    if((SteamStore.steamsvc.get() != null) && (Steam.get() != null)) {
@@ -908,7 +922,12 @@ public class OptWnd extends WindowX {
     private void addPanelButton(String name, char key, Panel panel, int x, int y) {
 	main.add(new PButton(UI.scale(200), name, key, panel), UI.scale(PANEL_POS.mul(x, y)));
     }
-    
+
+    /* KamiClient: lazy variant, for panels that need a live ui to build. */
+    private void addPanelButton(String name, char key, Supplier<Panel> panel, int x, int y) {
+	main.add(new PButton(UI.scale(200), name, key, panel), UI.scale(PANEL_POS.mul(x, y)));
+    }
+
     private void addPanelButton(String name, char key, Action action, int x, int y) {
 	main.add(new AButton(UI.scale(200), name, key, action), UI.scale(PANEL_POS.mul(x, y)));
     }
@@ -1037,9 +1056,6 @@ public class OptWnd extends WindowX {
 	y += STEP;
 	panel.add(new CFGBox("Output missing translation lines", L10N.DBG), x, y);
     
-	y += STEP;
-	panel.add(new CFGBox("Force hardware cursor", CFG.FORCE_HW_CURSOR, null, true), x, y);
-	
 	y += STEP;
 	panel.add(new CFGBox("Store minimap tiles", CFG.STORE_MAP), x, y);
     

@@ -38,7 +38,7 @@ public class StatusWdg extends Widget {
 	players = Text.renderstroked(String.format("Players: %s", httpStatus.users), Color.WHITE, Color.BLACK).tex();
 	if(oldPlayers != null) oldPlayers.dispose();
 	Tex oldFps = fpstext;
-	fpstext = Text.renderstroked(String.format("FPS: %d", GLPanel.Loop.currentFps), Color.WHITE, Color.BLACK).tex();
+	fpstext = Text.renderstroked(String.format("FPS: %d", UILoop.currentFps), Color.WHITE, Color.BLACK).tex();
 	if(oldFps != null) oldFps.dispose();
 
 	updatePing();

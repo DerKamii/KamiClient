@@ -756,8 +756,8 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 			paginae.remove(pag);
 		    }
 		}
-		updlayout();
 		pagseq++;
+		updlayout();
 	    }
 	} else {
 	    super.uimsg(msg, args);

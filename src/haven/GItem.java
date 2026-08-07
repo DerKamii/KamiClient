@@ -681,13 +681,9 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 		    Utils.setprefc(String.format("cont-wndc/%s", id), lc = this.c);
 	    }
 	}
-	
-	public void wdgmsg(Widget sender, String msg, Object... args) {
-	    if((sender == this) && (msg == "close")) {
-		chstate("hide");
-	    } else {
-		super.wdgmsg(sender, msg, args);
-	    }
+
+	public void reqclose() {
+	    chstate("hide");
 	}
 	
 	public void cdestroy(Widget w) {

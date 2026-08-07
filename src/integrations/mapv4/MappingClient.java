@@ -212,7 +212,7 @@ public class MappingClient {
     public void OpenMap(MapRef mapRef) {
 	try {
 	    if(mapRef == null) {return;}
-	    WebBrowser.self.show(new URL(
+	    glob.sess.ui.wnd.toolkit().browse(new java.net.URI(
 		String.format(endpoint + "/#/grid/%d/%d/%d/6", mapRef.mapID, mapRef.gc.x, mapRef.gc.y)));
 	} catch (Exception ex) {}
     }

@@ -11,6 +11,8 @@ import static haven.BuddyWnd.width;
 /* >wdg: Realm */
 @FromResource(name = "ui/realm", version = 34)
 public class Realm extends Polity {
+    public String type() {return("rlm");}
+
     public static final Map<String, Resource.Image> authimg = Utils.<String, Resource.Image>map().
 	//use Resource.remote() instead of Resource.classres().pool because this class is loaded locally, but thingwall icon is not local
 	put("t", Loading.waitfor(Resource.remote().load("gfx/terobjs/mm/thingwall", 4)).layer(Resource.imgc)).

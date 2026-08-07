@@ -32,7 +32,7 @@ import java.util.*;
 import static haven.BuddyWnd.width;
 import static haven.PType.*;
 
-public class Polity extends Widget {
+public abstract class Polity extends Widget {
     public final String cap, name;
     public int auth, acap, adrain, aseq;
     public boolean offline;
@@ -40,6 +40,8 @@ public class Polity extends Widget {
     public int mseq;
     protected Widget mw;
     private int nextmemb = 0;
+
+    public abstract String type();
 
     public static final Text unk = Text.render("???");
     public static final Text self = Text.render("You", new Color(192, 192, 255));

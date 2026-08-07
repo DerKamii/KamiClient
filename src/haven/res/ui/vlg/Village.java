@@ -12,6 +12,8 @@ import static haven.BuddyWnd.width;
 /* >wdg: Village */
 @FromResource(name = "ui/vlg", version = 37)
 public class Village extends Polity {
+    public String type() {return("pol");}
+
     final BuddyWnd.GroupSelector gsel;
     private final int my;
 

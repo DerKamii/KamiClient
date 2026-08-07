@@ -349,7 +349,7 @@ public class LoginScreen extends Widget {
 		    lines[i].dispose();
 		    lines[i] = null;
 		}
-		if(buf[i] != null)
+		if((lines[i] == null) && (buf[i] != null))
 		    lines[i] = Text.render(buf[i]);
 		if(lines[i] != null) {
 		    g.image(lines[i].tex(), Coord.of((int)((sz.x - lines[i].sz().x) * ax), y));

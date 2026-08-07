@@ -33,6 +33,7 @@ import java.awt.datatransfer.Transferable;
 import java.util.*;
 import java.text.Collator;
 import java.util.List;
+import static haven.PType.*;
 
 public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
     private List<Buddy> buddies = new ArrayList<Buddy>();
@@ -112,10 +113,10 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
     public class Buddy {
 	public int id;
 	public String name;
-	Text rname = null;
 	public int online;
 	public int group;
 	public boolean seen;
+	public Map<Object, Object> notes = Collections.emptyMap();
 
 	public Buddy(int id, String name, int online, int group, boolean seen) {
 	    this.id = id;
@@ -153,11 +154,20 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	    wdgmsg("grp", id, grp);
 	}
 
+	public void note(Object key, Object val) {
+	    Map<Object, Object> nn = new HashMap<>(notes);
+	    nn.put(key, val);
+	    MessageBuf buf = new MessageBuf();
+	    buf.addmap(nn);
+	    wdgmsg("notes", id, buf.fin());
+	}
+
 	private void chstatus(int status) {
 	    online = status;
 	    ui.message(String.format("%s is %s now.", name, online > 0 ? "ONLINE" : "OFFLINE"), gc[group], CFG.DISPLAY_KINSFX.get());
 	}
 
+	private Text rname = null;
 	public Text rname() {
 	    if((rname == null) || !rname.text.equals(name))
 		rname = Text.render(name);
@@ -268,7 +278,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
     @RName("grp")
     public static class $grp implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    return(new GroupSelector(Utils.iv(args[0])) {
+	    return(new GroupSelector(INT.of(args[0])) {
 		    public void changed(int group) {
 			wdgmsg("ch", group);
 		    }
@@ -365,11 +375,11 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 
 	public void uimsg(String msg, Object... args) {
 	    if(msg == "i-ava") {
-		Composited.Desc desc = Composited.Desc.decode(ui.sess, (Object[])args[0]);
-		Resource.Resolver map = new Resource.Resolver.ResourceMap(ui.sess, (Object[])args[1]);
+		Composited.Desc desc = Composited.Desc.decode(ui.sess, OBJS.of(args[0]));
+		Resource.Resolver map = new Resource.Resolver.ResourceMap(ui.sess, OBJS.of(args[1]));
 		ava.pop(desc, map);
 	    } else if(msg == "i-atime") {
-		atime = (long)Utils.ntime() - ((Number)args[0]).longValue();
+		atime = (long)Utils.ntime() - NUM.of(args[0]).longValue();
 		setatime();
 	    } else {
 		super.uimsg(msg, args);
@@ -603,12 +613,19 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
     
     public void uimsg(String msg, Object... args) {
 	if(msg == "add") {
-	    int id = Utils.iv(args[0]);
-	    String name = ((String)args[1]).intern();
-	    int online = Utils.iv(args[2]);
-	    int group = Utils.iv(args[3]);
-	    boolean seen = Utils.bv(args[4]);
+	    int id = INT.of(args[0]);
+	    String name = STR.of(args[1]).intern();
+	    int online = INT.of(args[2]);
+	    int group = INT.of(args[3]);
+	    boolean seen = BOOL.of(args[4]);
 	    Buddy b = new Buddy(id, name, online, group, seen);
+	    if(args.length > 5) {
+		try {
+		    b.notes = new MessageBuf(BYTES.of(args[5])).map();
+		} catch(Exception e) {
+		    new Warning(e, "could not decode buddy notes").issue();
+		}
+	    }
 	    synchronized(buddies) {
 		buddies.add(b);
 		idmap.put(b.id, b);
@@ -619,7 +636,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 		    b.chgrp(defaultGroup);
 	    serial++;
 	} else if(msg == "rm") {
-	    int id = Utils.iv(args[0]);
+	    int id = INT.of(args[0]);
 	    Buddy b;
 	    synchronized(buddies) {
 		b = idmap.get(id);
@@ -630,19 +647,21 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	    }
 	    serial++;
 	} else if(msg == "chst") {
-	    int id = Utils.iv(args[0]);
-	    int online = Utils.iv(args[1]);
+	    int id = INT.of(args[0]);
+	    int online = INT.of(args[1]);
 	    Buddy b = find(id);
 	    b.chstatus(online);
 	    if((info != null) && (info.buddy == b))
 		info.update();
 	} else if(msg == "upd") {
-	    int id = Utils.iv(args[0]);
-	    String name = (String)args[1];
-	    int online = Utils.iv(args[2]);
-	    int grp = Utils.iv(args[3]);
-	    boolean seen = Utils.bv(args[4]);
+	    int id = INT.of(args[0]);
+	    String name = STR.of(args[1]);
+	    int online = INT.of(args[2]);
+	    int grp = INT.of(args[3]);
+	    boolean seen = BOOL.of(args[4]);
 	    Buddy b = find(id);
+	    if(args.length > 5)
+		b.notes = new MessageBuf(BYTES.of(args[5])).map();
 	    synchronized(b) {
 		b.name = name;
 		b.online = online;
@@ -653,7 +672,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 		info.update();
 	    serial++;
 	} else if(msg == "sel") {
-	    int id = Utils.iv(args[0]);
+	    int id = INT.of(args[0]);
 	    Window p = getparent(Window.class);
 	    if(p != null) {
 		p.show();
@@ -661,15 +680,15 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	    }
 	    bl.change(find(id));
 	} else if(msg == "pwd") {
-	    charpass.settext((String)args[0]);
+	    charpass.settext(STR.of(args[0]));
 	    charpass.buf.point(charpass.buf.length());
 	    charpass.commit();
 	} else if(msg == "pname") {
-	    pname.settext((String)args[0]);
+	    pname.settext(STR.of(args[0]));
 	    pname.buf.point(pname.buf.length());
 	    pname.commit();
 	} else if(msg == "i-set") {
-	    Buddy b = (args[0] == null) ? null : find(Utils.iv(args[0]));
+	    Buddy b = (args[0] == null) ? null : find(INT.of(args[0]));
 	    bl.sel = b;
 	    if((info == null) || (info.buddy != b)) {
 		if(info != null) {

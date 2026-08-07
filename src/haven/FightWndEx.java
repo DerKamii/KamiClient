@@ -585,6 +585,11 @@ public class FightWndEx extends Widget {
 	    edit = sel;
 	    nmed = ReadLine.make(new ReadLine.Owner() {
 		@Override
+		public UI ui() {
+		    return(Savelist.this.ui);
+		}
+
+		@Override
 		public void changed(ReadLine buf) {
 		    redit = null;
 		}

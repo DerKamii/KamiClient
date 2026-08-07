@@ -7,6 +7,13 @@ import static haven.BuddyWnd.width;
 
 @FromResource(name = "ui/polity", version = 11)
 public class Generic extends Polity {
+    /* KamiClient: type() is the gfx/hud/buttons/<name> tab icon, and the only
+     * ones that exist are "pol" (tooltip "Village") and "rlm" ("Realm"). The
+     * base ui/polity widget has no icon of its own, so it shares the "pol"
+     * tab — same bucket the old cap-equals-"Village" check would have missed.
+     * If the server ever ships a real ui/polity with a type(), that wins. */
+    public String type() {return("pol");}
+
     private final int my;
 
     public Generic(String name) {

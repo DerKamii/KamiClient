@@ -44,7 +44,7 @@ import haven.ffi.objc.Runtime;
 import static haven.iosys.tk.Key.Std.*;
 
 @Toolkit.Available(name = "cgl")
-public class CocoaContext implements Toolkit.Factory {
+public class CocoaContext implements Providers.Factory<Toolkit> {
     private final Runtime rt;
     private final Foundation fnd;
     private final AppKit ak;

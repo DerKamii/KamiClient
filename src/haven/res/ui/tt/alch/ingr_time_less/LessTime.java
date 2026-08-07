@@ -9,7 +9,8 @@ import haven.res.ui.alchbook.*;
 import java.awt.image.BufferedImage;
 
 /* >tt: LessTime */
-@haven.FromResource(name = "ui/tt/alch/ingr-time-less", version = 3, override = true)
+/* KamiClient: override=true is load-bearing — see BuffAttr. get-code drops it. */
+@haven.FromResource(name = "ui/tt/alch/ingr-time-less", version = 6, override = true)
 public class LessTime extends Effect implements EffectInfo {
     public LessTime(Owner owner) {super(owner);}
 

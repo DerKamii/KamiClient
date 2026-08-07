@@ -9,7 +9,10 @@ import haven.res.ui.alchbook.*;
 import java.awt.image.BufferedImage;
 
 /* >tt: BuffAttr */
-@haven.FromResource(name = "ui/tt/alch/ingr-buff", version = 3, override = true)
+/* KamiClient: override=true is load-bearing. me.ender.alchemy.Effect does
+ * instanceof/new on this class, so the objects the game builds must be THIS
+ * class, not a res-loaded twin. get-code drops the flag — put it back. */
+@haven.FromResource(name = "ui/tt/alch/ingr-buff", version = 6, override = true)
 public class BuffAttr extends Effect implements EffectInfo {
     public final Resource res;
 

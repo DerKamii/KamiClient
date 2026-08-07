@@ -9,7 +9,8 @@ import haven.res.ui.alchbook.*;
 import java.awt.image.BufferedImage;
 
 /* >tt: HealWound */
-@haven.FromResource(name = "ui/tt/alch/ingr-heal", version = 3, override = true)
+/* KamiClient: override=true is load-bearing — see BuffAttr. get-code drops it. */
+@haven.FromResource(name = "ui/tt/alch/ingr-heal", version = 6, override = true)
 public class HealWound extends Effect implements EffectInfo {
     public final Resource res, repl;
 
@@ -35,9 +36,9 @@ public class HealWound extends Effect implements EffectInfo {
 	BufferedImage ret = catimgsh(0, t1, icon, t2);
 	if(repl != null) {
 	    ret = catimgsh(0, ret,
-		Text.render(" into ").img,
-		PUtils.convolvedown(repl.flayer(Resource.imgc).img, new Coord(h, h), CharWnd.iconfilter),
-		Text.render(repl.flayer(Resource.tooltip).t).img);
+			   Text.render(" into ").img,
+			   PUtils.convolvedown(repl.flayer(Resource.imgc).img, new Coord(h, h), CharWnd.iconfilter),
+			   Text.render(repl.flayer(Resource.tooltip).t).img);
 	}
 	return(ret);
     }

@@ -867,7 +867,10 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
 
 	    public Category(String id, String name) {
 		this.id = id;
-		cap = add(new Img(CharWnd.catf.render(name).tex()));
+		/* KamiClient: the caption is a UI label ("Village", "Realm"),
+		 * so it goes through L10N. This used to live in the ui/vlg and
+		 * ui/realm res code, which upstream moved up here. */
+		cap = add(new Img(CharWnd.catf.i10n_label(name).tex()));
 	    }
 
 	    public class Selector extends SDropBox<Polity, Widget> {
@@ -898,7 +901,10 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
 		if(pols.isEmpty()) {
 		    sel = null;
 		} else if(pols.size() == 1) {
-		    sel = new Label(pols.get(0).name, Polity.nmf);
+		    /* KamiClient: a polity's name is player data, never
+		     * translate it. The Selector path below already renders
+		     * through Polity.nmf directly, so it is fine as-is. */
+		    sel = new Label.Untranslated(pols.get(0).name, Polity.nmf);
 		} else {
 		    sel = new Selector();
 		}

@@ -5,7 +5,7 @@ import haven.*;
 import java.util.*;
 import static haven.BuddyWnd.width;
 
-@FromResource(name = "ui/polity", version = 11)
+@haven.FromResource(name = "ui/polity", version = 12)
 public class GroupWidget extends Widget {
     public final int id;
 

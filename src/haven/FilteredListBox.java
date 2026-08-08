@@ -1,6 +1,7 @@
 package haven;
 
 import java.awt.event.KeyEvent;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,7 +20,7 @@ public abstract class FilteredListBox<T> extends Listbox<T> {
     }
     
     public void setItems(List<T> items) {
-	this.items = items;
+	this.items = (items != null) ? items : Collections.emptyList();
 	filter();
     }
     

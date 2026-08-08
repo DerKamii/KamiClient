@@ -24,8 +24,8 @@ public class Fac implements ItemInfo.InfoFactory {
 	a++;
 	int uses = Utils.iv(args[a++]);
 	int used = Utils.iv(args[a++]);
-	int left = uses - used;
-	ISlots ret = new ISlots(owner, left, pmin, pmax, attrs.toArray(new Resource[0]));
+	// KamiClient: build the slots_alt ISlots even for the old res, so w16 and w16.1 both land on one class.
+	haven.res.ui.tt.slots_alt.ISlots ret = new haven.res.ui.tt.slots_alt.ISlots(owner, uses, used, pmin, pmax, attrs.toArray(new Resource[0]));
 	while(a < args.length) {
 	    Indir<Resource> res = rr.getresv(args[a++]);
 	    Message sdt = Message.nil;

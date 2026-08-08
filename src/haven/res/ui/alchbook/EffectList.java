@@ -65,6 +65,9 @@ public class EffectList extends TableBox<KnownEffects> implements FilterDisplay.
 	    KnownEffects ik = i.next();
 	    try {
 		ik.fin(OwnerContext.uictx.curry(ui));
+		// KamiClient: fin() doesn't touch the input res, so poke it here and stay in `loading`
+		// until it resolves — otherwise it throws Loading out of draw later.
+		ik.input.type.name();
 	    } catch(Loading l) {
 		continue;
 	    }

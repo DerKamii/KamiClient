@@ -33,8 +33,13 @@ public class WoundTreatment {
 	if(treatment != null && treatment.length > 0) {
 	    buf.append("\n\n$b{$font[serif,16]{Treatment}}\n\n");
 	    for (String t : treatment) {
-		String name = Resource.remote().load(t).get().layer(Resource.tooltip).t;
-		buf.append("$img[").append(t).append(",c,h=16]").append(name).append("\n");
+		try {
+		    String name = Resource.remote().loadwait(t).layer(Resource.tooltip).t;
+		    buf.append("$img[").append(t).append(",c,h=16]").append(name).append("\n");
+		} catch (Resource.BadResourceException ignore) {
+		    // KamiClient: missing/renamed treatment res shouldn't nuke the whole tooltip, just show the raw name.
+		    buf.append(t).append("\n");
+		}
 	    }
 	}
 	return buf.toString();

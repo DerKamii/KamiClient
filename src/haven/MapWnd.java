@@ -530,11 +530,12 @@ public class MapWnd extends WindowX implements Console.Directory {
 	view.markobjs();
 	if(visible) {
 	    if(mrefocus != null) {
-		for(Predicate<Marker> filter : Arrays.asList(pmarkers, smarkers)) {
-		    if(filter.test(mrefocus)) {
-			if(filter != mflt) {
-			    mflt = filter;
-			    markerseq = -1;
+		// KamiClient: go through the category dropbox, not mflt directly, or the list switches
+		// but the dropdown keeps showing the old category. Covers custom markers too.
+		for(MarkerCategory cat : MarkerCategory.values()) {
+		    if(cat.filter.test(mrefocus)) {
+			if(mflt != cat.filter) {
+			    tool.categories.change(cat);
 			}
 			break;
 		    }

@@ -5,7 +5,6 @@ import haven.*;
 import java.awt.*;
 import java.awt.image.WritableRaster;
 import java.util.Map;
-import java.util.Objects;
 import java.util.WeakHashMap;
 
 import static haven.MapWnd.MarkerType.*;
@@ -32,15 +31,10 @@ public class CustomMarker extends MapFile.Marker {
 	return 1;
     }
     
-    @Override
-    public boolean equals(Object o) {
-	if(this == o) return true;
-	if(o == null || getClass() != o.getClass()) return false;
-	CustomMarker that = (CustomMarker) o;
-	return seg == that.seg && tc.equals(that.tc) && nm.equals(that.nm)
-	    && color.equals(that.color) && res.equals(that.res);
-    }
-    
+    // KamiClient: no equals/hashCode on purpose. MapFile.markers is an ArrayList and remove()/contains()
+    // go through equals, so value equality lets one marker stand in for another and makes them flicker.
+    // Everything that needs to compare markers by value does it explicitly (see equals(a, b) below).
+
     @Override
     public void draw(GOut g, Coord c, Text tip, final float scale, final MapFile file) {
 	final Image img = image(res, color);
@@ -71,11 +65,6 @@ public class CustomMarker extends MapFile.Marker {
 	    } catch (Loading ignored) {}
 	}
 	return image;
-    }
-    
-    @Override
-    public int hashCode() {
-	return Objects.hash(seg, tc, nm, color, res);
     }
     
     public static boolean equals(CustomMarker a, CustomMarker b) {

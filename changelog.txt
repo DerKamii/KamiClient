@@ -1,3 +1,10 @@
+$size[14]{$u{update on 08.08.2026 v2:}
+* Merged remaining stuff from ender
+* Fixed map markers flickering and the marker category dropdown not following the list
+* Shift-click transfer now works out of any list inventory, not just the main one
+* Fixed gilding bonuses missing from attribute search
+* Updated wound treatments
+`
 $size[14]{$u{update on 08.08.2026:}
 * Merged loftar's code
 `

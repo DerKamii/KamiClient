@@ -4,6 +4,7 @@ $size[14]{$u{update on 08.08.2026 v2:}
 * Shift-click transfer now works out of any list inventory, not just the main one
 * Fixed gilding bonuses missing from attribute search
 * Updated wound treatments
+* Autodrink no longer spams the drink action when you have nothing to drink (thanks Vladichka)
 `
 $size[14]{$u{update on 08.08.2026:}
 * Merged loftar's code

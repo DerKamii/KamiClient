@@ -146,6 +146,7 @@ public enum GobTag {
         "gfx/kritter/caveangler/",
         "gfx/kritter/cavelouse/",
         "gfx/kritter/chasmconch/",
+        "gfx/kritter/crane/crane",
         "gfx/kritter/eagleowl/",
         "gfx/kritter/fox/",
         "gfx/kritter/goat/wildgoat",

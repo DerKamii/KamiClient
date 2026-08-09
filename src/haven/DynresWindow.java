@@ -577,6 +577,7 @@ public class DynresWindow extends WindowX {
 	    private RenderTree.Slot slot;
 	    private float field, elev, angl;
 	    private float tfield = Float.NaN, telev, tangl;
+	    private Text error;
 
 	    public View(Coord sz, Spec spec, Indir<Resource> vres) {
 		super(sz);
@@ -638,7 +639,7 @@ public class DynresWindow extends WindowX {
 
 	    public void tick(double dt) {
 		super.tick(dt);
-		if(slot == null) {
+		if((slot == null) && (error == null)) {
 		    try {
 			if(spr == null)
 			    spr = spec.create(this, vres);
@@ -646,11 +647,24 @@ public class DynresWindow extends WindowX {
 			Coord3f mid = bnd.p.add(bnd.n).div(2);
 			RenderTree.Node n  = Pipe.Op.compose(spec.st, Location.xlate(mid.neg())).apply(spr, false);
 			slot = basic.add(Pipe.Op.nil.apply(n, false));
-		    } catch(Loading l) {}
+		    } catch(Loading l) {
+		    } catch(RuntimeException e) {
+			/* KamiClient: a broken preview shouldn't take the client
+			 * down with it. Usually the res server serving a different
+			 * version than the game server asked for, which we can't do
+			 * anything about from here. */
+			error = Text.render("Could not load preview");
+		    }
 		}
 		if(spr != null)
 		    spr.tick(dt);
 		updatecam(dt);
+	    }
+
+	    public void draw(GOut g) {
+		super.draw(g);
+		if(error != null)
+		    g.image(error.tex(), sz.sub(error.sz()).div(2));
 	    }
 
 	    public void gtick(Render out) {

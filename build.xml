@@ -212,6 +212,7 @@
   </target>
 
   <target name="res-jar" depends="build-env" unless="has-res-jar">
+    <mkdir dir="lib/ext" />
     <get src="${ext-lib-base}/builtin-res.jar" dest="lib/ext/builtin-res.jar"
 	 usetimestamp="true" />
     <get src="${ext-lib-base}/hafen-res.jar" dest="lib/ext/hafen-res.jar"

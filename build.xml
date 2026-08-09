@@ -88,8 +88,12 @@
     <condition property="explicit-annotations">
       <javaversion atleast="21" />
     </condition>
+    <!-- KamiClient: pin the source encoding. Some res sources use non-ASCII
+	 identifiers (see ui/tt/attrmod/inormattr.java), and without this javac
+	 decodes them with the platform charset, which blows up on Windows. -->
     <javac srcdir="src" destdir="build/classes" debug="on"
 	   source="1.8" target="1.8" release="8" includeantruntime="no"
+	   encoding="UTF-8"
 	   bootclasspath="${boot-classpath}">
       <classpath>
 	<pathelement path="lib/ext/jogl/jogl-all.jar" />
@@ -122,7 +126,7 @@
 
   <target name="client-res-java" depends="hafen-client">
     <mkdir dir="resources/classes" />
-    <javac srcdir="resources/java" destdir="resources/classes" debug="on" source="1.8" target="1.8" includeantruntime="no">
+    <javac srcdir="resources/java" destdir="resources/classes" debug="on" source="1.8" target="1.8" includeantruntime="no" encoding="UTF-8">
       <classpath>
         <pathelement path="build/classes" />
       </classpath>

@@ -144,6 +144,14 @@ public interface KamiOptPanels {
 		y += STEP;
 		panel.add(new CFGBox("Hide domestic animals", CFG.HIDE_DOMESTIC_ANIMALS, "Completely hides domesticated animals from rendering. Reduces GPU workload when many animals are on screen."), x, y);
 
+		y += STEP;
+		y += STEP;
+		panel.add(new Label("Troubleshooting:"), x, y);
+
+		y += STEP;
+		panel.add(new Button(UI.scale(200), "Purge cached resources", false).action(() -> purgecache(wnd.ui))
+			  .settip("Deletes the downloaded resource cache. The client redownloads what it needs, so expect a bit of hitching afterwards. Try this if resources fail to load or look wrong.", true), x, y);
+
 		//second row
 		my = Math.max(my, y);
 		x += UI.scale(265);
@@ -155,6 +163,29 @@ public interface KamiOptPanels {
 		panel.add(wnd.new PButton(UI.scale(200), "Back", 27, wnd.main), new Coord(0, my + UI.scale(35)));
 		panel.pack();
 		title.c.x = (panel.sz.x - title.sz.x) / 2;
+	}
+
+	/* KamiClient: nuke the on-disk resource cache. Doesn't touch what's
+	 * already loaded in memory, so a relog is still the safest way to get a
+	 * clean slate, but this at least gets rid of a bad cached file. */
+	static void purgecache(UI ui) {
+		if(!(ResCache.global instanceof HashDirCache)) {
+			ui.error("There is no resource cache to purge.");
+			return;
+		}
+		HashDirCache cache = (HashDirCache)ResCache.global;
+		Defer.later(() -> {
+			try {
+				int n = cache.purge();
+				synchronized(ui) {
+					ui.msg(String.format("Purged %,d cached resources. Relog to make sure everything gets reloaded.", n));
+				}
+			} catch(Exception e) {
+				synchronized(ui) {
+					ui.error("Could not purge the resource cache: " + e.getMessage());
+				}
+			}
+		}, null);
 	}
 
 	static void initAutomationPanel(OptWnd wnd, OptWnd.Panel panel) {

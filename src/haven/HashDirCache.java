@@ -339,6 +339,25 @@ public class HashDirCache implements ResCache {
 	}
     }
 
+    /* KamiClient: for the "purge cached resources" button. Only drops entries
+     * belonging to this cache, the data directory is shared with the other
+     * ones. */
+    public int purge() throws IOException {
+	List<String> names = new ArrayList<>();
+	for(Iterator<String> i = list(); i.hasNext();)
+	    names.add(i.next());
+	int n = 0;
+	for(String name : names) {
+	    try {
+		remove(name);
+		n++;
+	    } catch(IOException e) {
+		/* Just means someone else got to it first, or it's locked. */
+	    }
+	}
+	return(n);
+    }
+
     public String toString() {
 	return("HashDirCache(" + id + ")");
     }

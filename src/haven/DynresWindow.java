@@ -427,9 +427,20 @@ public class DynresWindow extends WindowX {
 					     "misc", new Coord2d(0.2, 0.2));
 	}
 
+	/* KamiClient: the menu is tall enough to cover the images on the row
+	 * below, and hovering it would pop their menus open too. Only one at a
+	 * time. */
+	private boolean othermenu() {
+	    for(Image img : imgs) {
+		if((img != this) && (img.menu != null))
+		    return(true);
+	    }
+	    return(false);
+	}
+
 	public boolean mousehover(MouseHoverEvent ev, boolean hovering) {
 	    boolean menuhover = (menu != null) && (menu.parent != null) && menu.rootarea().contains(ui.mc);
-	    if((hovering || menuhover) && (menu == null)) {
+	    if((hovering || menuhover) && (menu == null) && !othermenu()) {
 		menu = SListMenu.of(UI.scale(250, 200), null,
 				    Arrays.asList(SListMenu.Action.of("Paint Sketch", () -> craft(false)),
 						  SListMenu.Action.of("Paint Masterpiece", () -> craft(true)),

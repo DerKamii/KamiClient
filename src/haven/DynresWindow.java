@@ -416,12 +416,24 @@ public class DynresWindow extends WindowX {
 	    ui.wnd.clipboard(Clipboard.Std.CLIPBOARD).put(new Clipboard.Contents(item));
 	}
 
+	/* KamiClient: let you look at an image you already own, not just ones
+	 * you're about to upload. */
+	private void preview() {
+	    if(!previews.done()) {
+		ui.error("Please wait, still downloading preview information...");
+		return;
+	    }
+	    getparent(GameUI.class).addchild(new PreviewWindow(res.get().flayer(TexR.class).tex().fill(), previews.get(), true),
+					     "misc", new Coord2d(0.2, 0.2));
+	}
+
 	public boolean mousehover(MouseHoverEvent ev, boolean hovering) {
 	    boolean menuhover = (menu != null) && (menu.parent != null) && menu.rootarea().contains(ui.mc);
 	    if((hovering || menuhover) && (menu == null)) {
 		menu = SListMenu.of(UI.scale(250, 200), null,
 				    Arrays.asList(SListMenu.Action.of("Paint Sketch", () -> craft(false)),
 						  SListMenu.Action.of("Paint Masterpiece", () -> craft(true)),
+						  SListMenu.Action.of("Preview", this::preview),
 						  SListMenu.Action.of("Copy to clipboard", this::copy),
 						  SListMenu.Action.of("Remove", this::delete)))
 		    .addat(this, pos("cbl"));
@@ -731,6 +743,14 @@ public class DynresWindow extends WindowX {
 	private Progress prog;
 
 	public PreviewWindow(BufferedImage img, List<Preview.Spec> previews) {
+	    this(img, previews, false);
+	}
+
+	/* KamiClient: disableUpload is for previewing an image that's already
+	 * uploaded -- no point offering to upload it again. The previews sit
+	 * next to the image rather than under it, the window gets far too tall
+	 * otherwise. */
+	public PreviewWindow(BufferedImage img, List<Preview.Spec> previews, boolean disableUpload) {
 	    super(Coord.z, "Preview", true);
 	    this.img = img;
 	    this.tex = new TexL.Fixed(img);
@@ -738,10 +758,10 @@ public class DynresWindow extends WindowX {
 	    tex.img.magfilter(LINEAR).minfilter(LINEAR).mipfilter(LINEAR);
 	    Widget prev = display = add(new Display(tex.sz().max(128, 128)), 0, 0);
 	    if(previews != null)
-		prev = add(new Preview(display.sz.x, previews, tex), prev.pos("bl").adds(0, 10));
-	    uploadbtn = add(new Button(UI.scale(100), "Upload", false, this::upload), prev.pos("bl").adds(0, 10));
+		prev = add(new Preview(display.sz.x, previews, tex), prev.pos("ur").adds(10, 0));
+	    uploadbtn = disableUpload ? null :
+		add(new Button(UI.scale(100), "Upload", false, this::upload), prev.pos("bl").adds(0, 10));
 	    pack();
-	    display.move(Coord.of((csz().x - display.sz.x) / 2, display.c.y));
 	}
 
 	public class Display extends Widget {

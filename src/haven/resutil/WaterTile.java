@@ -738,6 +738,13 @@ public class WaterTile extends Tiler {
 	public double getz(Coord tc) {
 	    return(super.getz(tc) - b.depth[b.ds.o(tc.sub(m.ul))]);
 	}
+
+	/* Must be overridden alongside the Coord form: inheriting the
+	 * parent's would return the surface height and silently drop the
+	 * depth subtraction. */
+	public double getz(int tx, int ty) {
+	    return(super.getz(tx, ty) - b.depth[b.ds.o(tx - m.ul.x, ty - m.ul.y)]);
+	}
     }
 
     public MCache.ZSurface getsurf(MapMesh m, MCache.SurfaceID id) {

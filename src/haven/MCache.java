@@ -100,16 +100,26 @@ public class MCache implements MapSource {
 	    return(getz(tc.mul(tilesz)));
 	}
 	
+	/* Coordinate-free form of the above. Every gob asks for its height
+	 * once a frame and the interpolation below needs four samples, so the
+	 * Coord objects that used to be built for those samples were, by a
+	 * wide margin, the largest source of garbage in the client.
+	 * Implementations should override this; the default keeps any that do
+	 * not working. */
+	public default double getz(int tx, int ty) {
+	    return(getz(Coord.of(tx, ty)));
+	}
+
 	public default double getz(Coord2d pc) {
 	    double tw = tilesz.x, th = tilesz.y;
-	    Coord ul = Coord.of(Utils.floordiv(pc.x, tw), Utils.floordiv(pc.y, th));
-	    double sx = (pc.x - (ul.x * tw)) / tw, ix = 1.0 - sx;
-	    double sy = (pc.y - (ul.y * th)) / th, iy = 1.0 - sy;
+	    int ulx = Utils.floordiv(pc.x, tw), uly = Utils.floordiv(pc.y, th);
+	    double sx = (pc.x - (ulx * tw)) / tw, ix = 1.0 - sx;
+	    double sy = (pc.y - (uly * th)) / th, iy = 1.0 - sy;
 	    try {
-		return((iy * ((ix * getz(ul          )) + (sx * getz(ul.add(1, 0))))) +
-		    (sy * ((ix * getz(ul.add(0, 1))) + (sx * getz(ul.add(1, 1))))));
+		return((iy * ((ix * getz(ulx, uly    )) + (sx * getz(ulx + 1, uly    )))) +
+		    (sy * ((ix * getz(ulx, uly + 1)) + (sx * getz(ulx + 1, uly + 1)))));
 	    } catch(ArrayIndexOutOfBoundsException e) {
-		Debug.dump(pc, ul, sx, sy);
+		Debug.dump(pc, Coord.of(ulx, uly), sx, sy);
 		throw(e);
 	    }
 	}
@@ -120,10 +130,11 @@ public class MCache implements MapSource {
 	
 	public default Coord3f getnormt(Coord2d pc) {
 	    double tw = tilesz.x, th = tilesz.y;
-	    Coord ul = Coord.of(Utils.floordiv(pc.x, tw), Utils.floordiv(pc.y, th));
-	    double sx = (pc.x - (ul.x * tw)) / tw, ix = 1.0 - sx;
-	    double sy = (pc.y - (ul.y * th)) / th, iy = 1.0 - sy;
-	    double z0 = getz(ul), z1 = getz(ul.add(1, 0)), z2 = getz(ul.add(1, 1)), z3 = getz(ul.add(0, 1));
+	    int ulx = Utils.floordiv(pc.x, tw), uly = Utils.floordiv(pc.y, th);
+	    double sx = (pc.x - (ulx * tw)) / tw, ix = 1.0 - sx;
+	    double sy = (pc.y - (uly * th)) / th, iy = 1.0 - sy;
+	    double z0 = getz(ulx, uly), z1 = getz(ulx + 1, uly), z2 = getz(ulx + 1, uly + 1),
+		z3 = getz(ulx, uly + 1);
 	    double nx = ((z1 * iy) + (z2 * sy)) - ((z0 * iy) + (z3 * sy));
 	    double ny = ((z3 * iy) + (z2 * sy)) - ((z0 * iy) + (z1 * sy));
 	    return(Coord3f.of((float)tw, 0, (float)nx).cmul(0, (float)th, (float)ny).norm());
@@ -506,6 +517,10 @@ public class MCache implements MapSource {
 	
 	public double getz(Coord tc) {
 	    return(z[tc.x + (tc.y * cmaps.x)]);
+	}
+
+	public double getz(int tx, int ty) {
+	    return(z[tx + (ty * cmaps.x)]);
 	}
 	
 	public void getol(OverlayInfo id, Area a, boolean[] buf) {
@@ -902,6 +917,7 @@ public class MCache implements MapSource {
 	}
 	
 	public double getfz(Coord c) {return(getz(c));}
+	public double getfz(int tx, int ty) {return(getz(tx, ty));}
 	public Tileset tileset(int i) {return(MCache.this.tileset(i));}
 	public Tiler tiler(int i) {return(MCache.this.tiler(i));}
     }
@@ -1010,9 +1026,21 @@ public class MCache implements MapSource {
 	return CFG.FLAT_TERRAIN.get() ? 0 : getfz2(tc);
     }
     
+    public double getfz(int tx, int ty) {
+	return CFG.FLAT_TERRAIN.get() ? 0 : getfz2(tx, ty);
+    }
+
     public double getfz2(Coord tc) {
 	Grid g = getgridt(tc);
 	return(g.getz(tc.sub(g.ul)));
+    }
+
+    /* Same as above without building a Coord for the tile or for the
+     * grid-relative offset. getgrid still needs one to key its map, but that
+     * is one allocation per lookup rather than one per sample. */
+    public double getfz2(int tx, int ty) {
+	Grid g = getgrid(Coord.of(Utils.floordiv(tx, cmaps.x), Utils.floordiv(ty, cmaps.y)));
+	return(g.getz(tx - g.ul.x, ty - g.ul.y));
     }
     
     public double getcz(double px, double py) {
@@ -1043,6 +1071,10 @@ public class MCache implements MapSource {
     public final ZSurface zsurf = new ZSurface() {
 	public double getz(Coord tc) {
 	    return(getfz(tc));
+	}
+
+	public double getz(int tx, int ty) {
+	    return(getfz(tx, ty));
 	}
     };
     

@@ -48,6 +48,10 @@ public abstract class PView extends Widget {
     private final TickList ticklist = new TickList();
     private Sampler fragsamp;
     private PostProcessor tonemap = null;
+    /* Widget destruction runs on the loader thread (see UI.CommandQueue),
+     * concurrently with the UI draw thread, so a PView can be disposed in
+     * the middle of its own draw. Flag it before the tree is torn down. */
+    private volatile boolean rdisposed = false;
 
     public PView(Coord sz) {
 	super(sz);
@@ -136,6 +140,10 @@ public abstract class PView extends Widget {
 
     public void basic(Object id, Pipe.Op state) {
 	try(Locked lk = tree.lock()) {
+	    /* The slot may have been removed by a concurrent dispose
+	     * between the rdisposed check in draw() and getting the lock. */
+	    if(rdisposed)
+		return;
 	    Pipe.Op prev;
 	    Collection<Pipe.Op> comb = null;
 	    if(state == null)
@@ -318,6 +326,8 @@ public abstract class PView extends Widget {
     }
 
     public void draw(GOut g) {
+	if(rdisposed)
+	    return;
 	if((back == null) || !g.out.env().compatible(back)) {
 	    if(env != null) {
 		envdispose();
@@ -342,6 +352,7 @@ public abstract class PView extends Widget {
     }
 
     public void dispose() {
+	rdisposed = true;
 	if(audio != null) {
 	    audio.clear();
 	}

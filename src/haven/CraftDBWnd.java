@@ -50,7 +50,8 @@ public class CraftDBWnd extends WindowX implements ICraftParent {
     private final Pattern category = Pattern.compile("paginae/craft/.+");
     private int pagseq = 0;
     private boolean needfilter = false;
-    private final ReadLine filter = ReadLine.make(null, "");
+    /* KamiClient: ReadLine.setline() now always pokes owner.changed(), so a null owner NPEs. */
+    private final ReadLine filter = ReadLine.make(() -> CraftDBWnd.this.ui, "");
     private Mode mode = All;
     
     static {

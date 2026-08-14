@@ -1,3 +1,11 @@
+$size[14]{$u{update on 14.08.2026:}
+* Added a button to purge the resource cache
+* Brought back the dynres preview button and the side-by-side layout
+* Only one dynres image menu opens at a time now
+* Fixed a crash from a broken dynres preview
+* Fixed an NPE when opening the alchemy/craft DB filters
+* Fixed a crash when the render tree was disposed mid-frame
+`
 $size[14]{$u{update on 08.08.2026 v2:}
 * Merged remaining stuff from ender
 * Fixed map markers flickering and the marker category dropdown not following the list

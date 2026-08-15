@@ -1060,7 +1060,14 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
 	    }
 	    if(tab == null) {
 		TButton tb = add(new TButton(name));
-		tab = ntab(new Category(name, tb.upimg.getres().flayer(Resource.tooltip).t), tb);
+		/* KamiClient: the tooltip is only the tab caption, so a res
+		 * without one is no reason to kill the widget - flayer throws
+		 * where layer just returns null. Seen on gfx/hud/buttons/polu,
+		 * which took the whole party widget down with it. */
+		Resource bres = tb.upimg.getres();
+		Resource.Tooltip tt = bres.layer(Resource.tooltip);
+		String cap = (tt != null) ? tt.t : bres.name.substring(bres.name.lastIndexOf('/') + 1);
+		tab = ntab(new Category(name, cap), tb);
 		types.add(tab);
 	    }
 	    return(tab);

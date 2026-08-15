@@ -90,6 +90,7 @@ public enum GobTag {
         "/cavemoth",
         "/chicken",
         "/crab",
+        "/cranefly",
         "/dragonfly",
         "/earthworm",
         "/firefly",

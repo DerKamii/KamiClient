@@ -2,6 +2,8 @@ $size[14]{$u{update on 15.08.2026:}
 * Fixed a crash when the server sent a message to a widget it had just closed
 * Fixed a crash opening the party window when a button had no tooltip
 * Crane flies now get a critter circle
+* Fixed marker uploads silently failing after a character switch
+* Automap upload failures now show up in chat instead of going nowhere
 `
 $size[14]{$u{update on 14.08.2026:}
 * Added a button to purge the resource cache

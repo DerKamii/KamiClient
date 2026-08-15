@@ -46,10 +46,57 @@ public class MappingClient {
     public static void destroy() {
 	synchronized (MappingClient.class) {
 	    if(INSTANCE != null) {
+		/* KamiClient: mark it dead BEFORE shutting the pools down.
+		 * The marker and grid pipelines reschedule themselves, so a
+		 * task already in flight would otherwise keep going and call
+		 * execute() on a shut-down scheduler - which throws
+		 * RejectedExecutionException and silently drops the upload.
+		 * Tasks check dead() and bail out quietly instead. */
+		INSTANCE.dead = true;
 		INSTANCE.gridsUploader.shutdown();
 		INSTANCE.scheduler.shutdown();
 		INSTANCE = null;
 	    }
+	}
+    }
+
+    private volatile boolean dead = false;
+    public boolean dead() {return dead;}
+
+    /* KamiClient: automap failures used to go to stdout only, so an upload
+     * that never happened looked exactly like one that did. Put it in front of
+     * the user - they are the only one who can act on it. */
+    private void warn(String msg) {
+	System.out.println(msg);
+	try {
+	    GameUI gui = glob.sess.ui.gui;
+	    if(gui != null)
+		gui.error(msg);
+	} catch(Exception ignored) {}
+    }
+
+    /* KamiClient: every submission to the pools goes through these, so a
+     * shutdown race is a no-op rather than an exception. They report whether
+     * the task was actually accepted. */
+    private boolean submit(Runnable task) {
+	if(dead)
+	    return false;
+	try {
+	    scheduler.execute(task);
+	    return true;
+	} catch(RejectedExecutionException ex) {
+	    return false;
+	}
+    }
+
+    private boolean submit(Runnable task, long delay, TimeUnit unit) {
+	if(dead)
+	    return false;
+	try {
+	    scheduler.schedule(task, delay, unit);
+	    return true;
+	} catch(RejectedExecutionException ex) {
+	    return false;
 	}
     }
     
@@ -158,7 +205,7 @@ public class MappingClient {
     
     public void SetTimerToNearestRes(String inspectResult)
     {
-	scheduler.execute(new UploadInspectResult(playerGridId, playerCoord, inspectResult, genus));
+	submit(new UploadInspectResult(playerGridId, playerCoord, inspectResult, genus));
     }
     
     private Coord lastGC = null;
@@ -169,7 +216,7 @@ public class MappingClient {
      */
     public void EnterGrid(Coord gc) {
 	lastGC = gc;
-	scheduler.execute(new GenerateGridUpdateTask(gc, genus));
+	submit(new GenerateGridUpdateTask(gc, genus));
     }
     
     /***
@@ -197,7 +244,7 @@ public class MappingClient {
 		long id = glob.map.getgrid(gc).id;
 		MapRef mapRef = cache.get(id);
 		if(mapRef == null) {
-		    scheduler.execute(new Locate(id));
+		    submit(new Locate(id));
 		}
 		return mapRef;
 	    }
@@ -253,7 +300,7 @@ public class MappingClient {
      * @param uploadCheck
      */
     public void ProcessMap(MapFile mapfile, Predicate<Marker> uploadCheck) {
-	scheduler.schedule(new ExtractMapper(mapfile, uploadCheck, genus), 1, TimeUnit.SECONDS);
+	submit(new ExtractMapper(mapfile, uploadCheck, genus), 1, TimeUnit.SECONDS);
 	
     }
     
@@ -280,7 +327,7 @@ public class MappingClient {
 		    }).collect(Collectors.toList());
 		    System.out.println("collected " + markers.size() + " markers");
 		    
-		    scheduler.schedule(new ProcessMapper(mapfile, markers, genus), 15, TimeUnit.SECONDS);
+		    submit(new ProcessMapper(mapfile, markers, genus), 15, TimeUnit.SECONDS);
 		} catch (Exception ex)
 		{
 		    System.out.println("Error while collection markers: " +ex);
@@ -289,7 +336,7 @@ public class MappingClient {
 	    } else {
 		if(retries-- > 0) {
 		    System.out.println("rescheduling upload");
-		    scheduler.schedule(this, 5, TimeUnit.SECONDS);
+		    submit(this, 5, TimeUnit.SECONDS);
 		}
 	    }
 	}
@@ -366,16 +413,19 @@ public class MappingClient {
 		    } catch (Loading ex) {
 			System.out.println(ex);
 			System.out.println("Rescheduling marker upload processing...");
-			scheduler.schedule(this, 5, TimeUnit.SECONDS);
+			submit(this, 5, TimeUnit.SECONDS);
 			return;
 		    }
 		}
 		
+		if(dead())
+		    return;
 		System.out.println("scheduling upload for " + loadedMarkers.size() + " markers");
-		try {
-		    scheduler.execute(new MarkerUpdate(new JSONArray(loadedMarkers.toArray())));
-		} catch (Exception ex) {
-		    System.out.println(ex);
+		if(!submit(new MarkerUpdate(new JSONArray(loadedMarkers.toArray())))) {
+		    /* KamiClient: this used to be a println of the rejection and
+		     * nothing else, so a dropped marker upload looked identical
+		     * to a successful one. */
+		    warn(String.format("Marker upload failed: could not queue %d markers.", loadedMarkers.size()));
 		}
 	    }
 	    catch (Exception ex)
@@ -408,12 +458,17 @@ public class MappingClient {
 		}
 		int code = connection.getResponseCode();
 		connection.disconnect();
+		/* KamiClient: the response code was read and thrown away, so a
+		 * server-side rejection was indistinguishable from a successful
+		 * upload. */
+		if(code < 200 || code >= 300)
+		    warn(String.format("Marker upload rejected by the server (HTTP %d).", code));
 	    } catch (Exception ex) {
-		System.out.println(ex);
+		warn("Marker upload failed: " + ex.getMessage());
 	    }
 	}
     }
-    
+
     private class PositionUpdates implements Runnable {
 	private class Tracking {
 	    public String name;
@@ -534,11 +589,11 @@ public class MappingClient {
 			    gridRefs.put(String.valueOf(subg.id), new WeakReference<MCache.Grid>(subg));
 			}
 		    }
-		    scheduler.execute(new UploadGridUpdateTask(new GridUpdate(gridMap, gridRefs), genus));
+		    submit(new UploadGridUpdateTask(new GridUpdate(gridMap, gridRefs), genus));
 		} catch (LoadingMap lm) {
 		    retries--;
 		    if(retries >= 0) {
-			scheduler.schedule(this, 1L, TimeUnit.SECONDS);
+			submit(this, 1L, TimeUnit.SECONDS);
 		    }
 		} catch (Exception e) {
 		    System.out.println(e);

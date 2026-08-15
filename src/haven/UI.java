@@ -745,7 +745,16 @@ public class UI {
 		    dispatch(wdg, new Widget.MessageEvent(msg, args));
 		}
 	    } else {
-		throw(new UIException("Uimsg to non-existent widget " + id, msg, args));
+		/* The server can send a message to a widget it has already
+		 * destroyed, since the destruction and the message cross on
+		 * the wire. Upstream throws here, but nothing catches it:
+		 * CommandQueue.run rewraps it as a CommandException, which
+		 * escapes Loader.loop -- that only catches
+		 * InterruptedException -- and kills the client over a
+		 * harmless ordering race. There is nothing to deliver the
+		 * message to in any case. Ported from NorscaClient. */
+		Warning.warn("race exception ignored: uimsg to non-existent widget %d: %s %s",
+			     id, msg, Arrays.deepToString(args));
 	    }
 	}
 	

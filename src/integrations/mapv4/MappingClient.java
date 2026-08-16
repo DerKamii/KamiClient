@@ -52,7 +52,6 @@ public class MappingClient {
 		 * execute() on a shut-down scheduler - which throws
 		 * RejectedExecutionException and silently drops the upload.
 		 * Tasks check dead() and bail out quietly instead. */
-		log("destroy(): shutting down mapping client");
 		INSTANCE.dead = true;
 		INSTANCE.gridsUploader.shutdown();
 		INSTANCE.scheduler.shutdown();
@@ -171,7 +170,6 @@ public class MappingClient {
     
     private MappingClient(Glob glob) {
 	this.glob = glob;
-	log("mapping client initialized");
 	scheduler.scheduleAtFixedRate(pu, 5L, 5L, TimeUnit.SECONDS);
     }
     
@@ -220,7 +218,6 @@ public class MappingClient {
 	    connection.setConnectTimeout(15000);
 	    connection.setReadTimeout(15000);
 	    int code = connection.getResponseCode();
-	    log("GET %s -> HTTP %d", url, code);
 	    if(code != 200)
 		log("checkVersion body: %s", readbody(connection, true));
 	    return code == 200;
@@ -378,7 +375,6 @@ public class MappingClient {
 			Indir<MapFile.Grid> indirGrid = mapfile.segments.get(m.seg).grid(mgc);
 			return new MarkerData(m, indirGrid);
 		    }).collect(Collectors.toList());
-		    log("collected %d markers from the map file", markers.size());
 
 		    if(!submit(new ProcessMapper(mapfile, markers, genus), 15, TimeUnit.SECONDS))
 			warn("Automap: could not queue marker processing.");
@@ -427,7 +423,6 @@ public class MappingClient {
 	    {
 		ArrayList<JSONObject> loadedMarkers = new ArrayList<>();
 		if (markers.isEmpty()) {
-		    log("processing skipped: no markers to process");
 		    return;
 		}
 
@@ -440,7 +435,6 @@ public class MappingClient {
 		 * into the upload. "collected 148 / scheduling 125" gave no clue
 		 * where the other 23 went. */
 		int skipNoGrid = 0, skipColor = 0, skipOther = 0;
-		log("processing %d markers (%d upload colours configured)", markers.size(), uploadColors.size());
 		for (int i = 0; i < markers.size(); i++) {
 		    try {
 			MarkerData md = markers.get(i);
@@ -467,7 +461,17 @@ public class MappingClient {
 			if(md.m instanceof SMarker) {
 			    o.put("type", "shared");
 			    try {
-				o.put("id", ((SMarker) md.m).oid);
+				/* KamiClient: .longValue(), NOT the UID itself.
+				 *
+				 * oid became a UID when ender markers were made to
+				 * extend the vanilla ones. UID extends Number, so
+				 * org.json writes it unquoted via toString() - and
+				 * UID.toString() is HEX. That put a bare
+				 * `id: 3f2a9c4b1d8e` in the body, which is not valid
+				 * JSON, so the server rejected the whole request with
+				 * a 400 during model binding - before any of its own
+				 * code ran, which is why nothing was logged. */
+				o.put("id", ((SMarker) md.m).oid.longValue());
 			    } catch (Exception ex)
 			    {
 				o.put("id", 0);
@@ -748,15 +752,11 @@ public class MappingClient {
 			synchronized (cache) {
 			    cache.put(Long.valueOf(gridUpdate.grids[1][1]), new MapRef(jo.getLong("map"), new Coord(jo.getJSONObject("coords").getInt("x"), jo.getJSONObject("coords").getInt("y"))));
 			}
-			if(reqs != null && reqs.length() > 0)
-			    log("server requested %d grid image uploads", reqs.length());
 			for (int i = 0; reqs != null && i < reqs.length(); i++) {
 			    gridsUploader.execute(new GridUploadTask(reqs.getString(i), gridUpdate.gridRefs.get(reqs.getString(i)), genus));
 			}
 			try {
 			    JSONArray reqs2 = jo.optJSONArray("gridOverlayRequests");
-			    if(reqs2 != null && reqs2.length() > 0)
-				log("server requested %d grid overlay uploads", reqs2.length());
 			    for (int i = 0; reqs2 != null && i < reqs2.length(); i++) {
 				gridsUploader.execute(new GridOverlayUploadTask(reqs2.getString(i), gridUpdate.gridRefs.get(reqs2.getString(i)), genus));
 			    }
@@ -969,7 +969,6 @@ public class MappingClient {
 		log("gridCacheUpdate -> HTTP %d: %s", code, readbody(connection, true));
 		throw new Exception("Couldn't upload Cache. Errorcode: " + code);
 	    }
-	    log("gridCacheUpdate OK: %d grids for segment %d", grids.size(), segmentId);
 	    connection.disconnect();
 	}
 	catch (Exception ex)

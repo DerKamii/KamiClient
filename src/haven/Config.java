@@ -574,5 +574,9 @@ public class Config {
 	automapper.SetEndpoint(CFG.AUTOMAP_ENDPOINT.get());
 	automapper.EnableGridUploads(CFG.AUTOMAP_UPLOAD.get());
 	automapper.EnableTracking(CFG.AUTOMAP_TRACK.get());
+	/* KamiClient: dump the automap config on startup so a console log from a
+	 * player says what they were actually running. */
+	MappingClient.log("configured: player=%s endpoint=%s gridUploads=%s tracking=%s",
+			  playername, CFG.AUTOMAP_ENDPOINT.get(), CFG.AUTOMAP_UPLOAD.get(), CFG.AUTOMAP_TRACK.get());
     }
 }

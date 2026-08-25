@@ -1,0 +1,13 @@
+# KamiClient: upload this as ".htaccess" into /usr/www/users/heartha
+# (the directory your FTP client shows as public_html).
+#
+# PHP cannot see above that directory on this host, so the webhook secret has to
+# live inside it. This makes sure Apache refuses to serve it even though it sits
+# in a document root. Belt and braces: the file is also dot-prefixed.
+
+# Covers kami-webhook, .kami-webhook, kami-webhook.php, and anything an editor
+# leaves behind (kami-webhook.php~, .kami-webhook.swp) - those extensions are NOT
+# run by PHP and would otherwise be served as plain text.
+<FilesMatch "^\.?kami-webhook.*$">
+    Require all denied
+</FilesMatch>

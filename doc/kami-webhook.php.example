@@ -1,0 +1,18 @@
+<?php
+/*
+ * KamiClient webhook secret.
+ *
+ * Upload as "kami-webhook.php" into /usr/www/users/heartha (the directory your
+ * FTP client shows as public_html), next to client/. Then delete the old
+ * plain-text kami-webhook file from the FTP root - PHP cannot see it there.
+ *
+ * Fetched over HTTP this executes and returns nothing, so the URL leaks nothing
+ * even though the file sits in a document root. Pair it with the .htaccess deny
+ * rule (doc/report-htaccess) so a leak needs BOTH PHP to stop executing AND the
+ * deny rule to be ignored.
+ *
+ * There is no output and no closing tag on purpose: nothing can be emitted, and
+ * no stray whitespace can end up in a response.
+ */
+
+return 'https://discord.com/api/webhooks/PUT/YOURS_HERE';

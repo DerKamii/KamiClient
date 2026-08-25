@@ -92,6 +92,25 @@ public class ErrorHandler extends ThreadGroup {
 	    }
 	}
 	
+	/* KamiClient: flatten a Report into the JSON our endpoint expects. Built by hand
+	 * rather than handing Gson a Throwable, so we control exactly what leaves the
+	 * machine - props is loftar's narrow whitelist (java/os version, cpus, buildinfo)
+	 * and the trace is plain text. Nothing else is collected. */
+	private String reportjson(Report r) {
+	    StringWriter tw = new StringWriter();
+	    r.t.printStackTrace(new PrintWriter(tw));
+	    Map<String, Object> root = new HashMap<>();
+	    root.put("time", r.time);
+	    root.put("trace", tw.toString());
+	    root.put("exception", r.t.getClass().getName());
+	    root.put("message", r.t.getMessage());
+	    Map<String, String> props = new HashMap<>();
+	    for(Map.Entry<String, Object> e : r.props.entrySet())
+		props.put(e.getKey(), String.valueOf(e.getValue()));
+	    root.put("props", props);
+	    return(new com.google.gson.Gson().toJson(root));
+	}
+
 	private void doreport(Report r) throws IOException {
 	    if(!status.goterror(r.t))
 		return;
@@ -102,11 +121,15 @@ public class ErrorHandler extends ThreadGroup {
 	    URLConnection c = errordest.openConnection();
 	    status.connecting();
 	    c.setDoOutput(true);
-	    c.addRequestProperty("Content-Type", "application/x-haven-report");
+	    /* KamiClient: we post JSON instead of loftar's dolda.coe blob, because our
+	     * report endpoint is a small PHP script and nothing outside the client can
+	     * decode dolda.coe. This means we can no longer report to a vanilla server,
+	     * which we never do anyway. Response handling below is unchanged. */
+	    c.addRequestProperty("Content-Type", "application/json");
 	    c.connect();
 	    try(OutputStream out = c.getOutputStream()) {
 		status.sending();
-		new BinEncoder().backrefs(true).write(out, r);
+		out.write(reportjson(r).getBytes("utf-8"));
 	    }
 	    String ctype = c.getContentType();
 	    StringWriter buf = new StringWriter();

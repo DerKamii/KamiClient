@@ -1419,7 +1419,7 @@ public class MiniMap extends Widget {
 	Object objid = null;
 	Supplier<BufferedImage> objtip = null;
 	try {
-	    if((grid != null) && (grid.dc != null)) {
+	    if(CFG.MMAP_SHOW_BIOME_TIP.get() && (grid != null) && (grid.dc != null)) {
 		DataGrid dgrid = grid.gref.get();
 		if(dgrid != null) {
 		    Coord gc = c.sub(grid.dc).div(dmag);

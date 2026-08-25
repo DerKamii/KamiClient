@@ -92,6 +92,7 @@ public enum GobTag {
         "/crab",
         "/cranefly",
         "/dragonfly",
+        "/dumbledore",
         "/earthworm",
         "/firefly",
         "/forestlizard",

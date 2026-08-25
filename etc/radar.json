@@ -16,6 +16,8 @@
   {"match": "gfx/kritter/horse/stallion", "icon": "radar/horse/stallion", "visible": true},
   {"match": "gfx/kritter/horse/mare", "icon": "radar/horse/mare", "visible": true},
 
+  {"match": "gfx/terobjs/herbs/brownkelp", "icon": "gfx/invobjs/brownkelp", "visible": true},
+
   {"match": "gfx/terobjs/pow[hearth]", "icon": "radar/hearthfire", "visible": true},
   {"match": "gfx/terobjs/items/gems/gemstone", "icon": "radar/gem", "visible": true},
   {"match": "gfx/terobjs/map/cavepuddle", "icon": "gfx/invobjs/clay-cave", "visible": true},

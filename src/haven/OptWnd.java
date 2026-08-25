@@ -1432,6 +1432,9 @@ public class OptWnd extends WindowX {
 	panel.add(new CFGBox("Show biomes on minimap", CFG.MMAP_SHOW_BIOMES), x, y);
     
 	y += STEP;
+	panel.add(new CFGBox("Show biome tooltip on minimap", CFG.MMAP_SHOW_BIOME_TIP), x, y);
+    
+	y += STEP;
 	panel.add(new CFGBox("Show queued path on minimap", CFG.MMAP_SHOW_PATH), x, y);
 	
 	y += STEP;

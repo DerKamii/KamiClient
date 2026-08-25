@@ -14,6 +14,11 @@
  * env var), and point haven.errorurl at it in the client build.
  */
 
+// The client compares the response Content-Type with an exact string match, so
+// PHP must not append its usual ";charset=UTF-8" or the client ignores our reply
+// and shows the user nothing. Must be set before any header() call.
+ini_set('default_charset', '');
+
 // ---------------------------------------------------------------- config
 
 // Read from the environment (or a webhook.txt sitting next to this script, kept

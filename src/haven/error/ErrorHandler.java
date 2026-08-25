@@ -131,7 +131,16 @@ public class ErrorHandler extends ThreadGroup {
 		status.sending();
 		out.write(reportjson(r).getBytes("utf-8"));
 	    }
+	    /* KamiClient: strip any ";charset=..." before comparing. Servers append it
+	     * routinely (PHP does by default), and upstream's exact match silently
+	     * dropped our reply on the floor, so the user saw no confirmation. */
 	    String ctype = c.getContentType();
+	    if(ctype != null) {
+		int sc = ctype.indexOf(';');
+		if(sc >= 0)
+		    ctype = ctype.substring(0, sc);
+		ctype = ctype.trim();
+	    }
 	    StringWriter buf = new StringWriter();
 	    Reader i = new InputStreamReader(c.getInputStream(), "utf-8");
 	    char[] dbuf = new char[1024];

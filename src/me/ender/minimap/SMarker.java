@@ -3,7 +3,6 @@ package me.ender.minimap;
 import haven.*;
 import me.ender.QuestCondition;
 
-import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -21,18 +20,16 @@ public class SMarker extends MapFile.SMarker {
 	questIterator = Utils.circularIterator(questConditions);
     }
 
-    @Override
-    public boolean equals(Object o) {
-	if(this == o) return true;
-	if(o == null || getClass() != o.getClass()) return false;
-	SMarker sMarker = (SMarker) o;
-	return seg == sMarker.seg && tc.equals(sMarker.tc) && nm.equals(sMarker.nm)
-	    && oid.equals(sMarker.oid) && res.equals(sMarker.res);
-    }
+    // KamiClient: no equals/hashCode on purpose, same reason as CustomMarker and PMarker. See the
+    // comment there. The smarkers map is keyed by oid so it does not care, but MiniMap.Markers keys a
+    // HashMap/HashSet on the marker itself and nm/tc are mutable.
 
-    @Override
-    public int hashCode() {
-	return Objects.hash(seg, tc, nm, oid, res);
+    public static boolean equals(SMarker a, SMarker b) {
+	return a.seg == b.seg
+	    && a.tc.equals(b.tc)
+	    && a.nm.equals(b.nm)
+	    && a.oid.equals(b.oid)
+	    && a.res.equals(b.res);
     }
 
     @Override

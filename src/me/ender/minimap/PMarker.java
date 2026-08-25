@@ -3,7 +3,6 @@ package me.ender.minimap;
 import haven.*;
 
 import java.awt.*;
-import java.util.Objects;
 
 public class PMarker extends MapFile.PMarker {
     public static final Resource.Image flagbg, flagfg;
@@ -20,17 +19,17 @@ public class PMarker extends MapFile.PMarker {
 	super(file, seg, tc, nm, color, onmap);
     }
 
-    @Override
-    public boolean equals(Object o) {
-	if(this == o) return true;
-	if(o == null || getClass() != o.getClass()) return false;
-	PMarker pMarker = (PMarker) o;
-	return seg == pMarker.seg && tc.equals(pMarker.tc) && nm.equals(pMarker.nm) && color.equals(pMarker.color);
-    }
+    // KamiClient: no equals/hashCode on purpose, same reason as CustomMarker. MapFile.markers is an
+    // ArrayList and MiniMap.Markers keys a HashMap/HashSet on markers, so value equality collapses two
+    // same-named markers on one tile into a single icon and they flicker. Worse, nm/color/tc are all
+    // mutable, so hashing on them strands a live key the moment a marker is renamed or recoloured.
+    // Compare by value explicitly via equals(a, b) below.
 
-    @Override
-    public int hashCode() {
-	return Objects.hash(seg, tc, nm, color);
+    public static boolean equals(PMarker a, PMarker b) {
+	return a.seg == b.seg
+	    && a.tc.equals(b.tc)
+	    && a.nm.equals(b.nm)
+	    && a.color.equals(b.color);
     }
 
     @Override

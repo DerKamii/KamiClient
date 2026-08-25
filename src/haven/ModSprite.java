@@ -53,32 +53,32 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
     private int lastupd;
     
     public static final Factory fact = new Factory() {
-	public Sprite create(Owner owner, Resource res, Message sdt) {
-	    if((res.layer(FastMesh.MeshRes.class) != null) ||
-		(res.layer(RenderLink.Res.class) != null))
-		return(new ModSprite(owner, res, sdt));
-	    return(null);
-	}
-    };
-    
+	    public Sprite create(Owner owner, Resource res, Message sdt) {
+		if((res.layer(FastMesh.MeshRes.class) != null) ||
+		   (res.layer(RenderLink.Res.class) != null))
+		    return(new ModSprite(owner, res, sdt));
+		return(null);
+	    }
+	};
+
     public static interface SMod {
 	public void operate(ModSprite spr);
     }
-    
+
     public static interface Mod {
 	public void operate(Cons cons);
 	public default int order() {return(0);}
 	public default void age() {}
 	public default boolean decdata(Message sdt) {return(false);}
-	
+
 	public static Mod of(Consumer<Cons> mod, int order) {
 	    return(new Mod() {
-		public void operate(Cons cons) {mod.accept(cons);}
-		public int order() {return(order);}
-	    });
+		    public void operate(Cons cons) {mod.accept(cons);}
+		    public int order() {return(order);}
+		});
 	}
     }
-    
+
     public static interface Ticker {
 	public default boolean tick(double dt) {return(false);}
 	public default void gtick(Render g) {}
@@ -96,7 +96,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    for(NodeWrap wrap : wraps)
 		this.wraps.add(wrap);
 	}
-	
+
 	/* XXX? Is this nice? Not sure how to handle render-links in a nicer way. */
 	public void unwrap() {
 	    while(obj instanceof NodeWrap.Wrapping) {
@@ -105,7 +105,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 		wraps.add(w.wrap());
 	    }
 	}
-	
+
 	public RenderTree.Node make() {
 	    RenderTree.Node ret = obj;
 	    if(!state.isEmpty())
@@ -141,19 +141,23 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    }
 	    return(new UnionMap<>(infos));
 	}
+
+	public String toString() {
+	    return(String.format("#<mod-part %s w=%s, st=%s, ds=%s>", obj, wraps, state, dynstate));
+	}
     }
-    
+
     public class Cons {
 	public Collection<Mod> mods = new ArrayList<>();
 	public Collection<Part> parts = new ArrayList<>();
 	public Collection<Ticker> tickers = new ArrayList<>();
 	public Collection<EquipTarget> eqtgts = new ArrayList<>();
-	
+
 	public ModSprite spr() {return(ModSprite.this);}
-	
+
 	public void add(Mod mod) {mods.add(mod);}
 	public void add(Part part) {parts.add(part);}
-	
+
 	public void process() {
 	    Cons prev = curcons.get();
 	    curcons.set(this);
@@ -175,7 +179,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 		curcons.set(prev);
 	    }
 	}
-	
+
 	public RenderTree.Node[] parts() {
 	    RenderTree.Node[] ret = new RenderTree.Node[parts.size()];
 	    int i = 0;
@@ -184,35 +188,35 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    return(ret);
 	}
     }
-    
+
     public static class ResData {
 	public final Resource res;
 	public final Collection<Mod> mods = new ArrayList<>();
 	public final Collection<SMod> smods = new ArrayList<>();
-	
+
 	public ResData(Resource res) {
 	    this.res = res;
 	}
     }
-    
+
     public static class ModMaker extends Resource.PublishedCode.Instancer.Chain<RMod> {
 	public ModMaker() {super(RMod.class);}
 	{
 	    add(new Direct<>(RMod.class));
 	    add(new StaticCall<>(RMod.class, "operate", Void.TYPE, new Class<?>[] {ResData.class},
-		(make) -> (dat) -> make.apply(new Object[] {dat})));
+				 (make) -> (dat) -> make.apply(new Object[] {dat})));
 	}}
-    
+
     @Resource.PublishedCode(name = "sprmod", instancer = ModMaker.class)
     public static interface RMod {
 	public void operate(ResData dat);
-	
+
 	@dolda.jglob.Discoverable
 	@Target(ElementType.TYPE)
 	@Retention(RetentionPolicy.RUNTIME)
 	public @interface Global {}
     }
-    
+
     static {
 	for(Class<?> cl : dolda.jglob.Loader.get(RMod.Global.class).classes()) {
 	    if(RMod.class.isAssignableFrom(cl)) {
@@ -222,7 +226,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    }
 	}
     }
-    
+
     private static final Map<Resource, ResData> rdcache = new WeakHashMap<>();
     protected ResData resdata(Resource res) {
 	synchronized(rdcache) {
@@ -239,11 +243,11 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    return(dat);
 	}
     }
-    
+
     public static int decflags(Message sdt) {
 	return(sdt.eom() ? 0xffff0000 : decnum(sdt));
     }
-    
+
     protected void decdata(Message sdt) {
 	flags = 0;
 	if(imods != null) {
@@ -258,7 +262,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	}
 	flags = decflags(sdt);
     }
-    
+
     protected ModSprite(boolean dummy, Owner owner, Resource res) {
 	super(owner, res);
 	gob = (owner == null) ? null : owner.fcontext(Gob.class, false);
@@ -272,34 +276,34 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	if(imods != null)
 	    imods.trimToSize();
     }
-    
+
     public ModSprite(Owner owner, Resource res) {
 	this(false, owner, res);
 	init();
     }
-    
+
     public ModSprite(Owner owner, Resource res, int flags) {
 	this(false, owner, res);
 	this.flags = flags;
 	init();
     }
-    
+
     public ModSprite(Owner owner, Resource res, Message sdt) {
 	this(false, owner, res);
 	decdata(sdt);
 	init();
     }
-    
+
     protected void init() {
 	update();
     }
-    
+
     public void imod(Mod mod) {
 	if(imods == null)
 	    imods = new ArrayList<>();
 	imods.add(mod);
     }
-    
+
     public <T> T imod(Class<T> cl) {
 	if(imods == null)
 	    return(null);
@@ -309,15 +313,15 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	}
 	return(null);
     }
-    
+
     protected Cons cons() {
 	return(new Cons());
     }
-    
+
     public static Cons curcons() {
 	return(curcons.get());
     }
-    
+
     protected void modifiers(Cons cons) {
 	for(Mod mod : resdata.mods)
 	    cons.add(mod);
@@ -328,7 +332,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	for(Mod mod : omods)
 	    cons.add(mod);
     }
-    
+
     protected void update() {
 	Cons cons = cons();
 	modifiers(cons);
@@ -339,25 +343,25 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	this.tickers = cons.tickers.toArray(notickers);
 	this.eqtgts = cons.eqtgts.toArray(noeqtgts);
     }
-    
+
     public void update(Message sdt) {
 	decdata(sdt);
 	update();
     }
-    
+
     protected void omods(Collection<Mod> buf, Gob gob) {
 	for(GAttrib attr : gob.attr.values()) {
 	    if(attr instanceof Mod)
 		buf.add((Mod)attr);
 	}
     }
-    
+
     private Mod[] getomods() {
 	Collection<Mod> buf = new ArrayList<>();
 	omods(buf, gob);
 	return(buf.toArray(nomods));
     }
-    
+
     private void attrupdate() {
 	Mod[] omods = getomods();
 	if(!Arrays.equals(omods, this.omods)) {
@@ -371,7 +375,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    }
 	}
     }
-    
+
     public boolean tick(double dt) {
 	if(gob != null) {
 	    int seq = gob.updateseq;
@@ -388,33 +392,33 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    ret |= ticker.tick(dt);
 	return(ret);
     }
-    
+
     public void gtick(Render g) {
 	for(Ticker ticker : tickers)
 	    ticker.gtick(g);
     }
-    
+
     public void age() {
 	if(imods != null) {
 	    for(Mod mod : imods)
 		mod.age();
 	}
     }
-    
+
     private void parts(RenderTree.Slot slot) {
 	for(RenderTree.Node part : parts)
 	    slot.add(part);
     }
-    
+
     public void added(RenderTree.Slot slot) {
 	parts(slot);
 	slots.add(slot);
     }
-    
+
     public void removed(RenderTree.Slot slot) {
 	slots.remove(slot);
     }
-    
+
     public Supplier<? extends Pipe.Op> eqpoint(String nm, Message dat) {
 	for(EquipTarget tgt : eqtgts) {
 	    Supplier<? extends Pipe.Op> ret = tgt.eqpoint(nm, dat);
@@ -433,18 +437,18 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	}
 	return(null);
     }
-    
+
     public String toString() {
 	return(String.format("#<mod-sprite %s>", (res == null) ? "nil" : res.name));
     }
-    
+
     public static class Meshes implements Mod {
 	public final FastMesh.MeshRes[] meshes;
-	
+
 	public Meshes(FastMesh.MeshRes[] meshes) {
 	    this.meshes = meshes;
 	}
-	
+
 	public void operate(Cons cons) {
 	    int flags = cons.spr().flags;
 	    for(FastMesh.MeshRes mr : meshes) {
@@ -452,7 +456,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 		    cons.add(new Part(mr.m, mr.mat.get()));
 	    }
 	}
-	
+
 	@RMod.Global
 	public static class $res implements RMod {
 	    public void operate(ResData dat) {
@@ -466,18 +470,18 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    }
 	}
     }
-    
+
     public static class RenderLinks implements Mod, Sprite.Owner {
 	public final ModSprite main;
 	public final RenderLink.Res[] rlinks;
 	public final RenderTree.Node[] parts;
-	
+
 	public RenderLinks(ModSprite spr, RenderLink.Res[] rlinks) {
 	    this.main = spr;
 	    this.rlinks = rlinks;
 	    parts = new RenderTree.Node[rlinks.length];
 	}
-	
+
 	public void operate(Cons cons) {
 	    int flags = cons.spr().flags;
 	    for(int i = 0; i < rlinks.length; i++) {
@@ -492,16 +496,16 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 		    if(part.obj instanceof Sprite) {
 			Sprite spr = (Sprite)part.obj;
 			cons.tickers.add(new Ticker() {
-			    public boolean tick(double dt) {return(spr.tick(dt));}
-			    public void gtick(Render out) {spr.gtick(out);}
-			});
+				public boolean tick(double dt) {return(spr.tick(dt));}
+				public void gtick(Render out) {spr.gtick(out);}
+			    });
 		    }
 		} else {
 		    parts[i] = null;
 		}
 	    }
 	}
-	
+
 	private static final OwnerContext.ClassResolver<ModSprite> ctxr = new OwnerContext.ClassResolver<ModSprite>()
 	    .add(ModSprite.class, spr -> spr);
 	public <T> T context(Class<T> cl) {
@@ -510,9 +514,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	public Random mkrandoom() {
 	    return(main.owner.mkrandoom());
 	}
-	
-	public int order() {return(2000);}
-	
+
 	@RMod.Global
 	public static class $res implements RMod {
 	    public void operate(ResData dat) {
@@ -522,16 +524,16 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    }
 	}
     }
-    
+
     public static class Animation implements Mod, Ticker {
 	public final MeshAnim.Res[] descs;
 	public MeshAnim.Animation[] anims = {};
 	private Map<MeshAnim.Res, MeshAnim.Animation> ids = Collections.emptyMap();
-	
+
 	public Animation(MeshAnim.Res[] descs) {
 	    this.descs = descs;
 	}
-	
+
 	public void operate(Cons cons) {
 	    /* XXX: Trim animations that aren't actually bound to any current parts? */
 	    int flags = cons.spr().flags;
@@ -548,7 +550,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    }
 	    this.anims = anims.toArray(new MeshAnim.Animation[0]);
 	    this.ids = newids.isEmpty() ? Collections.emptyMap() : newids;
-	    
+
 	    for(Part part : cons.parts) {
 		if(part.obj instanceof FastMesh) {
 		    FastMesh m = (FastMesh)part.obj;
@@ -561,10 +563,10 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 		    }
 		}
 	    }
-	    
+
 	    cons.tickers.add(this);
 	}
-	
+
 	public boolean tick(double ddt) {
 	    float dt = (float)ddt;
 	    boolean done = false;
@@ -572,14 +574,14 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 		done |= anim.tick(dt);
 	    return(done);
 	}
-	
+
 	public void age() {
 	    for(MeshAnim.Animation anim : anims)
 		anim.age();
 	}
-	
+
 	public int order() {return(1000);}
-	
+
 	@RMod.Global
 	public static class $res implements RMod {
 	    public void operate(ResData dat) {
@@ -589,7 +591,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    }
 	}
     }
-    
+
     public static class Poser implements Mod, Ticker, Skeleton.ModOwner, EquipTarget {
 	public static final Pipe.Op
 	    rigid = new BaseColor(FColor.GREEN),
@@ -607,14 +609,14 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	private boolean stat = false;
 	private Pose oldpose;
 	private float ipold;
-	
+
 	public Poser(ModSprite spr, Skeleton skel, Skeleton.ResPose[] descs) {
 	    this.spr = spr;
 	    this.skel = skel;
 	    this.descs = descs;
 	    this.pose = skel.new Pose(skel.bindpose);
 	}
-	
+
 	private void rebuild() {
 	    pose.reset();
 	    for(PoseMod m : mods)
@@ -623,7 +625,35 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 		pose.blend(oldpose, Utils.smoothstep(ipold));
 	    pose.gbuild();
 	}
-	
+
+	public class Applier implements Mod {
+	    public void operate(Cons cons) {
+		for(Part part : cons.parts) {
+		    if(part.obj instanceof FastMesh) {
+			FastMesh m = (FastMesh)part.obj;
+			if(PoseMorph.boned(m)) {
+			    String bnm = PoseMorph.boneidp(m);
+			    if(bnm == null) {
+				PoseMorph st = new PoseMorph(pose, m);
+				part.dynstate.add(st::state);
+				if(bonedb)
+				    part.state.add(morphed);
+			    } else {
+				part.dynstate.add(pose.bonetrans2(skel.bones.get(bnm).idx));
+				if(bonedb)
+				    part.state.add(rigid);
+			    }
+			} else {
+			    if(bonedb)
+				part.state.add(unboned);
+			}
+		    }
+		}
+	    }
+
+	    public int order() {return(1010);}
+	}
+
 	public void operate(Cons cons) {
 	    int flags = cons.spr().flags;
 	    stat = true;
@@ -646,34 +676,13 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    }
 	    this.ids = newids.isEmpty() ? Collections.emptyMap() : newids;
 	    rebuild();
-	    
-	    for(Part part : cons.parts) {
-		if(part.obj instanceof FastMesh) {
-		    FastMesh m = (FastMesh)part.obj;
-		    if(PoseMorph.boned(m)) {
-			String bnm = PoseMorph.boneidp(m);
-			if(bnm == null) {
-			    PoseMorph st = new PoseMorph(pose, m);
-			    part.dynstate.add(st::state);
-			    if(bonedb)
-				part.state.add(morphed);
-			} else {
-			    part.dynstate.add(pose.bonetrans2(skel.bones.get(bnm).idx));
-			    if(bonedb)
-				part.state.add(rigid);
-			}
-		    } else {
-			if(bonedb)
-			    part.state.add(unboned);
-		    }
-		}
-	    }
-	    
+
 	    cons.tickers.add(this);
 	    cons.eqtgts.add(this);
+	    cons.add(new Applier());
 	    // cons.add(new Part(pose.new Debug()));
 	}
-	
+
 	public boolean tick(double ddt) {
 	    float dt = (float)ddt;
 	    if(!stat || (ipold > 0)) {
@@ -694,7 +703,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    }
 	    return(false);
 	}
-	
+
 	public Supplier<Pipe.Op> eqpoint(String nm, Message dat) {
 	    Skeleton.BoneOffset bo = spr.res.layer(Skeleton.BoneOffset.class, nm);
 	    if(bo != null)
@@ -703,7 +712,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 		return(pose.eqpoint(nm, dat));
 	    return(null);
 	}
-	
+
 	private static final OwnerContext.ClassResolver<Poser> ctxr = new OwnerContext.ClassResolver<Poser>()
 	    .add(Poser.class, p -> p)
 	    .add(ModSprite.class, p -> p.spr);
@@ -720,16 +729,16 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    Skeleton.ModOwner parent = spr.owner.fcontext(Skeleton.ModOwner.class, false);
 	    return((parent == null) ? 0 : parent.getv());
 	}
-	
+
 	public void age() {
 	    for(PoseMod mod : mods)
 		mod.age();
 	    this.ipold = 0.0f;
 	    this.oldpose = null;
 	}
-	
-	public int order() {return(1010);}
-	
+
+	public int order() {return(-1000);}
+
 	@RMod.Global
 	public static class $res implements RMod {
 	    public void operate(ResData dat) {

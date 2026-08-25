@@ -557,11 +557,9 @@ public class Config {
     }
     
     static {
-	Console.setscmd("par", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    par.set(Utils.parsebool(args[1]));
-		}
-	    });
+	Console.setscmd("par", (cons, args) -> {
+	    par.set(Utils.parsebool(args[1]));
+	});
     }
     
     public static void initAutomapper(UI ui) {

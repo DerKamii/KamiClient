@@ -1325,7 +1325,7 @@ public class MapWnd extends WindowX implements Console.Directory {
     public void importmap() {
 	FilePicker dialog = ui.wnd.toolkit().picker().make(FilePicker.Mode.OPEN, ui.wnd);
 	dialog.filter("Exported Haven map data", "hmap");
-	dialog.show().map(Promise.cnonnull(this::exportmap)).report(ui);
+	dialog.show().map(Promise.cnonnull(this::importmap)).report(ui);
     }
     
     public Coord2d findMarkerPosition(String name) {
@@ -1492,22 +1492,18 @@ public class MapWnd extends WindowX implements Console.Directory {
     
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
-	cmdmap.put("exportmap", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    if(args.length > 1)
-			exportmap(Utils.path(args[1]));
-		    else
-			exportmap();
-		}
-	    });
-	cmdmap.put("importmap", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    if(args.length > 1)
-			importmap(Utils.path(args[1]));
-		    else
-			importmap();
-		}
-	    });
+	cmdmap.put("exportmap", (cons, args) -> {
+	    if(args.length > 1)
+		exportmap(Utils.path(args[1]));
+	    else
+		exportmap();
+	});
+	cmdmap.put("importmap", (cons, args) -> {
+	    if(args.length > 1)
+		importmap(Utils.path(args[1]));
+	    else
+		importmap();
+	});
     }
     public Map<String, Console.Command> findcmds() {
 	return(cmdmap);

@@ -29,8 +29,10 @@ package haven.ffi;
 import haven.*;
 import java.nio.*;
 import java.nio.charset.*;
+import java.nio.file.*;
 import java.lang.invoke.*;
 import java.lang.foreign.*;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.*;
 import java.lang.foreign.MemoryLayout.PathElement;
@@ -86,6 +88,43 @@ public class FUtils {
 	} catch(NoSuchMethodException | IllegalAccessException e) {
 	    throw(new RuntimeException(e));
 	}
+    }
+
+    public static Method smethod(Class<?> cl, String name) {
+	Method fm = null;
+	for(Method m : cl.getDeclaredMethods()) {
+	    if(m.getName().equals(name) && ((m.getModifiers() & Modifier.STATIC) != 0)) {
+		if(fm == null)
+		    fm = m;
+		else
+		    throw(new RuntimeException(name + " is ambiguous between " + m + " and " + fm));
+	    }
+	}
+	return(fm);
+    }
+
+    public static Method vmethod(Class<?> cl, String name) {
+	Method fm = null;
+	for(Method m : cl.getDeclaredMethods()) {
+	    if(m.getName().equals(name) && ((m.getModifiers() & Modifier.STATIC) == 0)) {
+		if(fm == null)
+		    fm = m;
+		else
+		    throw(new RuntimeException(name + " is ambiguous between " + m + " and " + fm));
+	    }
+	}
+	return(fm);
+    }
+
+    public static MemorySegment supcall(Arena alloc, MethodHandles.Lookup lookup, Class<?> cl, String name, Object arg1, MemoryLayout rtype, MemoryLayout... ptypes) {
+	Method m = smethod(cl, name);
+	MethodHandle h = slookup(lookup, cl, name, m.getReturnType(), m.getParameterTypes());
+	if(arg1 != null)
+	    h = MethodHandles.insertArguments(h, 0, arg1);
+	if(rtype == null)
+	    return(ABI.ld.upcallStub(h, FunctionDescriptor.ofVoid(ptypes), alloc));
+	else
+	    return(ABI.ld.upcallStub(h, FunctionDescriptor.of(rtype, ptypes), alloc));
     }
 
     public static String fmtstruct(String name, MemorySegment mem, StructLayout desc) {
@@ -155,24 +194,30 @@ public class FUtils {
     }
 
     public static byte[] memcpy(byte[] dst, MemorySegment src, int doff, long soff, int len) {
-	for(int i = 0; i < len; i++)
-	    dst[doff + i] = (byte)src.get(ValueLayout.JAVA_BYTE, soff + i);
+	MemorySegment.copy(src, soff, MemorySegment.ofArray(dst), doff, len);
 	return(dst);
+    }
+    public static byte[] memcpy(MemorySegment src, long soff, int len) {
+	return(memcpy(new byte[len], src, 0, soff, len));
+    }
+
+    public static MemorySegment memcpya(MemorySegment src, long soff, int len) {
+	MemorySegment buf = MemorySegment.ofArray(new long[(len + 7) >> 3]);
+	MemorySegment.copy(src, soff, buf, 0, len);
+	return(buf);
     }
 
     public static String nstring(MemorySegment src, long off, int len, Charset charset) {
-	return(new String(memcpy(new byte[len], src.reinterpret(off + len), 0, off, len), charset));
+	return(new String(memcpy(src.reinterpret(off + len), off, len), charset));
     }
 
     public static MemorySegment memcpy(MemorySegment dst, ByteBuffer src, long doff, int soff, int len) {
-	for(int i = 0; i < len; i++)
-	    dst.set(ValueLayout.JAVA_BYTE, doff + i, src.get(soff + i));
+	MemorySegment.copy(MemorySegment.ofBuffer(src), soff, dst, doff, len);
 	return(dst);
     }
 
     public static MemorySegment memcpy(MemorySegment dst, byte[] v) {
-	for(int i = 0; i < v.length; i++)
-	    dst.set(ValueLayout.JAVA_BYTE, i, v[i]);
+	MemorySegment.copy(MemorySegment.ofArray(v), 0, dst, 0, v.length);
 	return(dst);
     }
 
@@ -249,5 +294,51 @@ public class FUtils {
 	if(ret == null)
 	    return(Long.toUnsignedString(val, 16));
 	return(ret);
+    }
+
+    private static Collection<Path> libpath = null;
+    public static SymbolLookup loadlib(String name, Arena arena) {
+	Collection<Path> libpath;
+	synchronized(FUtils.class) {
+	    if(FUtils.libpath == null) {
+		String spec = Utils.getprop("java.library.path", "");
+		if(spec.equals("")) {
+		    FUtils.libpath = Collections.emptyList();
+		} else {
+		    ArrayList<Path> buf = new ArrayList<>();
+		    int p = 0;
+		    String sep = java.io.File.pathSeparator;
+		    boolean done = false;
+		    while(!done) {
+			int p2 = spec.indexOf(sep, p);
+			String nm;
+			if(p2 < 0) {
+			    nm = spec.substring(p);
+			    done = true;
+			} else {
+			    nm = spec.substring(p, p2);
+			    p = p2 + sep.length();
+			}
+			try {
+			    buf.add(Paths.get(nm));
+			} catch(InvalidPathException e) {
+			    new Warning(e, "invalid library path: " + e).issue();
+			}
+		    }
+		    FUtils.libpath = buf;
+		}
+	    }
+	    libpath = FUtils.libpath;
+	}
+	if(libpath != null) {
+	    for(Path p : libpath) {
+		try {
+		    return(SymbolLookup.libraryLookup(p.resolve(name), arena));
+		} catch(IllegalArgumentException e) {
+		    e.printStackTrace();
+		}
+	    }
+	}
+	return(SymbolLookup.libraryLookup(name, arena));
     }
 }

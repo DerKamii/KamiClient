@@ -1,3 +1,10 @@
+$size[14]{$u{update on 25.08.2026:}
+* Merged loftar's code
+* Added an option to turn off the biome tooltip on the minimap (Options -> UI)
+* Fixed placed and object markers flickering on the minimap
+* Dumbledores can now be picked up like other critters
+* Added a radar icon for brown kelp
+`
 $size[14]{$u{update on 15.08.2026:}
 * Fixed a crash when the server sent a message to a widget it had just closed
 * Fixed a crash opening the party window when a button had no tooltip

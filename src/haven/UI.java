@@ -632,6 +632,19 @@ public class UI {
     }
     
     public Grab grabmouse(Widget wdg) {
+	/* KamiClient: alt+tab can leave a stale mouse grab behind, and the
+	 * stale one sits at the head of the list eating clicks -- that's the
+	 * "clicking through the UI" bug. Drop any pointer grab this widget
+	 * already holds before taking a new one. Deliberately only pointer
+	 * grabs and only here, same as the original fix; widening it to
+	 * grab() would also catch grabkeys and we don't know what that breaks. */
+	ArrayList<Grab> stale = new ArrayList<>();
+	for(Grab gx : grabs) {
+	    if((gx.owner == wdg) && (gx.etype == PointerEvent.class))
+		stale.add(gx);
+	}
+	for(Grab gd : stale)
+	    gd.remove();
 	Predicate<Widget.Event> sel = ev -> (
 	    /* XXX? These are just the traditionally mouse-grabbed events. Is grabmouse() itself obsolete? */
 	    (ev instanceof MouseDownEvent) || (ev instanceof MouseUpEvent) ||

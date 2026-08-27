@@ -1,3 +1,9 @@
+$size[14]{$u{update on 27.08.2026:}
+* Merged loftar's code
+* Fixed the minesweeper overlay not marking cave-in dust
+* Fixed mouse clicks not registering on the UI
+* Updated resource code for lib/bollar and gfx/fx/cavewarn
+`
 $size[14]{$u{update on 25.08.2026:}
 * Merged loftar's code
 * Added an option to turn off the biome tooltip on the minimap (Options -> UI)

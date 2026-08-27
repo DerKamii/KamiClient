@@ -24,23 +24,16 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.ffi;
+package haven.ffi.x11;
 
-import java.lang.foreign.*;
+public class XStatusException extends XLibException {
+    public final int status;
 
-public abstract class StructInstance {
-    protected final MemorySegment mem;
-
-    protected abstract StructLayout $layout();
-    protected String $name() {return("struct " + this.getClass().getSimpleName().toLowerCase());}
-
-    protected StructInstance(MemorySegment mem) {
-	if(FUtils.nullp(mem))
-	    throw(new NullPointerException());
-	this.mem = mem.reinterpret($layout().byteSize());
+    public XStatusException(int status) {
+	this.status = status;
     }
 
-    public String toString() {
-	return(FUtils.fmtstruct($name(), mem, $layout()));
+    public String getMessage() {
+	return(String.format("X Error: %d", status));
     }
 }

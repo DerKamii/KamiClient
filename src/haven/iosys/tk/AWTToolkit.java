@@ -861,13 +861,64 @@ public abstract class AWTToolkit implements Toolkit {
 	});
     }
 
+    /* KamiClient: AWT's browse integration is built on the legacy
+     * gnome-vfs/gvfs libraries, so plenty of Linux desktops report
+     * isDesktopSupported() as true while BROWSE is unsupported, and links
+     * just fail. Shell out to the platform's URL handler in that case. */
+    private static String[][] urlcmds() {
+	if(Config.iswindows) {
+	    /* rundll32 rather than `start', which is a cmd builtin and not
+	     * directly executable. */
+	    return(new String[][] {{"rundll32", "url.dll,FileProtocolHandler"}});
+	} else if(System.getProperty("os.name", "").startsWith("Mac OS")) {
+	    return(new String[][] {{"open"}});
+	} else {
+	    return(new String[][] {{"xdg-open"}, {"gio", "open"}});
+	}
+    }
+
+    private static boolean hascmd(String cmd) {
+	String path = System.getenv("PATH");
+	if(path == null)
+	    return(false);
+	for(String dir : path.split(File.pathSeparator)) {
+	    if(new File(dir, cmd).canExecute())
+		return(true);
+	    if(Config.iswindows && new File(dir, cmd + ".exe").canExecute())
+		return(true);
+	}
+	return(false);
+    }
+
+    private static boolean execbrowse(java.net.URI location) {
+	for(String[] cmd : urlcmds()) {
+	    if(!hascmd(cmd[0]))
+		continue;
+	    try {
+		ProcessBuilder spec = new ProcessBuilder(Utils.extend(cmd, location.toString()));
+		spec.inheritIO();
+		Process proc = spec.start();
+		if(proc.waitFor() == 0)
+		    return(true);
+	    } catch(InterruptedException e) {
+		Thread.currentThread().interrupt();
+		return(false);
+	    } catch(IOException e) {
+	    }
+	}
+	return(false);
+    }
+
     public void browse(java.net.URI location) throws IOException {
-	if(!Desktop.isDesktopSupported())
-	    throw(new IOException("Java Desktop interface is unavailable."));
-	Desktop dt = Desktop.getDesktop();
-	if(!dt.isSupported(Desktop.Action.BROWSE))
-	    throw(new IOException("Web browser is unsupported."));
-	dt.browse(location);
+	if(Desktop.isDesktopSupported()) {
+	    Desktop dt = Desktop.getDesktop();
+	    if(dt.isSupported(Desktop.Action.BROWSE)) {
+		dt.browse(location);
+		return;
+	    }
+	}
+	if(!execbrowse(location))
+	    throw(new IOException("No web browser available."));
     }
 
     public void dispose() {

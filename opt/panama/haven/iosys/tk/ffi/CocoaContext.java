@@ -30,7 +30,9 @@ import java.util.*;
 import java.util.function.*;
 import java.awt.image.*;
 import java.io.*;
+import java.net.*;
 import java.nio.*;
+import java.nio.file.*;
 import haven.*;
 import haven.iosys.*;
 import haven.render.*;
@@ -42,6 +44,7 @@ import haven.ffi.gl.*;
 import haven.ffi.objc.AppKit.*;
 import haven.ffi.objc.CGL.*;
 import haven.ffi.objc.CoreGraphics.*;
+import haven.ffi.objc.Foundation.*;
 import haven.ffi.objc.Runtime;
 import static haven.ffi.objc.Carbon.*;
 import static haven.iosys.tk.Key.Std.*;
@@ -82,11 +85,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
     }
 
     public Toolkit open(String... args) {
-	try {
-	    javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName());
-	} catch(Exception e) {
-	    throw(new RuntimeException(e));
-	}
+	AWTToolkit.initawt2();
 	return(mainrun(CocoaToolkit::new));
     }
 
@@ -119,10 +118,17 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
     <T> T mainrun(Supplier<T> task) {
 	class Runner implements Runnable {
 	    T val;
+	    RuntimeException err;
 	    boolean done;
 
 	    public void run() {
-		val = task.get();
+		try {
+		    val = task.get();
+		} catch(RuntimeException e) {
+		    err = e;
+		} catch(Throwable t) {
+		    err = new RuntimeException(t);
+		}
 		synchronized(this) {
 		    done = true;
 		    notifyAll();
@@ -143,7 +149,32 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	}
 	if(irq)
 	    Thread.currentThread().interrupt();
+	if(r.err != null)
+	    throw(r.err);
 	return(r.val);
+    }
+
+    <T> Supplier<T> lazymainrun(Supplier<T> task) {
+	return(new Supplier<T>() {
+	    private T result;
+	    private boolean has = false;
+
+	    public T get() {
+		if(has)
+		    return(result);
+		return(mainrun(() -> {
+		    if(!has) {
+			result = task.get();
+			has = true;
+		    }
+		    return(result);
+		}));
+	    }
+	});
+    }
+
+    <T> Promise<T> mtpromise(Supplier<T> task) {
+	return(Promise.deferred(task, this::mainrun));
     }
 
     public class CocoaToolkit implements Toolkit {
@@ -468,6 +499,139 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    }
 	}
 
+	public class Pasteboard implements Clipboard {
+	    public final NSPasteboard bk;
+
+	    public Pasteboard(NSPasteboard bk) {
+		this.bk = bk;
+	    }
+
+	    class PutContents {
+		final NSPasteboardItem first = ak.NSPasteboardItem();
+		final List<NSPasteboardItem> items = new ArrayList<>(Collections.singletonList(first));
+		int remaining = 0;
+
+		private void finish() {
+		    bk.clearContents();
+		    bk.writeObjects(items.toArray(new NSPasteboardItem[0]));
+		}
+
+		private Consumer<Object> checkput() {
+		    remaining++;
+		    return(_ -> {
+			if(--remaining == 0)
+			    finish();
+		    });
+		}
+
+		private void cvt_text(CharSequence val) {
+		    first.setData(fnd.NSData(Utils.utf8.encode(CharBuffer.wrap(val))), "public.utf8-plain-text");
+		}
+
+		private void cvt_image(BufferedImage img) {
+		    ByteArrayOutputStream buf = new ByteArrayOutputStream();
+		    try {
+			javax.imageio.ImageIO.write(img, "TIFF", buf);
+		    } catch(IOException e) {
+			throw(new RuntimeException(e));
+		    }
+		    first.setData(fnd.NSData(buf.toByteArray()), "public.tiff");
+		}
+
+		private void cvt_paths(Collection<Path> paths) {
+		    Iterator<Path> i = paths.iterator();
+		    Path f = i.next();
+		    first.setData(fnd.NSData(Utils.utf8.encode(CharBuffer.wrap(f.toUri().toString()))), "public.file-url");
+		    while(i.hasNext()) {
+			Path p = i.next();
+			NSPasteboardItem item = ak.NSPasteboardItem();
+			item.setData(fnd.NSData(Utils.utf8.encode(CharBuffer.wrap(p.toUri().toString()))), "public.file-url");
+		    }
+		}
+	    }
+
+	    public void put(Contents c, Runnable expire) {
+		mainrun(() -> {
+		    PutContents buf = new PutContents();
+		    for(Item<?> item : c.items) {
+			if(item.fmt == Format.TEXT) {
+			    item.check(Format.TEXT).get()
+				.then(val -> mtpromise(() -> {buf.cvt_text(val); return(null);}))
+				.map(buf.checkput());
+			} else if(item.fmt == Format.IMAGE) {
+			    item.check(Format.IMAGE).get()
+				.then(val -> mtpromise(() -> {buf.cvt_image(val); return(null);}))
+				.map(buf.checkput());
+			} else if(item.fmt == Format.PATHS) {
+			    item.check(Format.PATHS).get()
+				.then(val -> mtpromise(() -> {buf.cvt_paths(val); return(null);}))
+				.map(buf.checkput());
+			}
+		    }
+		});
+	    }
+
+	    private String mktext(List<NSPasteboardItem> cont) {
+		if(cont.size() == 1)
+		    return(cont.get(0).stringForType("public.utf8-plain-text"));
+		StringBuilder buf = new StringBuilder();
+		for(NSPasteboardItem item : cont) {
+		    if(item.types().contains("public.utf8-plain-text"))
+			buf.append(item.stringForType("public.utf8-plain-text"));
+		}
+		return(buf.toString());
+	    }
+
+	    private BufferedImage mkimage(List<NSPasteboardItem> cont) {
+		for(NSPasteboardItem item : cont) {
+		    if(item.types().contains("public.tiff"))
+			try {
+			    return(javax.imageio.ImageIO.read(new ByteArrayInputStream(item.dataForType("public.tiff").data())));
+			} catch(IOException e) {
+			    throw(new RuntimeException(e));
+			}
+		}
+		return(null);
+	    }
+
+	    private Collection<Path> mkfiles(List<NSPasteboardItem> cont) {
+		Collection<Path> ret = new ArrayList<>();
+		for(NSPasteboardItem item : cont) {
+		    if(item.types().contains("public.file-url")) {
+			NSURL url = fnd.NSURL(item.stringForType("public.file-url"));
+			URI uri = Utils.uri(url.filePathURL().absoluteString());
+			ret.add(Paths.get(uri));
+		    }
+		}
+		return(ret);
+	    }
+
+	    private <T> Item<T> mkitem(Format<T> fmt, List<NSPasteboardItem> cont, Function<List<NSPasteboardItem>, ? extends T> cvt) {
+		return(new Item<T>(fmt, () -> mtpromise(() -> cvt.apply(cont))));
+	    }
+
+	    Contents mkcontents() {
+		List<NSPasteboardItem> cont = bk.pasteboardItems();
+		if((cont == null) || cont.isEmpty())
+		    return(new Contents(Collections.emptyList()));
+		List<Item<?>> ret = new ArrayList<>();
+		NSPasteboardItem first = cont.get(0);
+		List<String> types = first.types();
+		if(types.contains("public.file-url"))
+		    ret.add(mkitem(Format.PATHS, cont, this::mkfiles));
+		if(types.contains("public.tiff"))
+		    ret.add(mkitem(Format.IMAGE, cont, this::mkimage));
+		if(types.contains("public.utf8-plain-text"))
+		    ret.add(mkitem(Format.TEXT, cont, this::mktext));
+		return(new Contents(ret));
+	    }
+
+	    public Promise<Contents> get() {
+		return(mtpromise(this::mkcontents));
+	    }
+	}
+	private final Supplier<Pasteboard> pb_general = lazymainrun(() -> new Pasteboard(ak.NSPasteboard_generalPasteboard()));
+
 	public class CocoaWindow implements Windeye {
 	    public final NSWindow nsw;
 	    public final NSView view;
@@ -478,6 +642,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    private CGLEnvironment renv;
 	    private Coord size = Coord.z;
 	    private NSCursor cursor = null;
+	    private DropHandler drophandler = null;
 
 	    public class CGLEnvironment extends FFIEnvironment {
 		private int qstate;
@@ -525,6 +690,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		nsw.setCollectionBehavior(AppKit.NSWindowCollectionBehaviorFullScreenPrimary);
 		view = ak.NSView(new ViewDelegate(), cg.CGRect(Area.sized(Coord.of(1, 1))));
 		view.setWantsBestResolutionOpenGLSurface(true);
+		view.registerForDraggedTypes("public.tiff", "public.file-url", "public.utf8-plain-text");
 		nsw.setContentView(view);
 	    }
 
@@ -631,6 +797,69 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 
 		public void resetCursorRects() {
 		    updatecursor();
+		}
+
+		public boolean wantsPeriodicDraggingUpdates() {return(true);}
+
+		class DragEvent implements DropHandler.DropHoverEvent {
+		    public static final BMap<DropHandler.Action, Integer> actmap =
+			new HashBMap<>(Utils.<DropHandler.Action, Integer>map()
+				       .put(DropHandler.Action.COPY, AppKit.NSDragOperationCopy)
+				       .put(DropHandler.Action.LINK, AppKit.NSDragOperationLink)
+				       .put(DropHandler.Action.MOVE, AppKit.NSDragOperationMove)
+				       .map());
+		    public final NSDraggingInfo drag;
+
+		    public DragEvent(NSDraggingInfo drag) {
+			this.drag = drag;
+		    }
+
+		    public Coord wndc() {
+			return(Coord.of(0, size.y).add(view.convertPointToBacking(view.convertPointFromView(drag.draggingLocation(), null)).c().mul(1, -1)));
+		    }
+
+		    public Set<DropHandler.Action> actions() {
+			Set<DropHandler.Action> ret = EnumSet.noneOf(DropHandler.Action.class);
+			int mask = drag.draggingSourceOperationMask();
+			for(Map.Entry<DropHandler.Action, Integer> act : actmap.entrySet()) {
+			    if((mask & act.getValue()) != 0)
+				ret.add(act.getKey());
+			}
+			return(ret);
+		    }
+
+		    private Clipboard.Contents cont = null;
+		    public Clipboard.Contents contents() {
+			if(cont == null)
+			    cont = new Pasteboard(drag.draggingPasteboard()).mkcontents();
+			return(cont);
+		    }
+		}
+
+		private int draghover(NSDraggingInfo drag) {
+		    DropHandler.Action act = (drophandler == null) ? null : drophandler.drophover(new DragEvent(drag));
+		    Integer ret = DragEvent.actmap.get(act);
+		    return((ret == null) ? AppKit.NSDragOperationNone : ret);
+		}
+
+		public int draggingEntered(NSDraggingInfo drag) {
+		    return(draghover(drag));
+		}
+		public int draggingUpdated(NSDraggingInfo drag) {
+		    return(draghover(drag));
+		}
+		public boolean performDragOperation(NSDraggingInfo drop) {
+		    class Event extends DragEvent implements DropHandler.DroppedEvent {
+			DropHandler.Action accepted = null;
+
+			Event() {super(drop);}
+
+			public void accept(DropHandler.Action act) {
+			    accepted = act;
+			}
+		    }
+		    Event ev = new Event();
+		    return((drophandler != null) && drophandler.dropped(new Event()) && (ev.accepted != null));
 		}
 	    }
 
@@ -824,6 +1053,10 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    }
 
 	    public CocoaWindow icon(BufferedImage img) {
+		/* XXX? Debatable behavior, but what else? Some global
+		 * "application" interface for the Toolkit as a whole
+		 * that is only used by Cocoa...? */
+		app.setApplicationIconImage(ak.NSImage(img, view.convertSizeFromBacking(cg.CGSize(Coord.of(img.getWidth(), img.getHeight())))));
 		return(this);
 	    }
 
@@ -939,12 +1172,75 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		gbuf.submit(gl -> this.glswap(gl, ((Boolean)mode) ? 1 : 0));
 	    }
 
+	    public Clipboard clipboard(Object id) {
+		if(id == Clipboard.Std.CLIPBOARD)
+		    return(pb_general.get());
+		return(Clipboard.nil);
+	    }
+
+	    public CocoaWindow drophandler(DropHandler h) {
+		this.drophandler = h;
+		return(this);
+	    }
+
 	    public void dispose() {
 	    }
 	}
 
 	public Windeye window() {
 	    return(mainrun(CocoaWindow::new));
+	}
+
+	public void browse(URI location) throws IOException {
+	    NSURL url = fnd.NSURL(location.toString());
+	    if(url == null)
+		throw(new IOException("Invalid URL: " + location.toString()));
+	    boolean st = mainrun(() -> ak.NSWorkspace_sharedWorkspace().openURL(url));
+	    if(!st)
+		throw(new IOException("Could not open URL: " + location.toString()));
+	}
+
+	public class PanelPicker implements FilePicker.Factory {
+	    public class Panel implements FilePicker {
+		public final NSSavePanel panel;
+		public final CocoaWindow parent;
+
+		public Panel(Mode mode, CocoaWindow parent) {
+		    this.panel = (mode == Mode.OPEN) ? ak.NSOpenPanel() : ak.NSSavePanel();
+		    this.parent = parent;
+		}
+
+		public void filter(String desc, String... exts) {
+		    mainrun(() -> {
+			panel.setAllowedFileTypes(exts);
+			panel.setAllowsOtherFileTypes(true);
+		    });
+		}
+
+		public Promise<Path> show() {
+		    Promise<Path> ret = new Promise<>();
+		    Consumer<Integer> handler = result -> {
+			if(result == AppKit.NSModalResponseOK) {
+			    ret.resolve(Paths.get(Utils.uri(panel.URL().absoluteString())));
+			} else {
+			    ret.resolve(null);
+			}
+		    };
+		    if(parent == null)
+			mainrun(() -> panel.begin(handler));
+		    else
+			mainrun(() -> panel.beginSheetModal(parent.nsw, handler));
+		    return(ret);
+		}
+	    }
+
+	    public FilePicker make(FilePicker.Mode mode, Windeye parent) {
+		return(mainrun(() -> new Panel(mode, (CocoaWindow)parent)));
+	    }
+	}
+
+	public FilePicker.Factory picker() {
+	    return(new PanelPicker());
 	}
 
 	public String description() {

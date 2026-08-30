@@ -1,3 +1,8 @@
+$size[14]{$u{update on 30.08.2026:}
+* Merged loftar's code
+* Fixed links not opening in a browser
+* The last 20 console commands are now kept between sessions, browsable with up/down
+`
 $size[14]{$u{update on 27.08.2026:}
 * Merged loftar's code
 * Fixed the minesweeper overlay not marking cave-in dust

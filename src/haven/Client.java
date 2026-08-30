@@ -284,6 +284,16 @@ public class Client implements Console.Directory {
 	    }, "Haven alt-window thread");
 	    th.start();
 	});
+	/* KamiClient: deliberately blow up, to check that crash reports
+	 * actually reach the endpoint. Throwing from a fresh thread in the
+	 * handler's group takes the real uncaught-exception path rather than
+	 * faking a report, so what you see is what a genuine crash does. */
+	cmdmap.put("dbg-crash", (cons, args) -> {
+	    String msg = (args.length > 1) ? args[1] : "Deliberate test crash";
+	    new HackThread(() -> {
+		throw(new RuntimeException(msg));
+	    }, "Haven crash-test thread").start();
+	});
     }
     public Map<String, Console.Command> findcmds() {
 	return(cmdmap);
@@ -427,9 +437,17 @@ public class Client implements Console.Directory {
 	     * for to offer a restart. */
 	    java.net.URL errordest = null;
 	    try {
-		if(!(ed = Utils.getprop("haven.errorurl", "")).equals("")) {
+		/* KamiClient: don't let the narrower JVM-property read clobber
+		 * the value we already got from haven-config.properties above;
+		 * an unset -D is silence, not an instruction. Only an explicit
+		 * "null" turns reporting off. */
+		String jed = Utils.getprop("haven.errorurl", "");
+		if(!jed.equals(""))
+		    ed = jed;
+		if(ed.equals("null"))
+		    ed = "";
+		if(!ed.equals(""))
 		    errordest = new java.net.URI(ed).toURL();
-		}
 	    } catch(java.net.MalformedURLException | java.net.URISyntaxException e) {
 	    }
 	    final haven.error.ErrorHandler hg = new haven.error.ErrorHandler(errordest);

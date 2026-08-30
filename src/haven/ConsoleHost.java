@@ -34,7 +34,11 @@ public abstract class ConsoleHost extends Widget implements Console.Host, ReadLi
     public ReadLine cmdline = null;
     private Text.Line cmdtext = null;
     private String cmdtextf = null;
-    private List<String> history = new ArrayList<String>();
+    /* KamiClient: command history is shared between all console hosts and
+     * persisted, so the last few commands survive a client restart. */
+    private static final String histpref = "cmdhistory";
+    private static final int histmax = 20;
+    private static final List<String> history = new ArrayList<String>(Utils.getprefsl(histpref, new String[0]));
     private int hpos = history.size();
     private String hcurrent;
     private UI.Grab kg;
@@ -44,7 +48,7 @@ public abstract class ConsoleHost extends Widget implements Console.Host, ReadLi
 
     public void done(ReadLine buf) {
 	String line = buf.line();
-	history.add(line);
+	addhistory(line);
 	try {
 	    ui.cons.run(this, line);
 	} catch(Exception e) {
@@ -55,6 +59,18 @@ public abstract class ConsoleHost extends Widget implements Console.Host, ReadLi
 	    error(msg);
 	}
 	cancelcmd();
+    }
+
+    private static void addhistory(String line) {
+	if(line.trim().isEmpty())
+	    return;
+	/* KamiClient: no point in keeping a run of the same command over and over. */
+	if(!history.isEmpty() && history.get(history.size() - 1).equals(line))
+	    return;
+	history.add(line);
+	while(history.size() > histmax)
+	    history.remove(0);
+	Utils.setprefsl(histpref, history);
     }
 
     private boolean cmdkey(KeyEvent ev) {

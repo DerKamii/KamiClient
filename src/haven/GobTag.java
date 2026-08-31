@@ -197,18 +197,17 @@ public enum GobTag {
         int sdt = gob.sdt();
         if(name != null) {
             List<String> ols = Collections.emptyList();
-            synchronized (gob.ols) {
-                try {
-                    List<String> list = new ArrayList<>();
-                    for (Gob.Overlay overlay : gob.ols) {
-                        if(overlay != null && overlay.spr != null && overlay.spr.res != null) {
-                            list.add(overlay.spr.res.name);
-                        }
+            /* KamiClient: gob.ols is copy-on-write now, so iterating it needs no lock. */
+            try {
+                List<String> list = new ArrayList<>();
+                for (Gob.Overlay overlay : gob.ols) {
+                    if(overlay != null && overlay.spr != null && overlay.spr.res != null) {
+                        list.add(overlay.spr.res.name);
                     }
-                    ols = list;
-                } catch (Loading e) {
-                    gob.tagsUpdated();
                 }
+                ols = list;
+            } catch (Loading e) {
+                gob.tagsUpdated();
             }
             
             if(name.startsWith("gfx/terobjs/trees")) {

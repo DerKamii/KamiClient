@@ -54,7 +54,10 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     final Map<Class<? extends GAttrib>, GAttrib> attr = new HashMap<Class<? extends GAttrib>, GAttrib>();
     private volatile GAttrib[] attrSnapshot = null;
     private volatile boolean stateDirty = true;
-    public final Collection<Overlay> ols = new ArrayList<Overlay>();
+    /* KamiClient: was a plain ArrayList. Overlays get added from the loader thread (Gob.added)
+     * while ctick walks and prunes the list on the UI thread, which threw ConcurrentModificationException.
+     * COW gives every reader a stable snapshot without a lock anyone can forget to take. */
+    public final Collection<Overlay> ols = new java.util.concurrent.CopyOnWriteArrayList<Overlay>();
     public final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
     public int updateseq = 0, lastolid = 0;
     private final Collection<SetupMod> setupmods = new ArrayList<SetupMod>() {
@@ -81,6 +84,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     public final Set<Gob> occupants = new HashSet<>();
     private GobRadius radius = null;
     private long eseq = 0;
+    private final Object markerLock = new Object();
     private Overlay marker;
     private MarkerSprite.Id markerId;
     public static final ChangeCallback CHANGED = new ChangeCallback() {
@@ -558,8 +562,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     public void ctick(double dt) {
 	for(GAttrib a : getAttrSnapshot())
 	    a.ctick(dt);
-	for(Iterator<Overlay> i = ols.iterator(); i.hasNext();) {
-	    Overlay ol = i.next();
+	for(Overlay ol : ols) {
 	    if(ol.slots == null) {
 		try {
 		    ol.init();
@@ -568,7 +571,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 		boolean done = ol.tick(dt);
 		if((!ol.delign || (ol.spr instanceof Sprite.CDel)) && done) {
 		    ol.remove0();
-		    i.remove();
+		    ols.remove(ol);
 		    overlaysUpdated();
 		}
 	    }
@@ -1092,12 +1095,9 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     
     public void added(RenderTree.Slot slot) {
 	slot.ostate(curstate());
-	synchronized (ols)
-	{
-	    for(Overlay ol : ols) {
-		if(ol.slots != null)
-		    slot.add(ol);
-	    }
+	for(Overlay ol : ols) {
+	    if(ol.slots != null)
+		slot.add(ol);
 	}
 	Map<Class<? extends GAttrib>, GAttrib> attr = cloneattrs();
 	for(GAttrib a : attr.values()) {
@@ -1775,7 +1775,9 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    }
 	}
 	
-	synchronized (ols) {
+	/* KamiClient: this guards marker/markerId, not the overlay list - it used to lock on ols,
+	 * which read like list synchronisation and wasn't. */
+	synchronized (markerLock) {
 	    if(id == markerId) {return;}
 	    if(marker != null) {
 		marker.remove();

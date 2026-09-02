@@ -3,6 +3,7 @@ $size[14]{$u{update (ongoing):}
 * Fixed a crash when placing an object while its effects were still loading
 * Fixed a crash when an object was removed while its info text was being drawn
 * Fixed a crash from item icons that were still loading in the craft window
+* Added an option to turn off the menu letter shortcuts (Options -> UI)
 `
 $size[14]{$u{update on 30.08.2026:}
 * Merged loftar's code

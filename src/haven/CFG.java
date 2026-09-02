@@ -152,6 +152,7 @@ public class CFG<T> {
     
     /**Show stack's hover inventory widgets only if SHIFT is pressed*/
     public static final CFG<Boolean> UI_STACK_SUB_INV_ON_SHIFT = new CFG<>("ui.stack.sub_inv_on_shift", false);
+    public static final CFG<Boolean> UI_MENU_HOTKEYS = new CFG<>("ui.menu_hotkeys", true);
     /**Unpack stacks into single items for extra inventory's list*/
     public static final CFG<Integer> UI_EXT_INV_MIN_ROWS = new CFG<>("ui.stack.ext_inv_min_rows", 3);
     public static final CFG<Boolean> UI_STACK_EXT_INV_UNPACK = new CFG<>("ui.stack.ext_inv_unpack", true);

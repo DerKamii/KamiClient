@@ -778,6 +778,11 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    use(next, new Interaction(), false);
 	    return(true);
 	}
+	/* KamiClient: the per-item letter binds are bare keys with no modifier required,
+	 * so they fire on any stray keypress. Let people who never use them turn them off -
+	 * Esc/Backspace/Shift+N above are deliberate presses and stay either way. */
+	if(!CFG.UI_MENU_HOTKEYS.get())
+	    return(super.globtype(ev));
 	int cp = -1;
 	PagButton pag = null;
 	for(PagButton btn : curbtns) {

@@ -1443,6 +1443,9 @@ public class OptWnd extends WindowX {
 	y += STEP;
 	panel.add(new CFGBox("Always show Minimap at start", CFG.SHOW_MINIMAP_ON_START), new Coord(x, y));
     
+	y += STEP;
+	panel.add(new CFGBox("Menu letter shortcuts", CFG.UI_MENU_HOTKEYS, "Lets you walk the action menu by typing the letter shown on each icon"), x, y);
+
 	y += 2*STEP;
 	panel.add(new CFGBox("Require SHIFT to show stack inventory", CFG.UI_STACK_SUB_INV_ON_SHIFT, "Show stack hover-inventories only if SHIFT is pressed"), x, y);
 	

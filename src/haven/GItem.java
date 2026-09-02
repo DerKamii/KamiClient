@@ -113,11 +113,14 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	public Color olcol();
 	
 	public default Pipe.Op rstate() {
-	    return(buf -> {
-		Color col = olcol();
-		if(col != null)
-		    new ColorMask(col).apply(buf);
-	    });
+	    /* KamiClient: olcol() can throw Loading, and this op gets applied deep inside
+	     * the draw where nothing catches it. Resolve the colour here instead - rstate()
+	     * is called from AttrCache, which absorbs Loading and retries next frame. */
+	    Color col = olcol();
+	    if(col == null)
+		return(buf -> {});
+	    ColorMask mask = new ColorMask(col);
+	    return(buf -> mask.apply(buf));
 	}
     }
     

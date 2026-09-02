@@ -1,6 +1,7 @@
 $size[14]{$u{update (ongoing):}
 * Fixed a crash when hovering the mouse off the edge of the map
 * Fixed a crash when placing an object while its effects were still loading
+* Fixed a crash when an object was removed while its info text was being drawn
 `
 $size[14]{$u{update on 30.08.2026:}
 * Merged loftar's code

@@ -427,7 +427,13 @@ public abstract class PView extends Widget {
 		copy = new ArrayList<>(cur);
 	    }
 	    for(Slot<? extends Render2D> slot : copy) {
-		slot.obj().draw(g, slot.state());
+		/* KamiClient: this pass runs outside the tree lock, so a gob can be removed
+		 * between the snapshot above and the draw below. Its overlay just doesn't
+		 * get drawn this frame - no reason to lose the whole frame over it. */
+		try {
+		    slot.obj().draw(g, slot.state());
+		} catch(RenderTree.SlotRemoved e) {
+		}
 	    }
 	}
 

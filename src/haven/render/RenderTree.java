@@ -756,6 +756,11 @@ public class RenderTree implements RenderList.Adapter, Disposable {
 	    @SuppressWarnings("unchecked")
 	    public <T extends State> T get(State.Slot<T> slot) {
 		DepInfo bk = dstate();
+		/* KamiClient: the 2D pass reads slot state without the tree lock, so the slot
+		 * can be removed out from under it - removech() nulls the dstate. Say what
+		 * actually happened instead of NPEing on the next line. */
+		if(bk == null)
+		    throw(new SlotRemoved(TreeSlot.this));
 		int idx = slot.id;
 		if((bk.states.length <= idx) || !bk.def[idx])
 		    throw(new RuntimeException("Reading undefined slot " + slot + " from slot-pipe"));

@@ -600,13 +600,34 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    botActions();
     }
     
+    /* A sprite's gtick can update its render slot, which makes the drawlist
+     * compile the new state and finalize every texture it references. One
+     * still loading throws Loading -- ordinary "not ready yet" control flow,
+     * not a failed tick, but nothing above catches it and it would take the
+     * whole frame down (OCache.gtick runs these in a parallel stream).
+     *
+     * Safe to skip: GLDrawList.update builds the replacement DrawSlot before
+     * touching any of its own state, so a throw leaves the previous slot
+     * intact and the next gtick retries once the resource has loaded.
+     * Guarded per sprite rather than per gob so one slow texture does not
+     * also skip the drawable and the gob's other overlays. */
+    private static void gtick1(Runnable tick) {
+	try {
+	    tick.run();
+	} catch(Loading e) {
+	    /* Retried next frame. */
+	}
+    }
+
     public void gtick(Render g) {
 	Drawable d = getattr(Drawable.class);
 	if(d != null)
-	    d.gtick(g);
+	    gtick1(() -> d.gtick(g));
 	for(Overlay ol : ols) {
-	    if(ol.spr != null)
-		ol.spr.gtick(g);
+	    if(ol.spr != null) {
+		final Sprite spr = ol.spr;
+		gtick1(() -> spr.gtick(g));
+	    }
 	}
     }
     

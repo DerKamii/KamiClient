@@ -32,6 +32,7 @@ import java.util.function.*;
 import haven.CFG;
 import haven.Composited;
 import haven.Config;
+import haven.Loading;
 
 public class TickList implements RenderList<TickList.TickNode> {
     private static volatile boolean cachedHideTrees = CFG.HIDE_TREES.get();
@@ -191,12 +192,25 @@ public class TickList implements RenderList<TickList.TickNode> {
 	    copy = snapshot;
 	}
 	BiConsumer<Entry, Render> task = (ent, out) -> {
-	    if(ent.mon == null) {
-		ent.tick.autogtick(out);
-	    } else {
-		synchronized(ent.mon) {
+	    try {
+		if(ent.mon == null) {
 		    ent.tick.autogtick(out);
+		} else {
+		    synchronized(ent.mon) {
+			ent.tick.autogtick(out);
+		    }
 		}
+	    } catch(Loading e) {
+		/* A gtick that updates its slot makes the drawlist compile
+		 * the new state, which finalizes any texture it references,
+		 * and one still loading throws. That is ordinary "not ready
+		 * yet" control flow, not a failed tick: GLDrawList.update
+		 * builds the replacement DrawSlot before touching any of its
+		 * own state, so nothing is left half-updated, and the next
+		 * gtick retries once the resource has loaded.
+		 *
+		 * Without this the Loading escapes the parallel stream and
+		 * takes the whole frame down with it. */
 	    }
 	};
 	if(!Config.par.get() || !cachedParallelTick) {

@@ -34,6 +34,7 @@ import auto.Bot;
 
 import java.awt.Color;
 import java.awt.event.KeyEvent;
+import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
@@ -2837,6 +2838,36 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	return camtypes.keySet();
     }
     
+    /* KamiClient: the dump commands exist for users who hit something odd and
+     * report it, and those users generally do not have the console open - so
+     * write the output to dumps/ as well as printing it. The file is the thing
+     * they can actually send back. */
+    private static PrintWriter dumpfile(Console cons, String name) {
+	java.io.File dir = new java.io.File("dumps");
+	if(!dir.isDirectory() && !dir.mkdirs()) {
+	    cons.out.println("could not create dumps/ - printing here only");
+	    return(null);
+	}
+	String stamp = new java.text.SimpleDateFormat("yyyy-MM-dd HH.mm.ss").format(new java.util.Date());
+	java.io.File f = new java.io.File(dir, String.format("%s %s.txt", name, stamp));
+	try {
+	    PrintWriter w = new PrintWriter(new java.io.FileWriter(f));
+	    cons.out.printf("writing %s%n", f.getPath());
+	    return(w);
+	} catch(java.io.IOException e) {
+	    cons.out.printf("could not write %s: %s%n", f.getPath(), e.getMessage());
+	    return(null);
+	}
+    }
+
+    /* Prints to the console and, when there is one, to the dump file too. */
+    private static void dumpf(Console cons, PrintWriter w, String fmt, Object... args) {
+	String ln = String.format(fmt, args);
+	cons.out.println(ln);
+	if(w != null)
+	    w.println(ln);
+    }
+
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
 	cmdmap.put("cam", (cons, args) -> {
@@ -2850,31 +2881,37 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	 * it, and the gap between them. A large offset means the filter; ~0 means
 	 * look elsewhere. */
 	cmdmap.put("camdump", (cons, args) -> {
-	    int strength = CFG.CAMERA_SMOOTH_STRENGTH.get();
-	    cons.out.printf("smoothing: %s (strength %d)%n",
-			    (strength > 0) ? "on" : "off", strength);
-	    Gob pl = player();
-	    cons.out.printf("plgob: %d %s%n", plgob, (pl == null) ? "(no gob)" : "");
-	    Coord3f raw;
+	    PrintWriter w = dumpfile(cons, "camdump");
 	    try {
-		raw = rawcc();
-	    } catch(Loading l) {
-		cons.out.printf("raw: <loading: %s>%n", l.getMessage());
-		return;
+		int strength = CFG.CAMERA_SMOOTH_STRENGTH.get();
+		dumpf(cons, w, "smoothing: %s (strength %d)",
+		      (strength > 0) ? "on" : "off", strength);
+		Gob pl = player();
+		dumpf(cons, w, "plgob: %d %s", plgob, (pl == null) ? "(no gob)" : "");
+		Coord3f raw;
+		try {
+		    raw = rawcc();
+		} catch(Loading l) {
+		    dumpf(cons, w, "raw: <loading: %s>", l.getMessage());
+		    return;
+		}
+		dumpf(cons, w, "raw:      (%.2f, %.2f, %.2f)  tile (%.1f, %.1f)",
+		      raw.x, raw.y, raw.z, raw.x / tilesz.x, raw.y / tilesz.y);
+		Coord3f f = camfilter.dbgfiltered();
+		if(f == null) {
+		    dumpf(cons, w, "filtered: <none - filter off or not seeded>");
+		} else {
+		    double off = Math.hypot(f.x - raw.x, f.y - raw.y);
+		    dumpf(cons, w, "filtered: (%.2f, %.2f)  vel (%.2f, %.2f)",
+			  f.x, f.y, camfilter.dbgvx(), camfilter.dbgvy());
+		    dumpf(cons, w, "offset:   %.2f (%.1f tiles)%s", off, off / tilesz.x,
+			  (off > 50) ? "  <-- beyond leash, this is the bug" : "");
+		}
+		dumpf(cons, w, "camera:   %s", (camera == null) ? "<none>" : camera.stats());
+	    } finally {
+		if(w != null)
+		    w.close();
 	    }
-	    cons.out.printf("raw:      (%.2f, %.2f, %.2f)  tile (%.1f, %.1f)%n",
-			    raw.x, raw.y, raw.z, raw.x / tilesz.x, raw.y / tilesz.y);
-	    Coord3f f = camfilter.dbgfiltered();
-	    if(f == null) {
-		cons.out.println("filtered: <none - filter off or not seeded>");
-	    } else {
-		double off = Math.hypot(f.x - raw.x, f.y - raw.y);
-		cons.out.printf("filtered: (%.2f, %.2f)  vel (%.2f, %.2f)%n",
-				f.x, f.y, camfilter.dbgvx(), camfilter.dbgvy());
-		cons.out.printf("offset:   %.2f (%.1f tiles)%s%n", off, off / tilesz.x,
-				(off > 50) ? "  <-- beyond leash, this is the bug" : "");
-	    }
-	    cons.out.printf("camera:   %s%n", (camera == null) ? "<none>" : camera.stats());
 	});
 	/* KamiClient: for the "world came apart" reports - layers drawn at wrong
 	 * offsets from each other, clicks all going one direction, flavour objects
@@ -2891,54 +2928,60 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	 *  - stale count: how many visible gobs are drawn away from where they are.
 	 *    A handful is normal churn; a lot of them is the bug. */
 	cmdmap.put("mapdump", (cons, args) -> {
-	    Gob pl = player();
-	    cons.out.printf("plgob %d, view cc %s%n", plgob, cc);
-	    if(pl == null) {
-		cons.out.println("no player gob");
-	    } else {
-		Coord3f prc = pl.getc();
-		Coord3f ppl = pl.placed.dbgplacedc();
-		cons.out.printf("player rc     %s%n", prc);
-		cons.out.printf("player placed %s%s%n", ppl,
-				pl.placed.dbgdirty() ? " (dirty)" : "");
-		if((ppl != null) && (prc != null))
-		    cons.out.printf("player drift  %.2f%n", Math.hypot(ppl.x - prc.x, ppl.y - prc.y));
-		Coord ptc = new Coord2d(prc).floor(tilesz);
-		try {
-		    MCache.Grid g = ui.sess.glob.map.getgridt(ptc);
-		    cons.out.printf("grid id %d ul %s, tile %s -> off %s%n",
-				    g.id, g.ul, ptc, ptc.sub(g.ul));
-		} catch(Loading l) {
-		    cons.out.printf("grid: <loading: %s>%n", l.getMessage());
-		}
-	    }
-	    /* Sweep the visible gobs for stale placements. */
-	    int n = 0, stale = 0;
-	    double worst = 0;
-	    Gob worstg = null;
-	    OCache oc = ui.sess.glob.oc;
-	    synchronized(oc) {
-		for(Gob g : oc) {
-		    Coord3f rc, pc;
+	    PrintWriter w = dumpfile(cons, "mapdump");
+	    try {
+		Gob pl = player();
+		dumpf(cons, w, "plgob %d, view cc %s", plgob, cc);
+		if(pl == null) {
+		    dumpf(cons, w, "no player gob");
+		} else {
+		    Coord3f prc = pl.getc();
+		    Coord3f ppl = pl.placed.dbgplacedc();
+		    dumpf(cons, w, "player rc     %s", prc);
+		    dumpf(cons, w, "player placed %s%s", ppl,
+			  pl.placed.dbgdirty() ? " (dirty)" : "");
+		    if((ppl != null) && (prc != null))
+			dumpf(cons, w, "player drift  %.2f", Math.hypot(ppl.x - prc.x, ppl.y - prc.y));
+		    Coord ptc = new Coord2d(prc).floor(tilesz);
 		    try {
-			rc = g.getc();
+			MCache.Grid g = ui.sess.glob.map.getgridt(ptc);
+			dumpf(cons, w, "grid id %d ul %s, tile %s -> off %s",
+			      g.id, g.ul, ptc, ptc.sub(g.ul));
 		    } catch(Loading l) {
-			continue;
-		    }
-		    pc = g.placed.dbgplacedc();
-		    if((rc == null) || (pc == null))
-			continue;
-		    n++;
-		    double d = Math.hypot(pc.x - rc.x, pc.y - rc.y);
-		    if(d > 1.0) {
-			stale++;
-			if(d > worst) {worst = d; worstg = g;}
+			dumpf(cons, w, "grid: <loading: %s>", l.getMessage());
 		    }
 		}
+		/* Sweep the visible gobs for stale placements. */
+		int n = 0, stale = 0;
+		double worst = 0;
+		Gob worstg = null;
+		OCache oc = ui.sess.glob.oc;
+		synchronized(oc) {
+		    for(Gob g : oc) {
+			Coord3f rc, pc;
+			try {
+			    rc = g.getc();
+			} catch(Loading l) {
+			    continue;
+			}
+			pc = g.placed.dbgplacedc();
+			if((rc == null) || (pc == null))
+			    continue;
+			n++;
+			double d = Math.hypot(pc.x - rc.x, pc.y - rc.y);
+			if(d > 1.0) {
+			    stale++;
+			    if(d > worst) {worst = d; worstg = g;}
+			}
+		    }
+		}
+		dumpf(cons, w, "gobs %d, placed away from rc %d", n, stale);
+		if(worstg != null)
+		    dumpf(cons, w, "worst %.2f: %s (%s)", worst, worstg.resid(), worstg.rc);
+	    } finally {
+		if(w != null)
+		    w.close();
 	    }
-	    cons.out.printf("gobs %d, placed away from rc %d%n", n, stale);
-	    if(worstg != null)
-		cons.out.printf("worst %.2f: %s (%s)%n", worst, worstg.resid(), worstg.rc);
 	});
 	/* KamiClient: the other half of :mapdump. Marks every gob's placement
 	 * stale so it recomputes next tick. If running this un-breaks a world

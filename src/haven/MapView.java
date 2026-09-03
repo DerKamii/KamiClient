@@ -2988,6 +2988,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	 * that has come apart, the bug is a missed placement invalidation and
 	 * not anything in the map data itself - which is the single most useful
 	 * thing an affected user can tell us. */
+	/* KamiClient: the big hammer - drop every cached grid so the client
+	 * re-requests the lot and rebuilds terrain, plots and flavour objects
+	 * from scratch. Same path the flat-terrain toggle uses, and the same
+	 * effect as walking in and out of a zone, which is what people have
+	 * been doing by hand to unstick a world that came apart. */
+	cmdmap.put("rebuildview", (cons, args) -> {
+	    ui.sess.glob.map.trimall();
+	    cons.out.println("dropped all cached map grids - they will reload from the server");
+	});
 	cmdmap.put("replace", (cons, args) -> {
 	    OCache oc = ui.sess.glob.oc;
 	    int n = 0;

@@ -5,7 +5,7 @@ $size[14]{$u{update on 03.09.2026:}
 * The camera smoothing on/off box is gone, the strength slider does it (0 = off)
 * Added a :camdump console command that shows where the camera thinks you are
 * Hopefully fixed the object placement invalidation check, which left crop overlays, property lines and flavour objects sitting where they no longer belong
-* Added :mapdump and :replace console commands in case the above isn't the whole story - :camdump and :mapdump now write a text file into dumps/ so you can send it without having the console open
+* Added :mapdump, :replace and :rebuildview console commands in case the above isn't the whole story - :rebuildview reloads the map the same way stepping in and out of a zone does, and :camdump/:mapdump write a text file into dumps/ so you can send it without having the console open
 `
 $size[14]{$u{update on 02.09.2026:}
 * Fixed a crash when hovering the mouse off the edge of the map

@@ -1,6 +1,8 @@
-$size[14]{$u{update (ongoing):}
+$size[14]{$u{update on 03.09.2026:}
 * Fixed a crash when the lighting was rebuilt while objects were still loading in
 * Fixed a crash when picking a character with the craft window left open
+* Fixed the camera drifting away from your character, sometimes far enough to black out the world
+* The camera smoothing on/off box is gone, the strength slider does it (0 = off)
 `
 $size[14]{$u{update on 02.09.2026:}
 * Fixed a crash when hovering the mouse off the edge of the map

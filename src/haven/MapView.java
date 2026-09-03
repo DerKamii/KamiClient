@@ -1402,14 +1402,20 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	return((plgob < 0) ? null : glob.oc.getgob(plgob));
     }
     
-    public Coord3f getcc() {
+    private Coord3f rawcc() {
 	Gob pl = player();
-	Coord3f raw;
 	if(pl != null)
-	    raw = pl.getc();
-	else
-	    raw = glob.map.getzp(cc);
-	return(camfilter.filter(raw));
+	    return(pl.getc());
+	return(glob.map.getzp(cc));
+    }
+
+    public Coord3f getcc() {
+	/* KamiClient: this used to step the smoothing filter inline, but getcc() is
+	 * called from a dozen places a frame - camera, culling, minimap, screenxf -
+	 * on both the UI and render threads, so the spring got advanced an arbitrary
+	 * number of times per frame from two threads at once. It's stepped once from
+	 * tick() now; this just reads whatever that produced. */
+	return(camfilter.get(rawcc()));
     }
 
     private final CamJitterFilter camfilter = new CamJitterFilter();
@@ -1419,25 +1425,55 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	// the target — roughly 4/OMEGA seconds to settle from rest. OMEGA=6
 	// gives ~0.65s settle on big jumps with smooth ease-in-out.
 	private static final float OMEGA = 6f;
-	private double lastTime = Double.NaN;
-	private Coord3f filtered;
+	/* Read from the render and UI threads, written by tick(); volatile so a
+	 * reset is seen promptly. Always snapshot it into a local before use -
+	 * the pair of coordinates is only consistent within one Coord3f. */
+	private volatile Coord3f filtered;
 	private float vx, vy;
 
-	Coord3f filter(Coord3f raw) {
-	    if(!CFG.CAMERA_SMOOTH_JITTER.get()) {
-		lastTime = Double.NaN;
+	/* Hard ceiling on how far the camera may sit from the player. The leash
+	 * already caps the offset at 50, so nothing legitimate comes near this -
+	 * it only fires if the spring state got corrupted anyway, and it's cheap
+	 * insurance against the camera wandering off and taking the loaded map
+	 * cuts with it. Well under the 1000 teleport threshold. */
+	private static final float MAXOFF = 200f;
+
+	/* Read the smoothed position. Called many times a frame from several
+	 * threads, so it only reads state - stepping happens in step(). */
+	Coord3f get(Coord3f raw) {
+	    Coord3f f = this.filtered;
+	    if(f == null)
 		return(raw);
-	    }
-	    double now = System.nanoTime() / 1e9;
-	    if(Double.isNaN(lastTime) || filtered == null) {
-		lastTime = now;
-		filtered = raw;
+	    if(!Float.isFinite(f.x) || !Float.isFinite(f.y) ||
+	       (Math.hypot(f.x - raw.x, f.y - raw.y) > MAXOFF)) {
+		filtered = null;
 		vx = vy = 0f;
 		return(raw);
 	    }
-	    float dt = (float)(now - lastTime);
-	    if(dt <= 0) return(filtered);
-	    lastTime = now;
+	    return(new Coord3f(f.x, f.y, raw.z));
+	}
+
+	/* Advance the spring. Called once a frame from MapView.tick with the
+	 * frame's own dt, so the camera behaves the same no matter how many
+	 * things asked for the position. */
+	void step(Coord3f raw, double rdt) {
+	    float leash = Utils.clip(CFG.CAMERA_SMOOTH_STRENGTH.get(), 0, 50);
+	    if(leash <= 0) {
+		/* Off: hand back the raw position and forget any state, so
+		 * turning it back on starts from where the camera actually is. */
+		filtered = null;
+		vx = vy = 0f;
+		return;
+	    }
+	    if(filtered == null) {
+		filtered = raw;
+		vx = vy = 0f;
+		return;
+	    }
+	    float dt = (float)rdt;
+	    if(dt <= 0)
+		return;
+	    // Keep dt well under 2/OMEGA, past which the integration goes unstable.
 	    if(dt > 0.1f) dt = 0.1f;
 
 	    // Teleport detection: if the player jumped a huge distance (e.g. zoning
@@ -1446,10 +1482,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    if(Math.hypot(filtered.x - raw.x, filtered.y - raw.y) > 1000f) {
 		filtered = raw;
 		vx = vy = 0f;
-		return(raw);
+		return;
 	    }
-
-	    float leash = Utils.clip(CFG.CAMERA_SMOOTH_STRENGTH.get(), 0, 50);
 
 	    // Critically-damped spring integration (semi-implicit). Produces
 	    // ease-in-out: accelerates from rest, decelerates into the target,
@@ -1486,8 +1520,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		vx = vy = 0f;
 	    }
 
+	    // Belt and braces: if anything above went non-finite, drop back to
+	    // the player rather than leaving the camera stranded off in space.
+	    if(!Float.isFinite(fx) || !Float.isFinite(fy)) {
+		filtered = null;
+		vx = vy = 0f;
+		return;
+	    }
+
 	    filtered = new Coord3f(fx, fy, raw.z);
-	    return(filtered);
 	}
     }
     
@@ -2043,6 +2084,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    camoff.x = (float)((Math.random() - 0.5) * shake);
 	    camoff.y = (float)((Math.random() - 0.5) * shake);
 	    camoff.z = (float)((Math.random() - 0.5) * shake);
+	    camfilter.step(rawcc(), dt);
 	    camera.tick(dt);
 	    if(CFG.EXTENDED_ORTHO_VIEW.get() && camera instanceof OrthoCam) {
 		OrthoCam oc = (OrthoCam)camera;

@@ -141,7 +141,7 @@ public interface Lighting {
 	public final int wb, hb, db;
 	public int maxlights = defmax;
 	private final int lswb;
-	private GridLights last;
+	private GridLights last, prev;
 
 	public LightGrid(int w, int h, int d) {
 	    if(w != Integer.highestOneBit(w)) throw(new IllegalArgumentException("not a power of two: " + w));
@@ -408,10 +408,16 @@ public interface Lighting {
 		c.addlight(i, lights[i]);
 	    c.compact();
 	    Debug.statprint(Utils.formatter("C-lights: %d lists, max %d, bounds %s, cell %s", c.nlists, c.maxlist, c.bbox, c.gsz), stats);
-	    if(last != null) {
-		last.dispose();
-		last = null;
-	    }
+	    /* KamiClient: this used to dispose the previous grid right here, but the light
+	     * recompile runs outside the tree lock - the loader thread can be halfway
+	     * through building drawlist settings off the old grid's textures, and it'd
+	     * blow up on a use-after-free. Hold it one extra compile before letting go:
+	     * by then the frame that could still have been reading it is long done.
+	     * Can't just leak it to the finalizer either - with ZONED lighting this runs
+	     * every frame, and that's two textures a frame for GC to chase. */
+	    if(prev != null)
+		prev.dispose();
+	    prev = last;
 	    return(last = new GridLights(lights, c.bbox, c.grid, c.listbuf, c.lboff));
 	}
 

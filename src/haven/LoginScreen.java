@@ -64,7 +64,7 @@ public class LoginScreen extends Widget {
 	switch(authmech.get()) {
 	case "native":
 	    login = new Credbox();
-	    accounts = add(new AccountList(10));
+	    accounts = add(new AccountList(10, confname));
 	    break;
 	case "steam":
 	    login = new Steambox();
@@ -122,10 +122,7 @@ public class LoginScreen extends Widget {
 
 	    private UserEntry(int w) {
 		super(w, "");
-		//history.addAll(Utils.getprefsl("saved-tokens@" + confname, new String[] {}));
-		synchronized (AccountList.accountmap) {
-		    history.addAll(AccountList.accountmap.keySet());
-		}
+		history.addAll(AccountList.accountnames(confname));
 	    }
 
 	    protected void changed() {
@@ -396,9 +393,14 @@ public class LoginScreen extends Widget {
 	    if("account".equals(msg) && login instanceof Credbox) {
 		Credbox creds = (Credbox) login;
 		String name = (String) args[0];
-		String token = (String) args[1];
 		creds.user.settext2(name);
-		creds.token = Utils.hex2byte(token);
+		/* KamiClient: the list used to carry the token along in the message,
+		 * back when it kept its own store. Look it up where it actually
+		 * lives now - settext2 has already done that via checktoken, but be
+		 * explicit rather than relying on the side effect. */
+		creds.token = Bootstrap.gettoken(name, confname);
+		if(creds.token == null)
+		    return;
 		creds.enter();
 	    }
 	    return;

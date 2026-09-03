@@ -9,95 +9,84 @@ import java.util.*;
 
 public class AccountList extends Widget {
     public static final String ACCOUNTS_JSON = "accounts.json";
-    public static final Map<String, String> accountmap = new HashMap<>();
     private static final Coord SZ = UI.scale(230, 30);
     private static final Comparator<Account> accountComparator = Comparator.comparing(o -> o.name);
     
-    static {
-	AccountList.loadAccounts();
-    }
-    
     public int height, y;
+    public final String confname;
     public final List<Account> accounts = new ArrayList<>();
     
-    static void loadAccounts() {
+    /* KamiClient: this class used to keep its own token store in accounts.json,
+     * keyed by username alone. That put saved logins somewhere a vanilla client
+     * could not see, and since the server rotates the token on each login, the
+     * two clients kept invalidating each other's saved login.
+     *
+     * It reads upstream's store now - the saved-tokens@<host> list, per host, the
+     * same place vanilla keeps them - so a login saved in either client works in
+     * both. Nothing here writes tokens any more; Bootstrap.settoken does that.
+     *
+     * One-shot import of any old accounts.json below, so nobody has to retype a
+     * login they had already saved here. */
+    public static List<String> accountnames(String confname) {
+	return(new ArrayList<>(Utils.getprefsl("saved-tokens@" + confname, new String[] {})));
+    }
+    
+    private static boolean imported = false;
+    public static void importold(String confname) {
+	synchronized(AccountList.class) {
+	    if(imported)
+		return;
+	    imported = true;
+	}
 	String json = Config.loadFile(ACCOUNTS_JSON);
-	if(json != null) {
-	    try {
-		Gson gson = (new GsonBuilder()).create();
-		Type collectionType = new TypeToken<HashMap<String, String>>() {
-		}.getType();
-		Map<String, String> tmp = gson.fromJson(json, collectionType);
-		accountmap.putAll(tmp);
-	    } catch (Exception ignored) {
+	if(json == null)
+	    return;
+	try {
+	    Gson gson = (new GsonBuilder()).create();
+	    Type collectionType = new TypeToken<HashMap<String, String>>() {}.getType();
+	    Map<String, String> old = gson.fromJson(json, collectionType);
+	    if(old == null)
+		return;
+	    List<String> have = accountnames(confname);
+	    for(Map.Entry<String, String> ent : old.entrySet()) {
+		if(have.contains(ent.getKey()) || (ent.getValue() == null))
+		    continue;
+		/* Only fill in names the prefs store does not already know. A
+		 * token vanilla wrote is newer than anything in here. */
+		Bootstrap.settoken2(ent.getKey(), confname, Utils.hex2byte(ent.getValue()));
 	    }
-	}
-    }
-    
-    public static void storeAccount(String name, String token) {
-	synchronized(accountmap) {
-	    accountmap.put(name, token);
-	}
-	saveAccounts();
-    }
-    
-    public static void removeAccount(String name) {
-	synchronized(accountmap) {
-	    accountmap.remove(name);
-	}
-	saveAccounts();
-    }
-    
-    public static void saveAccounts() {
-	synchronized(accountmap) {
-	    Gson gson = (new GsonBuilder()).setPrettyPrinting().create();
-	    Config.saveFile(ACCOUNTS_JSON, gson.toJson(accountmap));
-	}
-    }
-    
-    //TODO: find how to incorporate hostname without breaking stuff
-    public static byte[] getToken(String user, String hostname) {
-	synchronized (accountmap) {
-	    String token = accountmap.get(user);
-	    if(token == null){
-		return null;
-	    } else {
-		return Utils.hex2byte(token);
-	    }
-	}
-    }
-    
-    public static void setToken(String user, String hostname, byte[] token) {
-	if(token == null) {
-	    removeToken(user, hostname);
-	} else {
-	    storeAccount(user, Utils.byte2hex(token));
+	    /* Imported, so get it out of the way - leaving it would re-import
+	     * stale tokens if the prefs store is ever cleared. */
+	    java.io.File old_ = Config.getFile(ACCOUNTS_JSON);
+	    if(old_.exists() && !old_.renameTo(new java.io.File(old_.getPath() + ".imported")))
+		old_.delete();
+	} catch(Exception ignored) {
 	}
     }
     
     public static void removeToken(String user, String hostname) {
-	removeAccount(user);
+	Bootstrap.settoken2(user, hostname, null);
     }
     
     public static class Account {
-	public String name, token;
+	public String name;
 	Button plb, del;
 	
-	public Account(String name, String token) {
+	public Account(String name) {
 	    this.name = name;
-	    this.token = token;
 	}
     }
     
-    public AccountList(int height) {
+    public AccountList(int height, String confname) {
 	super();
 	this.height = height;
+	this.confname = confname;
 	this.sz = new Coord(SZ.x, SZ.y * height);
 	y = 0;
 	
-	for (Map.Entry<String, String> entry : accountmap.entrySet()) {
-	    add(entry.getKey(), entry.getValue());
-	}
+	importold(confname);
+	for(String name : accountnames(confname))
+	    add(name);
 	accounts.sort(accountComparator);
     }
     
@@ -141,7 +130,7 @@ public class AccountList extends Widget {
 	    synchronized(accounts) {
 		for(Account account : accounts) {
 		    if(sender == account.plb) {
-			super.wdgmsg("account", account.name, account.token);
+			super.wdgmsg("account", account.name);
 			break;
 		    } else if(sender == account.del) {
 			remove(account);
@@ -154,8 +143,8 @@ public class AccountList extends Widget {
 	}
     }
     
-    public void add(String name, String token) {
-	Account c = new Account(name, token);
+    public void add(String name) {
+	Account c = new Account(name);
 	c.plb = add(new Button(UI.scale(200), name) {
 	    @Override
 	    protected boolean i10n() { return false; }
@@ -176,7 +165,7 @@ public class AccountList extends Widget {
 	    accounts.remove(account);
 	}
 	scroll(0);
-	removeAccount(account.name);
+	removeToken(account.name, confname);
 	ui.destroy(account.plb);
 	ui.destroy(account.del);
     }

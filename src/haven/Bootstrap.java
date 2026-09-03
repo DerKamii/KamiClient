@@ -137,25 +137,27 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	    return;
 	String prefnm = user;
 	Utils.setpref("savedtoken-" + mangleuser(user) + "@" + confname, (token == null) ? null : Utils.hex.enc(token));
-	rottokens(user, confname, token != null, true);
+	rottokens2(user, confname, token != null, true);
     }
     
+    /* KamiClient: these used to keep tokens in accounts.json via AccountList, which
+     * meant a saved login here and one in a vanilla client were two separate things.
+     * The server rotates the token on every login, so whichever client logged in
+     * last invalidated the other one's copy and you had to type the password again.
+     *
+     * They go through upstream's store now - Java prefs, keyed per host, with the
+     * saved-tokens rotation list - so both clients see the same saved login.
+     * AccountList reads that store rather than owning one of its own. */
     public static byte[] gettoken(String user, String hostname) {
-	return AccountList.getToken(user, hostname);
+	return(gettoken2(user, hostname));
     }
     
     public static void rottokens(String user, String hostname, boolean creat, boolean rm) {
-	if(rm && !creat) {
-	    AccountList.removeToken(user, hostname);
-	}
+	rottokens2(user, hostname, creat, rm);
     }
     
     public static void settoken(String user, String hostname, byte[] token) {
-	if(token == null) {
-	    AccountList.removeToken(user, hostname);
-	} else {
-	    AccountList.setToken(user, hostname, token);
-	}
+	settoken2(user, hostname, token);
     }
 
     private Message getmsg() throws InterruptedException {

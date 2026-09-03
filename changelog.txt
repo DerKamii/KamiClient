@@ -1,6 +1,9 @@
-$size[14]{$u{update on 03.09.2026:}
-* The client now writes a note into the logs folder if it catches the render state going inconsistent, and tells you once in chat. If you see that message, please send the file
+$size[14]{$u{update on 03.09.2026 v2:}
+* Still working on the world breaking apart (misplaced buildings, crops and fences). Fixed one cause, but I haven't found the root cause just yet - restarting or stepping indoors clears it for now.
+* If you get a chat message about something unexpected, there's a file in the logs folder - please send it, it'll help me track this down.
 * Saved logins now live where the vanilla client keeps them, so switching between clients no longer logs you out of the other one. Anything already saved gets carried over the first time you start
+`
+$size[14]{$u{update on 03.09.2026:}
 * Fixed a crash when the lighting was rebuilt while objects were still loading in
 * Fixed a crash loading objects into the world ("Reading undefined slot"), which also explains a couple of other render crashes
 * Fixed a crash when picking a character with the craft window left open

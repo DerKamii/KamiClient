@@ -1,10 +1,11 @@
 $size[14]{$u{update on 03.09.2026:}
 * Fixed a crash when the lighting was rebuilt while objects were still loading in
 * Fixed a crash when picking a character with the craft window left open
-* Fixed the camera drifting away from your character, sometimes far enough to black out the world
+* Fixed the camera smoothing stepping itself several times a frame from two threads
 * The camera smoothing on/off box is gone, the strength slider does it (0 = off)
 * Added a :camdump console command that shows where the camera thinks you are
-* Added :mapdump and :replace console commands for chasing the "world came apart" bug
+* Hopefully fixed the object placement invalidation check, which left crop overlays, property lines and flavour objects sitting where they no longer belong
+* Added :mapdump and :replace console commands in case the above isn't the whole story
 `
 $size[14]{$u{update on 02.09.2026:}
 * Fixed a crash when hovering the mouse off the edge of the map

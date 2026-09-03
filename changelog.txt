@@ -1,4 +1,5 @@
 $size[14]{$u{update on 03.09.2026:}
+* The client now writes a note into the logs folder if it catches the render state going inconsistent, and tells you once in chat. If you see that message, please send the file
 * Saved logins now live where the vanilla client keeps them, so switching between clients no longer logs you out of the other one. Anything already saved gets carried over the first time you start
 * Fixed a crash when the lighting was rebuilt while objects were still loading in
 * Fixed a crash loading objects into the world ("Reading undefined slot"), which also explains a couple of other render crashes

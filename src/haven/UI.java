@@ -1228,6 +1228,8 @@ public class UI {
 	synchronized (guiLock) {
 	    this.gui = gui;
 	}
+	/* KamiClient: so DiagLog can reach the player from code that has no widget. */
+	DiagLog.setgui(gui);
     }
     
     public void clearGUI(GameUI gui) {
@@ -1236,6 +1238,7 @@ public class UI {
 		this.gui = null;
 	    }
 	}
+	DiagLog.clrgui(gui);
     }
     
     public boolean isDefaultCursor() {

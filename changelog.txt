@@ -1,5 +1,6 @@
 $size[14]{$u{update on 03.09.2026:}
 * Fixed a crash when the lighting was rebuilt while objects were still loading in
+* Fixed a crash loading objects into the world ("Reading undefined slot"), which also explains a couple of other render crashes
 * Fixed a crash when picking a character with the craft window left open
 * Fixed the camera smoothing stepping itself several times a frame from two threads
 * The camera smoothing on/off box is gone, the strength slider does it (0 = off)

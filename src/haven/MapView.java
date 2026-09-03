@@ -1453,6 +1453,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return(new Coord3f(f.x, f.y, raw.z));
 	}
 
+	/* For :camdump - the raw smoothed position, or null when the filter is
+	 * off or hasn't seeded. Deliberately does not go through get(), so
+	 * dumping never resets the state we're trying to look at. */
+	Coord3f dbgfiltered() {return(this.filtered);}
+	float dbgvx() {return(vx);}
+	float dbgvy() {return(vy);}
+
 	/* Advance the spring. Called once a frame from MapView.tick with the
 	 * frame's own dt, so the camera behaves the same no matter how many
 	 * things asked for the position. */
@@ -2836,6 +2843,38 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    if(args.length >= 2) {
 		setcam(args[1], Utils.splice(args, 2));
 	    }
+	});
+	/* KamiClient: for chasing "my camera drifted off the character" reports.
+	 * Nothing throws when that happens, so there's no crash log to read -
+	 * this prints the raw player position, what the smoothing filter made of
+	 * it, and the gap between them. A large offset means the filter; ~0 means
+	 * look elsewhere. */
+	cmdmap.put("camdump", (cons, args) -> {
+	    int strength = CFG.CAMERA_SMOOTH_STRENGTH.get();
+	    cons.out.printf("smoothing: %s (strength %d)%n",
+			    (strength > 0) ? "on" : "off", strength);
+	    Gob pl = player();
+	    cons.out.printf("plgob: %d %s%n", plgob, (pl == null) ? "(no gob)" : "");
+	    Coord3f raw;
+	    try {
+		raw = rawcc();
+	    } catch(Loading l) {
+		cons.out.printf("raw: <loading: %s>%n", l.getMessage());
+		return;
+	    }
+	    cons.out.printf("raw:      (%.2f, %.2f, %.2f)  tile (%.1f, %.1f)%n",
+			    raw.x, raw.y, raw.z, raw.x / tilesz.x, raw.y / tilesz.y);
+	    Coord3f f = camfilter.dbgfiltered();
+	    if(f == null) {
+		cons.out.println("filtered: <none - filter off or not seeded>");
+	    } else {
+		double off = Math.hypot(f.x - raw.x, f.y - raw.y);
+		cons.out.printf("filtered: (%.2f, %.2f)  vel (%.2f, %.2f)%n",
+				f.x, f.y, camfilter.dbgvx(), camfilter.dbgvy());
+		cons.out.printf("offset:   %.2f (%.1f tiles)%s%n", off, off / tilesz.x,
+				(off > 50) ? "  <-- beyond leash, this is the bug" : "");
+	    }
+	    cons.out.printf("camera:   %s%n", (camera == null) ? "<none>" : camera.stats());
 	});
 	cmdmap.put("whyload", (cons, args) -> {
 	    Loading l = lastload;

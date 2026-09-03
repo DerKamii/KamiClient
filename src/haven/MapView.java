@@ -2876,6 +2876,86 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	    cons.out.printf("camera:   %s%n", (camera == null) ? "<none>" : camera.stats());
 	});
+	/* KamiClient: for the "world came apart" reports - layers drawn at wrong
+	 * offsets from each other, clicks all going one direction, flavour objects
+	 * stuck to the camera. Nothing throws, so there's no crash log; this prints
+	 * the three coordinate systems that have to agree, so an affected user's
+	 * output says which one drifted.
+	 *
+	 * What to look for:
+	 *  - player rc vs placed: a gap means Gob.Placed cached a stale placement.
+	 *    Nothing marks placement dirty when the map updates under a standing
+	 *    gob, so this is the prime suspect.
+	 *  - grid ul vs the tile it should hold: a mismatch means the map grid
+	 *    itself is keyed wrong, which would break clicks too.
+	 *  - stale count: how many visible gobs are drawn away from where they are.
+	 *    A handful is normal churn; a lot of them is the bug. */
+	cmdmap.put("mapdump", (cons, args) -> {
+	    Gob pl = player();
+	    cons.out.printf("plgob %d, view cc %s%n", plgob, cc);
+	    if(pl == null) {
+		cons.out.println("no player gob");
+	    } else {
+		Coord3f prc = pl.getc();
+		Coord3f ppl = pl.placed.dbgplacedc();
+		cons.out.printf("player rc     %s%n", prc);
+		cons.out.printf("player placed %s%s%n", ppl,
+				pl.placed.dbgdirty() ? " (dirty)" : "");
+		if((ppl != null) && (prc != null))
+		    cons.out.printf("player drift  %.2f%n", Math.hypot(ppl.x - prc.x, ppl.y - prc.y));
+		Coord ptc = new Coord2d(prc).floor(tilesz);
+		try {
+		    MCache.Grid g = ui.sess.glob.map.getgridt(ptc);
+		    cons.out.printf("grid id %d ul %s, tile %s -> off %s%n",
+				    g.id, g.ul, ptc, ptc.sub(g.ul));
+		} catch(Loading l) {
+		    cons.out.printf("grid: <loading: %s>%n", l.getMessage());
+		}
+	    }
+	    /* Sweep the visible gobs for stale placements. */
+	    int n = 0, stale = 0;
+	    double worst = 0;
+	    Gob worstg = null;
+	    OCache oc = ui.sess.glob.oc;
+	    synchronized(oc) {
+		for(Gob g : oc) {
+		    Coord3f rc, pc;
+		    try {
+			rc = g.getc();
+		    } catch(Loading l) {
+			continue;
+		    }
+		    pc = g.placed.dbgplacedc();
+		    if((rc == null) || (pc == null))
+			continue;
+		    n++;
+		    double d = Math.hypot(pc.x - rc.x, pc.y - rc.y);
+		    if(d > 1.0) {
+			stale++;
+			if(d > worst) {worst = d; worstg = g;}
+		    }
+		}
+	    }
+	    cons.out.printf("gobs %d, placed away from rc %d%n", n, stale);
+	    if(worstg != null)
+		cons.out.printf("worst %.2f: %s (%s)%n", worst, worstg.resid(), worstg.rc);
+	});
+	/* KamiClient: the other half of :mapdump. Marks every gob's placement
+	 * stale so it recomputes next tick. If running this un-breaks a world
+	 * that has come apart, the bug is a missed placement invalidation and
+	 * not anything in the map data itself - which is the single most useful
+	 * thing an affected user can tell us. */
+	cmdmap.put("replace", (cons, args) -> {
+	    OCache oc = ui.sess.glob.oc;
+	    int n = 0;
+	    synchronized(oc) {
+		for(Gob g : oc) {
+		    g.placed.dirty = true;
+		    n++;
+		}
+	    }
+	    cons.out.printf("marked %d gobs for replacement%n", n);
+	});
 	cmdmap.put("whyload", (cons, args) -> {
 	    Loading l = lastload;
 	    if(l == null)

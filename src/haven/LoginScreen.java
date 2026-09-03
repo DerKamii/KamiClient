@@ -455,6 +455,68 @@ public class LoginScreen extends Widget {
 	if(Config.isUpdate) {
 	    showChangeLog();
 	}
+	if(CFG.SEND_CRASH_REPORTS.get() == -1)
+	    askcrashreports();
+    }
+
+    /* KamiClient: crash logs always land in logs/ whatever they pick here - this
+     * only governs whether a copy gets sent to me. Asked once; the answer lives in
+     * the config and there is a matching option under Options if they change their
+     * mind. */
+    private Window crashask = null;
+    private void askcrashreports() {
+	if(crashask != null)
+	    return;
+	final WindowX wnd = new WindowX(Coord.z, "Crash reports") {
+		public void wdgmsg(Widget sender, String msg, Object... args) {
+		    if(msg.equals("close")) {
+			/* Closing without choosing is not consent. Ask again next start. */
+			destroy();
+			return;
+		    }
+		    super.wdgmsg(sender, msg, args);
+		}
+
+		public void destroy() {
+		    crashask = null;
+		    super.destroy();
+		}
+	    };
+	crashask = ui.root.add(wnd);
+	int y = 0;
+	crashask.add(new Label("If the client crashes, may it send me the crash report?"), 0, y);
+	y += UI.scale(22);
+	crashask.add(new Label("Either way a copy is saved in the logs folder, so you can"), 0, y);
+	y += UI.scale(16);
+	crashask.add(new Label("always send one yourself. Changeable later under Options."), 0, y);
+	y += UI.scale(24);
+	crashask.add(new Button(UI.scale(340), "Full report") {
+		public void click() {
+		    CFG.SEND_CRASH_REPORTS.set(CFG.CRASH_FULL);
+		    crashask.destroy();
+		}
+	    }, 0, y).settip("The error and where it happened, plus your Java version, " +
+			    "operating system, graphics card and client build. No account " +
+			    "details, no chat, nothing you typed.");
+	y += UI.scale(24);
+	crashask.add(new Button(UI.scale(340), "Just the error") {
+		public void click() {
+		    CFG.SEND_CRASH_REPORTS.set(CFG.CRASH_EXCONLY);
+		    crashask.destroy();
+		}
+	    }, 0, y).settip("Only the error and where it happened. Nothing about your " +
+			    "machine or your build - harder for me to place, but it still helps.");
+	y += UI.scale(24);
+	crashask.add(new Button(UI.scale(340), "Don't send anything") {
+		public void click() {
+		    CFG.SEND_CRASH_REPORTS.set(CFG.CRASH_NONE);
+		    crashask.destroy();
+		}
+	    }, 0, y);
+	crashask.pack();
+	/* Dead centre, so it lands over the login box rather than off in a corner
+	 * where it can be clicked past without reading. */
+	crashask.c = ui.root.sz.sub(crashask.sz).div(2);
     }
 
     public void draw(GOut g) {

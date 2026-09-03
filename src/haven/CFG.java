@@ -223,6 +223,13 @@ public class CFG<T> {
     public static final CFG<Boolean> BLOCK_ATTACK_TAMED_HORSE = new CFG<>("ui.combat.block_attack_tamed_horse", false);
     public static final CFG<Boolean> LEGACY_BGM_ENABLED = new CFG<>("audio.legacy_bgm.enabled", false);
     public static final CFG<Boolean> LEGACY_BGM_NO_COOLDOWN = new CFG<>("audio.legacy_bgm.no_cooldown", false);
+
+    /* KamiClient: -1 not asked yet, 0 declined, 1 exception only, 2 full report.
+     * Crash logs are always written to logs/ whatever this says; it only governs
+     * what, if anything, gets sent to me. "Exception only" is the trace and the
+     * message - no system details, no build or session info. */
+    public static final CFG<Integer> SEND_CRASH_REPORTS = new CFG<>("general.send_crash_reports", -1);
+    public static final int CRASH_NONE = 0, CRASH_EXCONLY = 1, CRASH_FULL = 2;
     public static final CFG<Double> LEGACY_BGM_VOLUME = new CFG<>("audio.legacy_bgm.volume", 0.5, new com.google.gson.reflect.TypeToken<Double>(){});
 
     private static final String CONFIG_JSON = "config.json";

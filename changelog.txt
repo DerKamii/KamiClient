@@ -1,3 +1,14 @@
+$size[14]{$u{update on 03.09.2026 v4:}
+* The world coming apart should be gone for good - map updates now always rebuild the terrain, the way the vanilla client does. This undoes an optimization of mine from April that skipped the rebuild when it thought nothing had changed, and was wrong about that more often than I realized
+`
+$size[14]{$u{update on 03.09.2026 v3:}
+* In order to appease the jester, I have added the mandatory opt in / out for the crash log reports. May thy mind be at ease.
+`
+$size[14]{$u{update on 03.09.2026 v2:}
+* Still working on the world breaking apart (misplaced buildings, crops and fences). Fixed one cause, but I haven't found the root cause just yet - restarting or stepping indoors clears it for now.
+* If you get a chat message about something unexpected, there's a file in the logs folder - please send it, it'll help me track this down.
+* Saved logins now live where the vanilla client keeps them, so switching between clients no longer logs you out of the other one. Anything already saved gets carried over the first time you start
+`
 $size[14]{$u{update on 03.09.2026:}
 * Fixed a crash when the lighting was rebuilt while objects were still loading in
 * Fixed a crash loading objects into the world ("Reading undefined slot"), which also explains a couple of other render crashes

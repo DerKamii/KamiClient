@@ -203,29 +203,15 @@ public class RenderTree implements RenderList.Adapter, Disposable {
 	    return(ret);
 	}
 
-	/* Cap the interner size to prevent unbounded growth.
-	 *
-	 * The DepInfo interner is meant to dedupe state configurations so downstream
-	 * caches can key on identity. However, because per-frame state slots like
-	 * FrameInfo (which holds the per-frame `time`) participate in DepInfo's hash
-	 * via state[i].hashCode() — and FrameInfo doesn't override hashCode, so it
-	 * inherits identity hashCode — every PView.tick produces a DepInfo with a
-	 * fresh hash. The interner never finds a match, always inserts, and grows
-	 * unboundedly until GC. The accumulated dead refs then trigger ~80-150ms
-	 * cleanup spikes inside add() once a frame's intern call drains the queue.
-	 *
-	 * Capping at 8192 keeps lookups cheap and prevents the cleanup-burst spike.
-	 * Past the cap we still find() (preserves dedup of existing entries) but
-	 * skip add() — returning `this`. Downstream consumers still get a valid
-	 * DepInfo; they just lose dedup for new entries past the cap.
-	 */
-	private static final int INTERN_SIZE_CAP = 8192;
+	/* KamiClient: 0fcebee31 capped this at 8192 to kill an 80-150ms cleanup
+	 * spike, returning an un-interned `this` past the cap on the assumption
+	 * that losing dedup was harmless. Reverted while chasing a map corruption
+	 * we cannot reproduce: the interner exists so every equal DepInfo is one
+	 * canonical object, and breaking that invariant on a guess is exactly the
+	 * kind of thing that bit us with the istate() null check. Put the cap back
+	 * if the stutter returns and the map bug does not. */
 	public DepInfo intern() {
 	    synchronized(interned) {
-		if(interned.size() >= INTERN_SIZE_CAP) {
-		    DepInfo found = interned.find(this);
-		    return found != null ? found : this;
-		}
 		return(interned.intern(this));
 	    }
 	}
@@ -705,16 +691,6 @@ public class RenderTree implements RenderList.Adapter, Disposable {
 		DepInfo pst = this.dstate;
 		try {
 		    upddstate(mkdstate(cstate, ostate));
-		} catch(Loading e) {
-		    /* Loading is ordinary control flow, not a failed state
-		     * transition. setdstate() has already applied the new
-		     * state by the time a client update can throw this, so
-		     * the slot is consistent; only a renderer was left
-		     * un-notified, and it re-resolves once the resource
-		     * finishes loading. Rolling back here would discard
-		     * valid state, and the rollback itself can throw
-		     * Loading again, turning a slow texture into a fatal
-		     * "Unexpected non-local exit". */
 		} catch(RuntimeException e) {
 		    try {
 			upddstate(pst);

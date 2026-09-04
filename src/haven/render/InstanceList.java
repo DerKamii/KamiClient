@@ -709,8 +709,27 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 	synchronized(this) {
 	    InstKey key = uslotmap.get(slot);
 	    if(key == null) {
-		if (!invalid.containsKey(slot))
-		    return; // KamiClient Experimental
+		/* KamiClient: upstream throws IllegalStateException here. An ender merge
+		 * (6f1e788be) turned that into a bare return, which also skips the
+		 * clremove() below - so the render tree drops the slot while the GL draw
+		 * list keeps drawing it. That is a candidate for the reports of the world
+		 * coming apart with every coordinate still self-consistent.
+		 *
+		 * Not restoring the throw, because if this fires often we would be
+		 * crashing people over something they have been living with. Log it
+		 * instead, and do the clremove the early return was skipping, so the
+		 * draw list at least stops rendering something the tree has removed. */
+		if(!invalid.containsKey(slot)) {
+		    DiagLog.log("instancelist-desync", "removing non-present slot: %s", slot);
+		    try {
+			clremove(slot);
+		    } catch(RuntimeException e) {
+			/* The draw list may not have it either, and it throws when
+			 * asked to remove something it does not hold. Either way we
+			 * have logged the real problem; do not make it fatal. */
+		    }
+		    return;
+		}
 		if(invalid.remove(slot) != Boolean.TRUE)
 		    throw(new IllegalStateException("removing non-present slot"));
 		ninvalid--;

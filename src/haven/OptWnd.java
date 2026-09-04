@@ -52,7 +52,7 @@ import static haven.Text.*;
 
 public class OptWnd extends WindowX {
     public static final Coord PANEL_POS = new Coord(220, 30);
-    private final Panel display, general, camera, shortcuts, mapping, uipanel, combat, minimap, experimental;
+    private final Panel display, general, camera, shortcuts, mapping, uipanel, combat, minimap, experimental, crashrep;
 	private final Panel color;
 	private final Panel automation;
     public final Panel main;
@@ -834,6 +834,7 @@ public class OptWnd extends WindowX {
 	automation = add(new Panel());
 	minimap = add(new Panel());
 	experimental = add(new Panel());
+	crashrep = add(new Panel());
 
 	int row = 0, colum = 0, mrow = 1;
     
@@ -863,6 +864,10 @@ public class OptWnd extends WindowX {
 	addPanelButton("Map upload", 'm', mapping, colum, row++);
 	addPanelButton("Automation settings", 't', automation, colum, row++);
 	addPanelButton("Experimental", 'x', experimental, colum, row++);
+	/* No hotkey: this is a set-once privacy choice, not something worth a
+	 * shortcut, and -1 is what PButton already takes for "no key". */
+	main.add(new PButton(UI.scale(200), "Crash reports", -1, crashrep),
+		 UI.scale(PANEL_POS.mul(colum, row++)));
 
 	int y = 0;
 	mrow = Math.max(mrow, row);
@@ -909,6 +914,7 @@ public class OptWnd extends WindowX {
 	KamiOptPanels.initMinimapPanel(this, minimap);
 	KamiOptPanels.initExperimentalPanel(this, experimental);
 	KamiOptPanels.initAutomationPanel(this, automation);
+	initCrashPanel(crashrep);
 	main.pack();
 	chpanel(main);
     }
@@ -1335,6 +1341,41 @@ public class OptWnd extends WindowX {
 	
 	return y;
     }
+    /* KamiClient: crash reporting is a privacy choice, not a UI preference, so it
+     * gets its own panel rather than being buried in a list of toggles. Mirrors the
+     * prompt the login screen shows on first start; the CFG also has a -1 "not asked
+     * yet", which is why it is an Integer, but anyone reaching this panel is
+     * answering it now. */
+    private void initCrashPanel(Panel panel) {
+	int x = 0, y = 0;
+	panel.add(new Label("If the client crashes, may it send me the crash report?"), x, y);
+	y += UI.scale(22);
+	panel.add(new Label("A copy is always saved in the logs folder whatever you pick,"), x, y);
+	y += UI.scale(16);
+	panel.add(new Label("so you can always send one to me yourself."), x, y);
+	y += UI.scale(26);
+	boolean[] done = {false};
+	RadioGroup grp = new RadioGroup(panel) {
+	    public void changed(int btn, String lbl) {
+		if(done[0])
+		    CFG.SEND_CRASH_REPORTS.set(btn);
+	    }
+	};
+	Widget prev = grp.add("Don't send anything", new Coord(x, y));
+	prev = grp.add("Just the error", prev.pos("bl").adds(0, 4));
+	prev.settip("Only the error and where it happened - nothing about your machine. " +
+		    "Harder for me to place, but it still helps.", true);
+	prev = grp.add("Full report", prev.pos("bl").adds(0, 4));
+	prev.settip("Also your Java version, operating system, graphics card and client " +
+		    "build. No account details, no chat, nothing you typed.", true);
+	int cur = CFG.SEND_CRASH_REPORTS.get();
+	grp.check((cur < 0) ? CFG.CRASH_NONE : cur);
+	done[0] = true;
+	panel.add(new PButton(UI.scale(200), "Back", 27, main),
+		  x, prev.pos("bl").adds(0, 30).y);
+	panel.pack();
+    }
+
     private void initUIPanel(Panel panel) {
 	int STEP = UI.scale(25);
 	int START;
@@ -1418,6 +1459,8 @@ public class OptWnd extends WindowX {
 	
 	y += STEP;
 	panel.add(new CFGBox("Show timestamps in chat messages", CFG.SHOW_CHAT_TIMESTAMP), new Coord(x, y));
+
+
 
 	y += STEP;
 	panel.add(new CFGBox("Instant full tooltips", CFG.UI_INSTANT_LONG_TIPS, "Items will show full tooltip immediately", true), x, y);

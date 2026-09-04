@@ -104,16 +104,32 @@ public class ErrorHandler extends ThreadGroup {
 	    root.put("trace", tw.toString());
 	    root.put("exception", r.t.getClass().getName());
 	    root.put("message", r.t.getMessage());
-	    Map<String, String> props = new HashMap<>();
-	    for(Map.Entry<String, Object> e : r.props.entrySet())
-		props.put(e.getKey(), String.valueOf(e.getValue()));
-	    root.put("props", props);
+	    /* KamiClient: on "exception only" the props go no further than this
+	     * machine. The trace is what makes a report useful; the props just make
+	     * it quicker to place, so they are the part worth making optional. */
+	    if(haven.CFG.SEND_CRASH_REPORTS.get() >= haven.CFG.CRASH_FULL) {
+		Map<String, String> props = new HashMap<>();
+		for(Map.Entry<String, Object> e : r.props.entrySet())
+		    props.put(e.getKey(), String.valueOf(e.getValue()));
+		root.put("props", props);
+	    } else {
+		root.put("props", new HashMap<String, String>());
+	    }
 	    return(new com.google.gson.Gson().toJson(root));
 	}
 
 	private void doreport(Report r) throws IOException {
+	    /* goterror writes the log to logs/ regardless of what follows, so
+	     * declining below costs the user nothing locally. */
 	    if(!status.goterror(r.t))
 		return;
+	    /* KamiClient: only send if the player said we could. Unset (-1) means
+	     * they have not been asked yet, which the login screen handles - until
+	     * they answer, nothing leaves the machine. */
+	    if(haven.CFG.SEND_CRASH_REPORTS.get() < haven.CFG.CRASH_EXCONLY) {
+		status.done(null, null);
+		return;
+	    }
 	    if( errordest == null){
 		status.done(null, null);
 		return;

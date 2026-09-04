@@ -35,6 +35,33 @@ public class InputIcon extends Icon implements ItemInfo.Owner {
 		for(EffectInfo ei : ik.effs)
 		    info.add((ItemInfo)ei);
 	    }
+	    if(ik == null || ik.effs.isEmpty()) {
+		String genus = (ui != null && ui.gui != null) ? ui.gui.genus : ((book.ui != null && book.ui.gui != null) ? book.ui.gui.genus : null);
+		if(genus != null) {
+		    String resKey = null;
+		    if(inp.sub != null && inp.sub.size() == 2) {
+			try {
+			    String sub1 = inp.sub.get(0).type.resource().name;
+			    String sub2 = inp.sub.get(1).type.resource().name;
+			    if(inp.type != null && inp.type.res != null && inp.type.resource().name.contains(me.ender.alchemy.AlchemyData.MINERAL_CALCINATION)) {
+				resKey = me.ender.alchemy.AlchemyData.makeCalcinationKey(sub1, sub2);
+			    } else {
+				resKey = me.ender.alchemy.AlchemyData.makeGrindKey(sub1, sub2);
+			    }
+			} catch(Loading ignore) {}
+		    } else if(inp.type != null && inp.type.res != null) {
+			try {
+			    resKey = inp.type.resource().name;
+			} catch(Loading ignore) {}
+		    }
+		    if(resKey != null) {
+			me.ender.alchemy.Ingredient ingr = me.ender.alchemy.AlchemyData.ingredient(resKey, genus);
+			if(ingr != null && ingr.effects != null && !ingr.effects.isEmpty()) {
+			    info.addAll(me.ender.alchemy.Effect.ingredientInfo(ingr.effects));
+			}
+		    }
+		}
+	    }
 	    this.info = info;
 	}
 	return(this.info);
@@ -46,6 +73,10 @@ public class InputIcon extends Icon implements ItemInfo.Owner {
 
     private Tex tip = null;
     public Object tooltip(Coord c, Widget prev) {
+	if(info != null && info.size() <= 1) {
+	    info = null;
+	    tip = null;
+	}
 	if(tip == null)
 	    tip = new TexI(ItemInfo.longtip(info()));
 	return(tip);

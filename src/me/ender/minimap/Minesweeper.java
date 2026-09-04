@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.List;
 
+
 import static haven.MapFile.*;
 
 public class Minesweeper {
@@ -49,6 +50,7 @@ public class Minesweeper {
     private final Object lock = new Object();
     private final Set<Long> gridIds = new HashSet<>();
     private final Map<Long, byte[]> values = new HashMap<>();
+    private final Map<Long, byte[]> safe_values = new HashMap<>();
     private final Map<Long, SweeperNode[]> cuts = new HashMap<>();
     private final MapFile file;
     
@@ -62,8 +64,40 @@ public class Minesweeper {
     }
     
     public static void markMinedOutTile(Sprite.Owner owner) {
-	//disabling this for now, as it will mark all tunnel tiles as safe 
-	//if(owner instanceof Gob) {markAtGob((Gob) owner, SAFE);}
+	Gob gob = ClientUtils.owner2ogob(owner).orElse(null);
+	if (gob == null) return;
+	
+	GameUI gui = gob.context(GameUI.class);
+	if (gui == null) return;
+	
+	Coord2d rc = gob.rc;
+	Minesweeper ms = gui.minesweeper;
+	if (ms == null) return;
+	
+	// Determine which grid and tile index
+	Coord gc = rc.floor(MCache.tilesz);
+	MCache.Grid grid = gui.ui.sess.glob.map.getgridt(gc);
+	if (grid == null) return;
+	
+	Coord tc = gc.sub(grid.gc.mul(MCache.cmaps));
+	long id = grid.id;
+	byte[] values = ms.values.get(id);
+	if (values != null) {
+	    int idx = index(tc);
+	    byte current = values[idx];
+	    byte count = (byte) (current & COUNT_MASK);
+	    byte flags = (byte) (current & FLAGS_MASK);
+	    
+	    // Only mark safe if count is currently 0
+	    if (count == 0) {
+		byte newFlags = (byte) ((flags & ~FLAGS_MASK) | FLAG_SAFE);
+		setValue(values, idx, NO_COUNT, newFlags);
+		
+		// Persist the grid
+		ms.storeGrid(id, values);
+	    }
+	}
+	ms.generateOutlineMap(id);
     }
     
     public static void markFlagAtPoint(Coord2d rc, byte flags, GameUI gui) {
@@ -74,7 +108,7 @@ public class Minesweeper {
 	GameUI gui = gob.context(GameUI.class);
 	if(gui == null) {return;}
 	
-	markPoint(gob.rc, count, NO_FLAGS, gui);
+	markPoint(gob.rc, count, CLEAR_FLAGS, gui);
     }
     
     private static void markPoint(Coord2d rc, byte count, byte flags, GameUI gui) {
@@ -86,6 +120,7 @@ public class Minesweeper {
 	long id = grid.id;
 	
 	gui.minesweeper.addValue(id, tc, count, flags);
+	gui.minesweeper.generateOutlineMap(id);
     }
     
     public static boolean paginaAction(OwnerContext ctx, MenuGrid.Interaction iact) {
@@ -117,8 +152,143 @@ public class Minesweeper {
 	    }
 	    setValue(values, index(tc), count, flags);
 	    storeGrid(id, values);
+	    
+	    // DEBUG PRINT
+	    // debugPrintAllGrids();
+	    
 	}
     }
+    
+    public void generateOutlineMap(long gridId) {
+	synchronized (lock) {
+	    byte[] baseGrid = values.get(gridId);
+	    if (baseGrid == null) return;
+	    
+	    byte[] outlineMap = new byte[baseGrid.length];
+	    int w = MCache.cmaps.x;
+	    int h = MCache.cmaps.y;
+	    
+	    for (int y = 0; y < h; y++) {
+		for (int x = 0; x < w; x++) {
+		    int idx = x + y * w;
+		    byte tile = baseGrid[idx];
+		    byte count = (byte)(tile & COUNT_MASK);
+		    byte flags = (byte)(tile & FLAGS_MASK);
+		    
+		    // Skip if tile already has value
+		    if (count != 0 || flags != CLEAR_FLAGS) continue;
+		    
+		    // Check neighbors for a zero
+		    boolean hasZeroNeighbor = false;
+		    for (int ny = Math.max(0, y - 1); ny <= Math.min(h - 1, y + 1); ny++) {
+			for (int nx = Math.max(0, x - 1); nx <= Math.min(w - 1, x + 1); nx++) {
+			    if (nx == x && ny == y) continue;
+			    int nidx = nx + ny * w;
+			    byte neighbor = baseGrid[nidx];
+			    byte neighborCount = (byte)(neighbor & COUNT_MASK);
+			    byte neighborFlags = (byte)(neighbor & FLAGS_MASK);
+			    
+			    if (neighborCount == 0 && neighborFlags == CLEAR_FLAGS) {
+				// We only care about existing zeros, not unknown tiles
+				continue;
+			    }
+			    
+			    if (neighborCount == 0) {
+				hasZeroNeighbor = true;
+				break;
+			    }
+			}
+			if (hasZeroNeighbor) break;
+		    }
+		    
+		    if (hasZeroNeighbor) {
+			outlineMap[idx] = FLAG_SAFE; // mark as 'O'
+		    }
+		}
+	    }
+	    
+	    safe_values.put(gridId, outlineMap);
+	}
+    }
+    
+    public Map<Long, byte[]> mergeMaps(Map<Long, byte[]> map1, Map<Long, byte[]> map2) {
+	Map<Long, byte[]> result = new HashMap<>();
+	
+	// Add all entries from map1
+	for (Map.Entry<Long, byte[]> entry : map1.entrySet()) {
+	    long key = entry.getKey();
+	    byte[] value1 = entry.getValue();
+	    byte[] value2 = map2.get(key);
+	    
+	    if (value2 != null) {
+		// Merge arrays element-wise
+		if (value1.length != value2.length)
+		    throw new IllegalArgumentException("Grid sizes must match for key " + key);
+		
+		byte[] merged = new byte[value1.length];
+		for (int i = 0; i < value1.length; i++) {
+		    merged[i] = (byte)(value1[i] | value2[i]); // merge flags (e.g., safe tiles)
+		}
+		result.put(key, merged);
+	    } else {
+		// Only in map1
+		result.put(key, value1.clone());
+	    }
+	}
+	
+	// Add entries from map2 that weren't in map1
+	for (Map.Entry<Long, byte[]> entry : map2.entrySet()) {
+	    if (!result.containsKey(entry.getKey())) {
+		result.put(entry.getKey(), entry.getValue().clone());
+	    }
+	}
+	
+	return result;
+    }
+    
+    /** Debug: prints the entire grid (for all loaded grids) to console as ASCII
+    public void debugPrintAllGrids() {
+	synchronized (lock) {
+	    System.out.println("=== MINESWEEPER ASCII MAP DUMP ===");
+	    
+	    for (Map.Entry<Long, byte[]> entry : mergeMaps(values, safe_values).entrySet()) {
+		long gridId = entry.getKey();
+		byte[] grid = entry.getValue();
+		
+		System.out.println("Grid ID: " + gridId);
+		printGridAscii(grid);
+		System.out.println();
+	    }
+	}
+    }
+    
+    // Prints a single grid
+    private void printGridAscii(byte[] grid) {
+	int w = MCache.cmaps.x;
+	int h = MCache.cmaps.y;
+	
+	for (int y = 0; y < h; y++) {
+	    StringBuilder line = new StringBuilder();
+	    for (int x = 0; x < w; x++) {
+		byte v = grid[x + y * w];
+		
+		byte count = (byte) (v & COUNT_MASK);
+		byte flags = (byte) (v & FLAGS_MASK);
+		
+		char c;
+		
+		if(flags == FLAG_DANGER) c = 'X';
+		else if(flags == FLAG_SAFE) c = 'O';
+		else if(flags == FLAG_MAYBE) c = '?';
+		else if(count > 0) c = (char) ('0' + count);
+		else c = '.';
+		
+		line.append(c);
+	    }
+	    System.out.println(line);
+	}
+    }
+    */
     
     private void updateGrid(long grid, byte[] newValues) {
 	if(gridIds.contains(grid) && loadGrid(grid)) {
@@ -173,11 +343,11 @@ public class Minesweeper {
 		nodes = cuts.get(grid.id);
 	    }
 	    
-	    if(nodes[index] == null) {
-		byte[] v = values.get(grid.id);
-		if(v == null) {return NIL;}
-		nodes[index] = new SweeperNode(v, cc);
-	    }
+	    byte[] merged = mergeMaps(values, safe_values).get(grid.id);
+	    if(merged == null) { return NIL; }
+	    
+	    // Always recreate the node to reflect latest values
+	    nodes[index] = new SweeperNode(merged, cc);
 	}
 	return nodes[index];
     }
@@ -281,6 +451,7 @@ public class Minesweeper {
 	byte[] v = doLoadGrid(data, id);
 	if(v == null) {return false;}
 	values.put(id, v);
+	generateOutlineMap(id);
 	return true;
     }
     

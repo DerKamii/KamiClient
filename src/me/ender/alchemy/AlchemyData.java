@@ -35,6 +35,7 @@ public class AlchemyData {
     
     private static final Gson GSON = new GsonBuilder()
 	.registerTypeAdapter(Effect.class, new Effect.Adapter())
+	.setPrettyPrinting()
 	.create();
     public static final int MAX_EFFECTS = 4;
     
@@ -44,9 +45,34 @@ public class AlchemyData {
     private static String initializedCombos = null;
     private static String initializedEffects = null;
     
+    public static class IngredientDef {
+	public String ingredient_type;
+	public String herbal_grind_craftable;
+	public String mineral_calcination_craftable;
+
+	public IngredientDef() {}
+
+	public IngredientDef(String type) {
+	    this.ingredient_type = type;
+	}
+    }
+
+    public static final String HERBAL_GRINDS_JSON = "herbal_grinds.json";
+    public static final String HERBAL_GRIND_PREFIX = "gfx/invobjs/herbalgrind:";
+    private static String initializedHerbalGrinds = null;
+    private static final Map<String, Ingredient> HERBAL_GRINDS = new LinkedHashMap<>();
+    private static final List<String> HERBAL_GRIND_KEYS = new ArrayList<>();
+
+    public static final String MINERAL_CALCINATIONS_JSON = "mineral_calcinations.json";
+    public static final String MINERAL_CALCINATION_PREFIX = "gfx/invobjs/mineralcalcination:";
+    private static String initializedMineralCalcinations = null;
+    private static final Map<String, Ingredient> MINERAL_CALCINATIONS = new LinkedHashMap<>();
+    private static final List<String> MINERAL_CALCINATION_KEYS = new ArrayList<>();
+
     private static final Map<String, Ingredient> INGREDIENTS = new HashMap<>();
     private static final Set<Elixir> ELIXIRS = new HashSet<>();
     private static final Set<String> INGREDIENT_LIST = new HashSet<>();
+    private static final Map<String, IngredientDef> INGREDIENT_DEFS = new LinkedHashMap<>();
     private static final Map<String, Set<String>> COMBOS = new HashMap<>();
     private static final HashSet<Effect> EFFECTS = new HashSet<>();
     
@@ -74,12 +100,26 @@ public class AlchemyData {
 	if(Objects.equals(initializedCombos, genus)) {return;}
 	initializedCombos = genus;
 	INGREDIENT_LIST.clear();
+	INGREDIENT_DEFS.clear();
 	COMBOS.clear();
 
 	loadIngredientList(Config.loadJarFile(ALL_INGREDIENTS_JSON));
-	loadIngredientList(Config.loadFSFile(ALL_INGREDIENTS_JSON, genus));
+	String fsJson = Config.loadFSFile(ALL_INGREDIENTS_JSON, genus);
+	boolean needMigration = false;
+	if(fsJson != null) {
+	    String trimmed = fsJson.trim();
+	    if(!trimmed.startsWith("{")) {
+		needMigration = true;
+	    }
+	}
+	loadIngredientList(fsJson);
+	if(needMigration && genus != null) {
+	    saveIngredientList(genus);
+	}
 	// KamiClient: same fix as initElixirs — combos are saved per-genus, so read them per-genus.
 	loadCombos(Config.loadFSFile(COMBOS_JSON, genus));
+	initHerbalGrinds(genus);
+	initMineralCalcinations(genus);
     }
     
     private static void initEffects(String genus) {
@@ -129,9 +169,24 @@ public class AlchemyData {
     private static void loadIngredientList(String json) {
 	if(json == null) {return;}
 	try {
-	    Set<String> tmp = GSON.fromJson(json, new TypeToken<Set<String>>() {
-	    }.getType());
-	    INGREDIENT_LIST.addAll(tmp);
+	    String trimmed = json.trim();
+	    if(trimmed.startsWith("{")) {
+		Map<String, IngredientDef> tmp = GSON.fromJson(json, new TypeToken<Map<String, IngredientDef>>() {
+		}.getType());
+		if(tmp != null) {
+		    INGREDIENT_DEFS.putAll(tmp);
+		    INGREDIENT_LIST.addAll(tmp.keySet());
+		}
+	    } else {
+		Set<String> tmp = GSON.fromJson(json, new TypeToken<Set<String>>() {
+		}.getType());
+		if(tmp != null) {
+		    for(String res : tmp) {
+			INGREDIENT_DEFS.putIfAbsent(res, new IngredientDef(detectIngredientType(res)));
+			INGREDIENT_LIST.add(res);
+		    }
+		}
+	    }
 	} catch (Exception ignore) {}
     }
     
@@ -166,7 +221,7 @@ public class AlchemyData {
     }
     
     private static void saveIngredientList(String genus) {
-	Config.saveFile(ALL_INGREDIENTS_JSON, GSON.toJson(INGREDIENT_LIST), genus);
+	Config.saveFile(ALL_INGREDIENTS_JSON, GSON.toJson(INGREDIENT_DEFS), genus);
     }
     
     private static void saveCombos(String genus) {
@@ -212,7 +267,7 @@ public class AlchemyData {
 		tryAddIngredientEffect(effects, info);
 	    }
 	}
-	
+
 	boolean effectsChanged = false;
 	if(isElixir && recipe != null) {
 	    //TODO: option to ignore bad-only elixirs?
@@ -225,6 +280,36 @@ public class AlchemyData {
 	    }
 	    effectsChanged = tryAddUnknownEffects(elixir, genus);
 	    updateCombos(elixir, genus);
+	} else if(!isElixir && res.contains(HERBAL_GRIND) && recipe != null && recipe.ingredients != null && recipe.ingredients.size() == 2) {
+	    initHerbalGrinds(genus);
+	    String sub1 = recipe.ingredients.get(0).res;
+	    String sub2 = recipe.ingredients.get(1).res;
+	    String grindKey = makeGrindKey(sub1, sub2);
+	    if(!effects.isEmpty()) {
+		Ingredient base = HERBAL_GRINDS.get(grindKey);
+		Ingredient grind = new Ingredient(effects, base);
+		if(base == null || !Objects.equals(grind, base)) {
+		    HERBAL_GRINDS.put(grindKey, grind);
+		    saveHerbalGrinds(genus);
+		    Reactor.event(INGREDIENTS_UPDATED);
+		}
+		effectsChanged = tryAddUnknownEffects(grind, genus);
+	    }
+	} else if(!isElixir && (res.contains(MINERAL_CALCINATION) || res.contains("mineralcalcination")) && recipe != null && recipe.ingredients != null && recipe.ingredients.size() == 2) {
+	    initMineralCalcinations(genus);
+	    String sub1 = recipe.ingredients.get(0).res;
+	    String sub2 = recipe.ingredients.get(1).res;
+	    String calcKey = makeCalcinationKey(sub1, sub2);
+	    if(!effects.isEmpty()) {
+		Ingredient base = MINERAL_CALCINATIONS.get(calcKey);
+		Ingredient calc = new Ingredient(effects, base);
+		if(base == null || !Objects.equals(calc, base)) {
+		    MINERAL_CALCINATIONS.put(calcKey, calc);
+		    saveMineralCalcinations(genus);
+		    Reactor.event(INGREDIENTS_UPDATED);
+		}
+		effectsChanged = tryAddUnknownEffects(calc, genus);
+	    }
 	} else if(!isElixir && !effects.isEmpty() && isNatural(res)) {
 	    initIngredients(genus);
 	    Ingredient base = INGREDIENTS.get(res);
@@ -237,7 +322,7 @@ public class AlchemyData {
 	    }
 	    effectsChanged = tryAddUnknownEffects(ingredient, genus);
 	}
-	
+
 	if(effectsChanged) {
 	    saveEffects(genus);
 	    Reactor.event(EFFECTS_UPDATED);
@@ -252,20 +337,113 @@ public class AlchemyData {
 	}
     }
     
+    public static String getAlchemyRes(Recipe r) {
+	if(r != null && r.res != null) {
+	    if(r.ingredients != null && r.ingredients.size() == 2) {
+		String s1 = r.ingredients.get(0).res;
+		String s2 = r.ingredients.get(1).res;
+		if(r.res.contains(MINERAL_CALCINATION) || r.res.contains("mineralcalcination")) {
+		    return makeCalcinationKey(s1, s2);
+		} else if(r.res.contains(HERBAL_GRIND) || r.res.contains("herbalgrind")) {
+		    return makeGrindKey(s1, s2);
+		}
+	    }
+	}
+	return (r != null) ? r.res : null;
+    }
+
+    public static String getAlchemyRes(GItem item) {
+	if(item == null) {return null;}
+	String res = item.resname();
+	if(res != null && (res.contains(HERBAL_GRIND) || res.contains(MINERAL_CALCINATION) || res.contains("mineralcalcination") || res.contains("herbalgrind"))) {
+	    try {
+		for(ItemInfo info : item.info()) {
+		    if(info instanceof haven.res.ui.tt.alch.recipe.Recipe) {
+			Recipe r = Recipe.from(res, (haven.res.ui.tt.alch.recipe.Recipe) info);
+			if(r.ingredients != null && r.ingredients.size() == 2) {
+			    String s1 = r.ingredients.get(0).res;
+			    String s2 = r.ingredients.get(1).res;
+			    if(res.contains(MINERAL_CALCINATION) || res.contains("mineralcalcination")) {
+				return makeCalcinationKey(s1, s2);
+			    } else {
+				return makeGrindKey(s1, s2);
+			    }
+			}
+		    }
+		}
+	    } catch(Exception ignored) {}
+	}
+	return res;
+    }
+
+    public static boolean isValidIngredient(String res, String genus) {
+	if(res == null) {return false;}
+	if(res.startsWith(HERBAL_GRIND_PREFIX) || res.startsWith(MINERAL_CALCINATION_PREFIX)) {
+	    return true;
+	}
+	return allIngredients(genus).contains(res);
+    }
+
+    public static boolean containsIngredient(String res, String target) {
+	if(res != null && target != null) {
+	    String sub = null;
+	    if(res.startsWith(HERBAL_GRIND_PREFIX)) {
+		sub = res.substring(HERBAL_GRIND_PREFIX.length());
+	    } else if(res.startsWith(MINERAL_CALCINATION_PREFIX)) {
+		sub = res.substring(MINERAL_CALCINATION_PREFIX.length());
+	    }
+	    if(sub != null) {
+		for(String part : sub.split("\\+")) {
+		    if(part.equals(target)) {
+			return true;
+		    }
+		}
+	    }
+	}
+	return false;
+    }
+
+    public static boolean canCombine(String res1, String res2) {
+	if(res1 == null || res2 == null) {return false;}
+	if(res1.equals(res2)) {return false;}
+	if(containsIngredient(res1, res2) || containsIngredient(res2, res1)) {
+	    return false;
+	}
+	boolean c1 = res1.startsWith(HERBAL_GRIND_PREFIX) || res1.startsWith(MINERAL_CALCINATION_PREFIX);
+	boolean c2 = res2.startsWith(HERBAL_GRIND_PREFIX) || res2.startsWith(MINERAL_CALCINATION_PREFIX);
+	if(c1 && c2) {
+	    String sub1 = res1.substring(res1.indexOf(':') + 1);
+	    String sub2 = res2.substring(res2.indexOf(':') + 1);
+	    String[] parts1 = sub1.split("\\+");
+	    String[] parts2 = sub2.split("\\+");
+	    for(String p1 : parts1) {
+		for(String p2 : parts2) {
+		    if(p1.equals(p2)) {
+			return false;
+		    }
+		}
+	    }
+	}
+	return true;
+    }
+
     private static void updateCombos(Elixir elixir, String genus) {
-	List<String> natural = elixir.recipe.ingredients.stream()
-	    .map(i -> i.res)
-	    .filter(AlchemyData::isNatural)
+	List<String> components = elixir.recipe.ingredients.stream()
+	    .map(AlchemyData::getAlchemyRes)
+	    .filter(r -> r != null && (isNatural(r) || r.startsWith(HERBAL_GRIND_PREFIX) || r.startsWith(MINERAL_CALCINATION_PREFIX)))
 	    .collect(Collectors.toList());
 	
-	if(natural.isEmpty()) {return;}
+	if(components.isEmpty()) {return;}
 	initCombos(genus);
 	boolean listUpdated = false;
 	boolean combosUpdated = false;
-	for (String ingredient : natural) {
-	    if(INGREDIENT_LIST.add(ingredient)) {listUpdated = true;}
+	for (String ingredient : components) {
+	    if(isNatural(ingredient) && INGREDIENT_LIST.add(ingredient)) {
+		INGREDIENT_DEFS.computeIfAbsent(ingredient, r -> new IngredientDef(detectIngredientType(r)));
+		listUpdated = true;
+	    }
 	    Set<String> combos = COMBOS.computeIfAbsent(ingredient, k -> new HashSet<>());
-	    if(combos.addAll(natural)) {combosUpdated = true;}
+	    if(combos.addAll(components)) {combosUpdated = true;}
 	}
 	
 	if(listUpdated) {saveIngredientList(genus);}
@@ -281,6 +459,15 @@ public class AlchemyData {
     
     public static Ingredient ingredient(String res, String genus) {
 	initIngredients(genus);
+	if(res != null) {
+	    if(res.startsWith(HERBAL_GRIND_PREFIX)) {
+		initHerbalGrinds(genus);
+		return HERBAL_GRINDS.get(res);
+	    } else if(res.startsWith(MINERAL_CALCINATION_PREFIX)) {
+		initMineralCalcinations(genus);
+		return MINERAL_CALCINATIONS.get(res);
+	    }
+	}
 	return INGREDIENTS.getOrDefault(res, null);
     }
     
@@ -305,7 +492,14 @@ public class AlchemyData {
     
     public static List<String> allIngredients(String genus) {
 	initCombos(genus);
-	return new ArrayList<>(INGREDIENT_LIST);
+	List<String> result = new ArrayList<>(INGREDIENT_LIST);
+	if(CFG.ALCHEMY_SHOW_GRINDS.get()) {
+	    initHerbalGrinds(genus);
+	    result.addAll(HERBAL_GRIND_KEYS);
+	    initMineralCalcinations(genus);
+	    result.addAll(MINERAL_CALCINATION_KEYS);
+	}
+	return result;
     }
     
     public static Set<String> combos(String target, String genus) {
@@ -420,5 +614,211 @@ public class AlchemyData {
     
     public static boolean isMineral(String res) {
 	return GobIconCategoryList.GobCategory.isRock(res) || GobIconCategoryList.GobCategory.isOre(res);
+    }
+    
+    public static String getIngredientType(String res) {
+	IngredientDef def = INGREDIENT_DEFS.get(res);
+	return (def != null && def.ingredient_type != null) ? def.ingredient_type : detectIngredientType(res);
+    }
+
+    public static String detectIngredientType(String res) {
+	if(isMineral(res)) {
+	    return "stone";
+	}
+	String lower = res.toLowerCase();
+	if(lower.contains("shroom") || lower.contains("bolete") || lower.contains("chantrelle")
+	    || lower.contains("lorchel") || lower.contains("puffball") || lower.contains("truffle")
+	    || lower.contains("blewit") || lower.contains("snowtop") || lower.contains("stalagoom")
+	    || lower.contains("champignon")) {
+	    return "mushroom";
+	}
+	if(lower.contains("guano") || lower.contains("dovepoop") || lower.contains("sponge")) {
+	    return "other";
+	}
+	return "herb";
+    }
+
+    public static boolean isStone(String res) {
+	return "stone".equals(getIngredientType(res));
+    }
+
+    public static boolean isMushroom(String res) {
+	return "mushroom".equals(getIngredientType(res));
+    }
+
+    public static boolean isHerb(String res) {
+	return "herb".equals(getIngredientType(res));
+    }
+
+    public static boolean isHerbalGrindCraftable(String res) {
+	IngredientDef def = INGREDIENT_DEFS.get(res);
+	if(def != null && def.herbal_grind_craftable != null) {
+	    return "yes".equalsIgnoreCase(def.herbal_grind_craftable);
+	}
+	return isHerb(res) || isMushroom(res);
+    }
+
+    public static boolean isMineralCalcinationCraftable(String res) {
+	IngredientDef def = INGREDIENT_DEFS.get(res);
+	if(def != null && def.mineral_calcination_craftable != null) {
+	    return "yes".equalsIgnoreCase(def.mineral_calcination_craftable);
+	}
+	return isStone(res);
+    }
+
+    public static String makeGrindKey(String res1, String res2) {
+	if(res1.compareTo(res2) <= 0) {
+	    return HERBAL_GRIND_PREFIX + res1 + "+" + res2;
+	} else {
+	    return HERBAL_GRIND_PREFIX + res2 + "+" + res1;
+	}
+    }
+
+    public static void initHerbalGrinds(String genus) {
+	if(Objects.equals(initializedHerbalGrinds, genus)) {return;}
+	initializedHerbalGrinds = genus;
+	HERBAL_GRINDS.clear();
+	HERBAL_GRIND_KEYS.clear();
+
+	List<String> grindable = new ArrayList<>();
+	for(String res : INGREDIENT_LIST) {
+	    if(isHerbalGrindCraftable(res)) {
+		grindable.add(res);
+	    }
+	}
+	grindable.sort(String::compareTo);
+
+	for(int i = 0; i < grindable.size(); i++) {
+	    for(int j = i + 1; j < grindable.size(); j++) {
+		HERBAL_GRIND_KEYS.add(makeGrindKey(grindable.get(i), grindable.get(j)));
+	    }
+	}
+
+	loadHerbalGrinds(Config.loadFSFile(HERBAL_GRINDS_JSON, genus));
+    }
+
+    private static void loadHerbalGrinds(String json) {
+	if(json == null) {return;}
+	try {
+	    Map<String, Ingredient> tmp = GSON.fromJson(json, new TypeToken<Map<String, Ingredient>>() {
+	    }.getType());
+	    if(tmp != null) {
+		for(Map.Entry<String, Ingredient> entry : tmp.entrySet()) {
+		    String res = entry.getKey();
+		    HERBAL_GRINDS.put(res, new Ingredient(entry.getValue().effects, HERBAL_GRINDS.get(res)));
+		}
+	    }
+	} catch (Exception ignore) {}
+    }
+
+    public static void saveHerbalGrinds(String genus) {
+	Config.saveFile(HERBAL_GRINDS_JSON, GSON.toJson(HERBAL_GRINDS), genus);
+    }
+
+    public static String makeCalcinationKey(String res1, String res2) {
+	if(res1.compareTo(res2) <= 0) {
+	    return MINERAL_CALCINATION_PREFIX + res1 + "+" + res2;
+	} else {
+	    return MINERAL_CALCINATION_PREFIX + res2 + "+" + res1;
+	}
+    }
+
+    public static void initMineralCalcinations(String genus) {
+	if(Objects.equals(initializedMineralCalcinations, genus)) {return;}
+	initializedMineralCalcinations = genus;
+	MINERAL_CALCINATIONS.clear();
+	MINERAL_CALCINATION_KEYS.clear();
+
+	List<String> calcinable = new ArrayList<>();
+	for(String res : INGREDIENT_LIST) {
+	    if(isMineralCalcinationCraftable(res)) {
+		calcinable.add(res);
+	    }
+	}
+	calcinable.sort(String::compareTo);
+
+	for(int i = 0; i < calcinable.size(); i++) {
+	    for(int j = i + 1; j < calcinable.size(); j++) {
+		MINERAL_CALCINATION_KEYS.add(makeCalcinationKey(calcinable.get(i), calcinable.get(j)));
+	    }
+	}
+
+	loadMineralCalcinations(Config.loadFSFile(MINERAL_CALCINATIONS_JSON, genus));
+    }
+
+    private static void loadMineralCalcinations(String json) {
+	if(json == null) {return;}
+	try {
+	    Map<String, Ingredient> tmp = GSON.fromJson(json, new TypeToken<Map<String, Ingredient>>() {
+	    }.getType());
+	    if(tmp != null) {
+		for(Map.Entry<String, Ingredient> entry : tmp.entrySet()) {
+		    String res = entry.getKey();
+		    MINERAL_CALCINATIONS.put(res, new Ingredient(entry.getValue().effects, MINERAL_CALCINATIONS.get(res)));
+		}
+	    }
+	} catch (Exception ignore) {}
+    }
+
+    public static void saveMineralCalcinations(String genus) {
+	Config.saveFile(MINERAL_CALCINATIONS_JSON, GSON.toJson(MINERAL_CALCINATIONS), genus);
+    }
+
+    public static void reloadIngredientList(String genus) {
+	String fsJson = Config.loadFSFile(ALL_INGREDIENTS_JSON, genus);
+	if(fsJson != null) {
+	    loadIngredientList(fsJson);
+	}
+    }
+
+    public static void updateCraftableStatus(String res, String processType, boolean accepted, String genus) {
+	initCombos(genus);
+	reloadIngredientList(genus);
+	String newStatus = accepted ? "yes" : "no";
+	boolean changed = false;
+
+	List<String> targets = new ArrayList<>();
+	targets.add(res);
+	if(res != null && res.matches(".+-(small|medium|large)$")) {
+	    String base = res.substring(0, res.lastIndexOf('-'));
+	    targets.add(base + "-small");
+	    targets.add(base + "-medium");
+	    targets.add(base + "-large");
+	}
+
+	for(String targetRes : targets) {
+	    IngredientDef def = INGREDIENT_DEFS.get(targetRes);
+	    if(def == null && targetRes.equals(res)) {
+		def = new IngredientDef(detectIngredientType(targetRes));
+		INGREDIENT_DEFS.put(targetRes, def);
+	    }
+	    if(def != null) {
+		if("herbalgrind".equalsIgnoreCase(processType)) {
+		    if(!Objects.equals(def.herbal_grind_craftable, newStatus)) {
+			def.herbal_grind_craftable = newStatus;
+			changed = true;
+		    }
+		} else if("mineralcalcination".equalsIgnoreCase(processType)) {
+		    if(!Objects.equals(def.mineral_calcination_craftable, newStatus)) {
+			def.mineral_calcination_craftable = newStatus;
+			changed = true;
+		    }
+		}
+	    }
+	}
+
+	if(changed) {
+	    if(genus != null) {
+		saveIngredientList(genus);
+	    } else {
+		Config.saveFile(ALL_INGREDIENTS_JSON, GSON.toJson(INGREDIENT_DEFS));
+	    }
+	    initializedHerbalGrinds = null;
+	    initHerbalGrinds(genus);
+	    initializedMineralCalcinations = null;
+	    initMineralCalcinations(genus);
+	    Reactor.event(INGREDIENTS_UPDATED);
+	    Reactor.event(COMBOS_UPDATED);
+	}
     }
 }

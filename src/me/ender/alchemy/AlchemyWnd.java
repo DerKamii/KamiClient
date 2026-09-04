@@ -1,6 +1,7 @@
 package me.ender.alchemy;
 
 import haven.*;
+import haven.rx.Reactor;
 import me.ender.ui.CFGBox;
 import me.ender.ui.TabStrip;
 
@@ -14,7 +15,7 @@ public class AlchemyWnd extends WindowX implements DTarget {
     static final int GAP = UI.scale(25);
     static final int ITEMS = 22;
     static final int ITEM_H = UI.scale(16);
-    static final int CONTENT_W = UI.scale(280);
+    static final int CONTENT_W = UI.scale(320);
     static final Tex MARK_X = Resource.loadtex("gfx/hud/mark-x");
     public static String LAST_SELECTED_INGREDIENT;
     public static final Coord WND_SZ = Coord.of(2 * PAD + LIST_W + GAP + CONTENT_W, ITEM_H * ITEMS);
@@ -36,14 +37,33 @@ public class AlchemyWnd extends WindowX implements DTarget {
 	tabs.add(strip.insert(add(new ComboWdg(namesProvider)), null, "Combos", null).tag);
 	tabs.add(strip.insert(add(new RecipesWdg()), null, "Recipes", null).tag);
 
-	Coord p = strip.pos("bl").addys(5);
+	CFGBox showGrinds = new CFGBox("Show Herbal Grinds &\nMineral Calcinations", CFG.ALCHEMY_SHOW_GRINDS, "Show herbal grinds and mineral calcinations at the bottom of the ingredients list", true);
+	showGrinds.set = val -> {
+	    Reactor.event(AlchemyData.INGREDIENTS_UPDATED);
+	    Reactor.event(AlchemyData.COMBOS_UPDATED);
+	};
+
+	CFGBox limitRecipe = new CFGBox("Limit recipe storing", CFG.ALCHEMY_LIMIT_RECIPE_SAVE, "Will save recipe only if elixir is dropped with Recipes tab open");
+	CFGBox autoProcess = new CFGBox("Auto process", CFG.ALCHEMY_AUTO_PROCESS, "While Alchemy or Ingredient Track window is open all ingredients with known effects and exixirs with known recipes you see would be recorded");
+
+	int headerH = Math.max(strip.sz.y, showGrinds.sz.y);
+	Coord p = Coord.of(0, headerH + UI.scale(5));
 	for (Widget tab : tabs) {
 	    tab.c = Coord.of(p);
 	}
 
-	p = Coord.of(LIST_W + GAP + CONTENT_W + PAD, 0);
-	p = adda(new CFGBox("Auto process", CFG.ALCHEMY_AUTO_PROCESS, "While Alchemy or Ingredient Track window is open all ingredients with known effects and exixirs with known recipes you see would be recorded"), p, 1,0).pos("ul");
-	adda(new CFGBox("Limit recipe storing", CFG.ALCHEMY_LIMIT_RECIPE_SAVE, "Will save recipe only if elixir is dropped with Recipes tab open"), p.addx(-GAP), 1, 0);
+	int chkGap = UI.scale(10);
+	int rightX = LIST_W + GAP + CONTENT_W + PAD;
+	int centerY = headerH / 2;
+
+	autoProcess.c = Coord.of(rightX - autoProcess.sz.x, centerY - autoProcess.sz.y / 2);
+	add(autoProcess);
+
+	limitRecipe.c = Coord.of(autoProcess.c.x - chkGap - limitRecipe.sz.x, centerY - limitRecipe.sz.y / 2);
+	add(limitRecipe);
+
+	showGrinds.c = Coord.of(limitRecipe.c.x - chkGap - showGrinds.sz.x, centerY - showGrinds.sz.y / 2);
+	add(showGrinds);
     }
 
     @Override

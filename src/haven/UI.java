@@ -430,6 +430,7 @@ public class UI {
 	double now = Utils.rtime();
 	double delta = now - lasttick;
 	lasttick = now;
+	Makewindow.checkRejectionTimeout(this);
 	dispatch(root, new Widget.TickEvent(delta));
 	if(gprefsdirty) {
 	    gprefs.save();
@@ -894,6 +895,7 @@ public class UI {
     }
     
     public void msg(Notice msg) {
+	Makewindow.checkCraftRejection(this);
 	Reactor.IMSG.onNext(msg.message());
 	dispatch(root, new NoticeEvent(msg));
     }
@@ -903,6 +905,7 @@ public class UI {
     }
     
     public void error(String msg) {
+	Makewindow.checkCraftRejection(this);
 	msg(new ErrorMessage(msg));
     }
     

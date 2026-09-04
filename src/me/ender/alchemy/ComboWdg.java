@@ -17,6 +17,7 @@ public class ComboWdg extends AlchemyWdg {
     private static final String UNTESTED = "Untested";
     private static int LAST_SELECTED_TAB = 0;
     private final NamesProvider namesProvider;
+    private final NamesProvider comboNamesProvider;
     private final IngredientList ingredients;
     private final ComboList combo;
     private final TabStrip<String> strip;
@@ -25,11 +26,12 @@ public class ComboWdg extends AlchemyWdg {
     ComboWdg(NamesProvider namesProvider) {
 	super();
 	this.namesProvider = namesProvider;
+	this.comboNamesProvider = new NamesProvider(CONTENT_W - ITEM_H - PAD);
 	
 	ingredients = new IngredientList(namesProvider, this::onIngredientChanged);
 	Coord p = add(ingredients, PAD, PAD).pos("br");
 	
-	combo = new ComboList(namesProvider);
+	combo = new ComboList(comboNamesProvider, this::onComboIngredientSelected);
 	p = add(combo, p.add(GAP, -combo.sz.y)).pos("ul");
 	
 	strip = new TabStrip<>(this::onTabSelected);
@@ -47,7 +49,25 @@ public class ComboWdg extends AlchemyWdg {
 	
 	add(highlight, combo.pos("ur").sub(highlight.sz).addy(-PAD));
 	
+	listen(AlchemyData.COMBOS_UPDATED, this::onDataUpdated);
+	listen(AlchemyData.INGREDIENTS_UPDATED, this::onDataUpdated);
+	
 	pack();
+    }
+    
+    private void onDataUpdated() {
+	ingredients.dirty = true;
+	combo.dirty = true;
+    }
+    
+    @Override
+    public boolean show(boolean show) {
+	boolean ret = super.show(show);
+	if(show) {
+	    ingredients.dirty = true;
+	    combo.dirty = true;
+	}
+	return ret;
     }
     
     @Override
@@ -59,6 +79,11 @@ public class ComboWdg extends AlchemyWdg {
 	    ingredients.showsel();
 	    initialized = true;
 	}
+    }
+    
+    private void onComboIngredientSelected(String res) {
+	ingredients.change(res);
+	ingredients.showsel();
     }
     
     private void highlight() {
@@ -94,6 +119,7 @@ public class ComboWdg extends AlchemyWdg {
 	    this.onChanged = onChanged;
 	    
 	    listen(AlchemyData.COMBOS_UPDATED, this::onComboUpdated);
+	    listen(AlchemyData.INGREDIENTS_UPDATED, this::onComboUpdated);
 	}
 	
 	private void onComboUpdated() {
@@ -131,8 +157,15 @@ public class ComboWdg extends AlchemyWdg {
 	}
 	
 	@Override
-	protected boolean match(String item, String filter) {
-	    return nameProvider.name(item).toLowerCase().contains(filter.toLowerCase());
+	protected boolean match(String item, String text) {
+	    if(text == null || text.isEmpty()) {return true;}
+	    final String filter = text.toLowerCase();
+	    if(nameProvider.name(item).toLowerCase().contains(filter)) {
+		return true;
+	    }
+	    Ingredient ingredient = AlchemyData.ingredient(item, ui.gui.genus);
+	    if(ingredient == null) {return false;}
+	    return ingredient.effects.stream().anyMatch(e -> e.matches(filter));
 	}
 	
 	@Override
@@ -145,18 +178,21 @@ public class ComboWdg extends AlchemyWdg {
 	private static final Coord MARK_C = Coord.of(0, UI.scale(1));
 	private static final Coord NAME_C = Coord.of(ITEM_H, 0);
 	private final NamesProvider nameProvider;
+	private final Consumer<String> onSelected;
 	private boolean dirty = true;
 	private String target = null;
 	private Ingredient ingredient = null;
 	private final Set<String> combos = new HashSet<>();
 	
-	public ComboList(NamesProvider nameProvider) {
+	public ComboList(NamesProvider nameProvider, Consumer<String> onSelected) {
 	    super(CONTENT_W, ITEMS - 2, ITEM_H);
 	    bgcolor = BGCOLOR;
 	    showFilterText = false;
 	    this.nameProvider = nameProvider;
+	    this.onSelected = onSelected;
 	    
 	    listen(AlchemyData.COMBOS_UPDATED, this::onComboUpdated);
+	    listen(AlchemyData.INGREDIENTS_UPDATED, this::onComboUpdated);
 	}
 	
 	public void setTarget(String target) {
@@ -167,6 +203,9 @@ public class ComboWdg extends AlchemyWdg {
 	
 	@Override
 	protected void itemclick(String item, int button) {
+	    if((button == 1) && (onSelected != null)) {
+		onSelected.accept(item);
+	    }
 	}
 	
 	private void onComboUpdated() {
@@ -208,6 +247,9 @@ public class ComboWdg extends AlchemyWdg {
 	
 	@Override
 	protected boolean match(String item, String filter) {
+	    if(target != null && !AlchemyData.canCombine(target, item)) {
+		return false;
+	    }
 	    if(TESTED.equals(filter)) {
 		return combos.contains(item);
 	    } else if(UNTESTED.equals(filter)) {

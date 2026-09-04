@@ -1,156 +1,772 @@
-[
-  "gfx/invobjs/alabaster",
-  "gfx/invobjs/apatite",
-  "gfx/invobjs/argentite",
-  "gfx/invobjs/arkose",
-  "gfx/invobjs/basalt",
-  "gfx/invobjs/batrock",
-  "gfx/invobjs/blackcoal",
-  "gfx/invobjs/breccia",
-  "gfx/invobjs/brick-coade",
-  "gfx/invobjs/brownkelp",
-  "gfx/invobjs/cassiterite",
-  "gfx/invobjs/catgold",
-  "gfx/invobjs/chalcopyrite",
-  "gfx/invobjs/champignon-large",
-  "gfx/invobjs/champignon-medium",
-  "gfx/invobjs/champignon-small",
-  "gfx/invobjs/chert",
-  "gfx/invobjs/cinnabar",
-  "gfx/invobjs/conchshard",
-  "gfx/invobjs/corund",
-  "gfx/invobjs/cuprite",
-  "gfx/invobjs/diabase",
-  "gfx/invobjs/diorite",
-  "gfx/invobjs/dolomite",
-  "gfx/invobjs/dovepoop",
-  "gfx/invobjs/dross",
-  "gfx/invobjs/eclogite",
-  "gfx/invobjs/fairyshroom",
-  "gfx/invobjs/feldspar",
-  "gfx/invobjs/flint",
-  "gfx/invobjs/fluorospar",
-  "gfx/invobjs/gabbro",
-  "gfx/invobjs/galena",
-  "gfx/invobjs/gneiss",
-  "gfx/invobjs/granite",
-  "gfx/invobjs/graywacke",
-  "gfx/invobjs/greenschist",
-  "gfx/invobjs/halite",
-  "gfx/invobjs/hematite",
-  "gfx/invobjs/herbs/baybolete",
-  "gfx/invobjs/herbs/blacktrumpet",
-  "gfx/invobjs/herbs/bladderwrack",
-  "gfx/invobjs/herbs/bloatedbolete",
-  "gfx/invobjs/herbs/bloodstern",
-  "gfx/invobjs/herbs/blueberry",
-  "gfx/invobjs/herbs/camomile",
-  "gfx/invobjs/herbs/candleberry",
-  "gfx/invobjs/herbs/cattailfibre",
-  "gfx/invobjs/herbs/cattailhead",
-  "gfx/invobjs/herbs/cattailroots",
-  "gfx/invobjs/herbs/cavebulb",
-  "gfx/invobjs/herbs/cavelantern",
-  "gfx/invobjs/herbs/chantrelle",
-  "gfx/invobjs/herbs/chimingbluebell",
-  "gfx/invobjs/herbs/chives",
-  "gfx/invobjs/herbs/clover",
-  "gfx/invobjs/herbs/coltsfoot",
-  "gfx/invobjs/herbs/crocus",
-  "gfx/invobjs/herbs/dandelion",
-  "gfx/invobjs/herbs/dill",
-  "gfx/invobjs/herbs/duskfern",
-  "gfx/invobjs/herbs/edelweiss",
-  "gfx/invobjs/herbs/fieldblewit",
-  "gfx/invobjs/herbs/fourleafclover",
-  "gfx/invobjs/herbs/frogscrown",
-  "gfx/invobjs/herbs/frostflower",
-  "gfx/invobjs/herbs/ghostapple",
-  "gfx/invobjs/herbs/giantpuffball",
-  "gfx/invobjs/herbs/glimmermoss",
-  "gfx/invobjs/herbs/greenkelp",
-  "gfx/invobjs/herbs/heartsease",
-  "gfx/invobjs/herbs/henbane",
-  "gfx/invobjs/herbs/indigocap",
-  "gfx/invobjs/herbs/kvann",
-  "gfx/invobjs/herbs/ladysmantle",
-  "gfx/invobjs/herbs/ladysmantledew",
-  "gfx/invobjs/herbs/lampstalk",
-  "gfx/invobjs/herbs/libertycap",
-  "gfx/invobjs/herbs/lingon",
-  "gfx/invobjs/herbs/lorchel",
-  "gfx/invobjs/herbs/lupine",
-  "gfx/invobjs/herbs/mandrake",
-  "gfx/invobjs/herbs/marshmallow",
-  "gfx/invobjs/herbs/mistletoe",
-  "gfx/invobjs/herbs/oystermushroom",
-  "gfx/invobjs/herbs/parasolshroom",
-  "gfx/invobjs/herbs/perfectautumnleaf",
-  "gfx/invobjs/herbs/royaltoadstool",
-  "gfx/invobjs/herbs/rubybolete",
-  "gfx/invobjs/herbs/rustroot",
-  "gfx/invobjs/herbs/salvia",
-  "gfx/invobjs/herbs/seasponge",
-  "gfx/invobjs/herbs/sleighbell",
-  "gfx/invobjs/herbs/snapdragon",
-  "gfx/invobjs/herbs/snowtop",
-  "gfx/invobjs/herbs/spindlytaproot",
-  "gfx/invobjs/herbs/stalagoom",
-  "gfx/invobjs/herbs/stingingnettle",
-  "gfx/invobjs/herbs/strawberry",
-  "gfx/invobjs/herbs/tangledbramble",
-  "gfx/invobjs/herbs/tansy",
-  "gfx/invobjs/herbs/thornythistle",
-  "gfx/invobjs/herbs/thyme",
-  "gfx/invobjs/herbs/toadflax",
-  "gfx/invobjs/herbs/truffle-black",
-  "gfx/invobjs/herbs/truffle-white",
-  "gfx/invobjs/herbs/waybroad",
-  "gfx/invobjs/herbs/windweed",
-  "gfx/invobjs/herbs/wintergreen",
-  "gfx/invobjs/herbs/yarrow",
-  "gfx/invobjs/herbs/yellowfoot",
-  "gfx/invobjs/hornblende",
-  "gfx/invobjs/hornsilver",
-  "gfx/invobjs/ilmenite",
-  "gfx/invobjs/jasper",
-  "gfx/invobjs/kyanite",
-  "gfx/invobjs/lavarock",
-  "gfx/invobjs/leadglance",
-  "gfx/invobjs/limestone",
-  "gfx/invobjs/limonite",
-  "gfx/invobjs/lorcheldried",
-  "gfx/invobjs/lorchelwet",
-  "gfx/invobjs/magnetite",
-  "gfx/invobjs/malachite",
-  "gfx/invobjs/marble",
-  "gfx/invobjs/mica",
-  "gfx/invobjs/microlite",
-  "gfx/invobjs/nagyagite",
-  "gfx/invobjs/obsidian",
-  "gfx/invobjs/olivine",
-  "gfx/invobjs/orthoclase",
-  "gfx/invobjs/peacockore",
-  "gfx/invobjs/pegmatite",
-  "gfx/invobjs/petzite",
-  "gfx/invobjs/porphyry",
-  "gfx/invobjs/pumice",
-  "gfx/invobjs/quarryquartz",
-  "gfx/invobjs/quartz",
-  "gfx/invobjs/reeds",
-  "gfx/invobjs/rhyolite",
-  "gfx/invobjs/rockcrystal",
-  "gfx/invobjs/sandstone",
-  "gfx/invobjs/schist",
-  "gfx/invobjs/serpentine",
-  "gfx/invobjs/slag",
-  "gfx/invobjs/slate",
-  "gfx/invobjs/soapstone",
-  "gfx/invobjs/sodalite",
-  "gfx/invobjs/standinggrass",
-  "gfx/invobjs/sunstone",
-  "gfx/invobjs/sylvanite",
-  "gfx/invobjs/trollshrooms",
-  "gfx/invobjs/wblock-trombonechantrelle",
-  "gfx/invobjs/zincspar"
-]
+{
+  "gfx/invobjs/alabaster": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/apatite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/argentite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/arkose": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/basalt": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/batrock": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/blackcoal": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/breccia": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/brick-coade": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/brownkelp": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/cassiterite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/catgold": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/chalcopyrite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/champignon-large": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/champignon-medium": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/champignon-small": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/chert": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/cinnabar": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/conchshard": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/corund": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/cuprite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/diabase": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/diorite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/dolomite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/dovepoop": {
+    "ingredient_type": "other",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/dross": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/eclogite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/fairyshroom": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/feldspar": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/flint": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/fluorospar": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/gabbro": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/galena": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/gneiss": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/granite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/graywacke": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/greenschist": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/halite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/hematite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/herbs/baybolete": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/blacktrumpet": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/bladderwrack": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/bloatedbolete": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/bloodstern": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/blueberry": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/camomile": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/candleberry": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/cattailfibre": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/cattailhead": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/cattailroots": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/cavebulb": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/cavelantern": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/chantrelle": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/chimingbluebell": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/chives": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/clover": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/coltsfoot": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/crocus": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/dandelion": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/dill": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/duskfern": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/edelweiss": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/fieldblewit": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/fourleafclover": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/frogscrown": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/frostflower": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/ghostapple": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/giantpuffball": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/glimmermoss": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/greenkelp": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/heartsease": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/henbane": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/indigocap": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/kvann": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/ladysmantle": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/ladysmantledew": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/lampstalk": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/libertycap": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/lingon": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/lorchel": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/lupine": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/mandrake": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/marshmallow": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/mistletoe": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/oystermushroom": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/parasolshroom": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/perfectautumnleaf": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/royaltoadstool": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/rubybolete": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/rustroot": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/salvia": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/seasponge": {
+    "ingredient_type": "other",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/herbs/sleighbell": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/snapdragon": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/snowtop": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/spindlytaproot": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/stalagoom": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/stingingnettle": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/strawberry": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/tangledbramble": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/tansy": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/thornythistle": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/thyme": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/toadflax": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/truffle-black": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/truffle-white": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/waybroad": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/windweed": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/wintergreen": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/yarrow": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/herbs/yellowfoot": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/hornblende": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/hornsilver": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/ilmenite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/jasper": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/kyanite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/lavarock": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/leadglance": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/limestone": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/limonite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/lorcheldried": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/lorchelwet": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/magnetite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/malachite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/marble": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/mica": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/microlite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/nagyagite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/obsidian": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/olivine": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/orthoclase": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/peacockore": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/pegmatite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/petzite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/porphyry": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/pumice": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/quarryquartz": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/quartz": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/reeds": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/rhyolite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/rockcrystal": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/sandstone": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/schist": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/serpentine": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/slag": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/slate": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/soapstone": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/sodalite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/standinggrass": {
+    "ingredient_type": "herb",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/sunstone": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/sylvanite": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/trollshrooms": {
+    "ingredient_type": "mushroom",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "yes"
+  },
+  "gfx/invobjs/wblock-trombonechantrelle": {
+    "ingredient_type": "other",
+    "mineral_calcination_craftable": "no",
+    "herbal_grind_craftable": "no"
+  },
+  "gfx/invobjs/zincspar": {
+    "ingredient_type": "stone",
+    "mineral_calcination_craftable": "yes",
+    "herbal_grind_craftable": "no"
+  }
+}

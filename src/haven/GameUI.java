@@ -1778,6 +1778,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
     public void uimsg(String msg, Object... args) {
 	if(msg == "err") {
 	    String err = (String)args[0];
+	    Makewindow.checkCraftRejection(ui);
 	    Reactor.EMSG.onNext(err);
 	    ui.error(err);
 	} else if(msg == "msg") {
@@ -2104,6 +2105,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
     }
 
     public boolean msg(UI.Notice msg) {
+	Makewindow.checkCraftRejection(ui);
 	if(msg.handler(this))
 	    return(true);
 	ChatUI.Channel.Message logged;

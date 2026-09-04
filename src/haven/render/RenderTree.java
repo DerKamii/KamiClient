@@ -756,9 +756,10 @@ public class RenderTree implements RenderList.Adapter, Disposable {
 	    @SuppressWarnings("unchecked")
 	    public <T extends State> T get(State.Slot<T> slot) {
 		DepInfo bk = dstate();
-		/* KamiClient: the 2D pass reads slot state without the tree lock, so the slot
-		 * can be removed out from under it - removech() nulls the dstate. Say what
-		 * actually happened instead of NPEing on the next line. */
+		/* KamiClient: belt and braces. dstate() should not hand back null now that
+		 * the bogus null check in istate() is gone - that was what produced them -
+		 * but the 2D pass does read slot state without the tree lock, so if a null
+		 * ever does turn up here again, say what it is instead of NPEing. */
 		if(bk == null)
 		    throw(new SlotRemoved(TreeSlot.this));
 		int idx = slot.id;
@@ -801,8 +802,20 @@ public class RenderTree implements RenderList.Adapter, Disposable {
 		} else {
 		    Inheritance pi = parent.istate();
 		    DepInfo ds = dstate();
-		    if (ds == null)
-			return(istate); // KamiClient NPE Check
+		    /* KamiClient: there used to be a "if(ds == null) return(istate);" here,
+		     * inherited from an ender merge. istate is null at that point - we are
+		     * inside if(istate == null) - so it handed a null Inheritance back to
+		     * mkdstate, whose DepPipe then produced a null DepInfo, which made the
+		     * next slot down do the same. Self-perpetuating.
+		     *
+		     * Worse, it left this.istate unassigned, so the Inheritance got rebuilt
+		     * later against a DepInfo that had moved on. pdstate() hands out a
+		     * SlotPipe that resolves dstate() at read time, so you end up with a
+		     * group claiming to define a slot the current DepInfo does not - which
+		     * is the "Reading undefined slot" throw over in SlotPipe.get.
+		     *
+		     * Upstream has no check here because dstate() is not supposed to return
+		     * null on this path; it only did because of the check itself. */
 		    Pipe[] istates = new Pipe[Math.max(pi.gstates.length, ds.def.length)];
 		    boolean f = false;
 		    for(int i = 0; i < istates.length; i++) {

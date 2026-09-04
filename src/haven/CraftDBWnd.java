@@ -101,8 +101,15 @@ public class CraftDBWnd extends WindowX implements ICraftParent {
 	    config.put(player, new LinkedList<>());
 	}
 	favourites = config.get(player);
+	/* KamiClient: Reactor.PLAYER is global and fires on character select, when there
+	 * may be no GameUI yet - picking a character from the charlist got here with
+	 * ui.gui still null. The favourites list is loaded either way; only the pagina
+	 * lookup needs the menu, and init() redoes that once the menu exists. */
+	MenuGrid menu = (ui != null && ui.gui != null) ? ui.gui.menu : this.menu;
+	if(menu == null)
+	    return;
 	favourites.stream()
-	    .map(ui.gui.menu::paginafor)
+	    .map(menu::paginafor)
 	    .filter(Objects::nonNull)
 	    .collect(Collectors.toCollection(() -> Favourites.items));
     }

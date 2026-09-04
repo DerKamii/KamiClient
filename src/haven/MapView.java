@@ -34,6 +34,7 @@ import auto.Bot;
 
 import java.awt.Color;
 import java.awt.event.KeyEvent;
+import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
@@ -1402,14 +1403,20 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	return((plgob < 0) ? null : glob.oc.getgob(plgob));
     }
     
-    public Coord3f getcc() {
+    private Coord3f rawcc() {
 	Gob pl = player();
-	Coord3f raw;
 	if(pl != null)
-	    raw = pl.getc();
-	else
-	    raw = glob.map.getzp(cc);
-	return(camfilter.filter(raw));
+	    return(pl.getc());
+	return(glob.map.getzp(cc));
+    }
+
+    public Coord3f getcc() {
+	/* KamiClient: this used to step the smoothing filter inline, but getcc() is
+	 * called from a dozen places a frame - camera, culling, minimap, screenxf -
+	 * on both the UI and render threads, so the spring got advanced an arbitrary
+	 * number of times per frame from two threads at once. It's stepped once from
+	 * tick() now; this just reads whatever that produced. */
+	return(camfilter.get(rawcc()));
     }
 
     private final CamJitterFilter camfilter = new CamJitterFilter();
@@ -1419,25 +1426,62 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	// the target — roughly 4/OMEGA seconds to settle from rest. OMEGA=6
 	// gives ~0.65s settle on big jumps with smooth ease-in-out.
 	private static final float OMEGA = 6f;
-	private double lastTime = Double.NaN;
-	private Coord3f filtered;
+	/* Read from the render and UI threads, written by tick(); volatile so a
+	 * reset is seen promptly. Always snapshot it into a local before use -
+	 * the pair of coordinates is only consistent within one Coord3f. */
+	private volatile Coord3f filtered;
 	private float vx, vy;
 
-	Coord3f filter(Coord3f raw) {
-	    if(!CFG.CAMERA_SMOOTH_JITTER.get()) {
-		lastTime = Double.NaN;
+	/* Hard ceiling on how far the camera may sit from the player. The leash
+	 * already caps the offset at 50, so nothing legitimate comes near this -
+	 * it only fires if the spring state got corrupted anyway, and it's cheap
+	 * insurance against the camera wandering off and taking the loaded map
+	 * cuts with it. Well under the 1000 teleport threshold. */
+	private static final float MAXOFF = 200f;
+
+	/* Read the smoothed position. Called many times a frame from several
+	 * threads, so it only reads state - stepping happens in step(). */
+	Coord3f get(Coord3f raw) {
+	    Coord3f f = this.filtered;
+	    if(f == null)
 		return(raw);
-	    }
-	    double now = System.nanoTime() / 1e9;
-	    if(Double.isNaN(lastTime) || filtered == null) {
-		lastTime = now;
-		filtered = raw;
+	    if(!Float.isFinite(f.x) || !Float.isFinite(f.y) ||
+	       (Math.hypot(f.x - raw.x, f.y - raw.y) > MAXOFF)) {
+		filtered = null;
 		vx = vy = 0f;
 		return(raw);
 	    }
-	    float dt = (float)(now - lastTime);
-	    if(dt <= 0) return(filtered);
-	    lastTime = now;
+	    return(new Coord3f(f.x, f.y, raw.z));
+	}
+
+	/* For :camdump - the raw smoothed position, or null when the filter is
+	 * off or hasn't seeded. Deliberately does not go through get(), so
+	 * dumping never resets the state we're trying to look at. */
+	Coord3f dbgfiltered() {return(this.filtered);}
+	float dbgvx() {return(vx);}
+	float dbgvy() {return(vy);}
+
+	/* Advance the spring. Called once a frame from MapView.tick with the
+	 * frame's own dt, so the camera behaves the same no matter how many
+	 * things asked for the position. */
+	void step(Coord3f raw, double rdt) {
+	    float leash = Utils.clip(CFG.CAMERA_SMOOTH_STRENGTH.get(), 0, 50);
+	    if(leash <= 0) {
+		/* Off: hand back the raw position and forget any state, so
+		 * turning it back on starts from where the camera actually is. */
+		filtered = null;
+		vx = vy = 0f;
+		return;
+	    }
+	    if(filtered == null) {
+		filtered = raw;
+		vx = vy = 0f;
+		return;
+	    }
+	    float dt = (float)rdt;
+	    if(dt <= 0)
+		return;
+	    // Keep dt well under 2/OMEGA, past which the integration goes unstable.
 	    if(dt > 0.1f) dt = 0.1f;
 
 	    // Teleport detection: if the player jumped a huge distance (e.g. zoning
@@ -1446,10 +1490,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    if(Math.hypot(filtered.x - raw.x, filtered.y - raw.y) > 1000f) {
 		filtered = raw;
 		vx = vy = 0f;
-		return(raw);
+		return;
 	    }
-
-	    float leash = Utils.clip(CFG.CAMERA_SMOOTH_STRENGTH.get(), 0, 50);
 
 	    // Critically-damped spring integration (semi-implicit). Produces
 	    // ease-in-out: accelerates from rest, decelerates into the target,
@@ -1486,8 +1528,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		vx = vy = 0f;
 	    }
 
+	    // Belt and braces: if anything above went non-finite, drop back to
+	    // the player rather than leaving the camera stranded off in space.
+	    if(!Float.isFinite(fx) || !Float.isFinite(fy)) {
+		filtered = null;
+		vx = vy = 0f;
+		return;
+	    }
+
 	    filtered = new Coord3f(fx, fy, raw.z);
-	    return(filtered);
 	}
     }
     
@@ -2043,6 +2092,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    camoff.x = (float)((Math.random() - 0.5) * shake);
 	    camoff.y = (float)((Math.random() - 0.5) * shake);
 	    camoff.z = (float)((Math.random() - 0.5) * shake);
+	    camfilter.step(rawcc(), dt);
 	    camera.tick(dt);
 	    if(CFG.EXTENDED_ORTHO_VIEW.get() && camera instanceof OrthoCam) {
 		OrthoCam oc = (OrthoCam)camera;
@@ -2788,12 +2838,175 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	return camtypes.keySet();
     }
     
+    /* KamiClient: the dump commands exist for users who hit something odd and
+     * report it, and those users generally do not have the console open - so
+     * write the output to dumps/ as well as printing it. The file is the thing
+     * they can actually send back. */
+    private static PrintWriter dumpfile(Console cons, String name) {
+	java.io.File dir = new java.io.File("dumps");
+	if(!dir.isDirectory() && !dir.mkdirs()) {
+	    cons.out.println("could not create dumps/ - printing here only");
+	    return(null);
+	}
+	String stamp = new java.text.SimpleDateFormat("yyyy-MM-dd HH.mm.ss").format(new java.util.Date());
+	java.io.File f = new java.io.File(dir, String.format("%s %s.txt", name, stamp));
+	try {
+	    PrintWriter w = new PrintWriter(new java.io.FileWriter(f));
+	    cons.out.printf("writing %s%n", f.getPath());
+	    return(w);
+	} catch(java.io.IOException e) {
+	    cons.out.printf("could not write %s: %s%n", f.getPath(), e.getMessage());
+	    return(null);
+	}
+    }
+
+    /* Prints to the console and, when there is one, to the dump file too. */
+    private static void dumpf(Console cons, PrintWriter w, String fmt, Object... args) {
+	String ln = String.format(fmt, args);
+	cons.out.println(ln);
+	if(w != null)
+	    w.println(ln);
+    }
+
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
 	cmdmap.put("cam", (cons, args) -> {
 	    if(args.length >= 2) {
 		setcam(args[1], Utils.splice(args, 2));
 	    }
+	});
+	/* KamiClient: for chasing "my camera drifted off the character" reports.
+	 * Nothing throws when that happens, so there's no crash log to read -
+	 * this prints the raw player position, what the smoothing filter made of
+	 * it, and the gap between them. A large offset means the filter; ~0 means
+	 * look elsewhere. */
+	cmdmap.put("camdump", (cons, args) -> {
+	    PrintWriter w = dumpfile(cons, "camdump");
+	    try {
+		int strength = CFG.CAMERA_SMOOTH_STRENGTH.get();
+		dumpf(cons, w, "smoothing: %s (strength %d)",
+		      (strength > 0) ? "on" : "off", strength);
+		Gob pl = player();
+		dumpf(cons, w, "plgob: %d %s", plgob, (pl == null) ? "(no gob)" : "");
+		Coord3f raw;
+		try {
+		    raw = rawcc();
+		} catch(Loading l) {
+		    dumpf(cons, w, "raw: <loading: %s>", l.getMessage());
+		    return;
+		}
+		dumpf(cons, w, "raw:      (%.2f, %.2f, %.2f)  tile (%.1f, %.1f)",
+		      raw.x, raw.y, raw.z, raw.x / tilesz.x, raw.y / tilesz.y);
+		Coord3f f = camfilter.dbgfiltered();
+		if(f == null) {
+		    dumpf(cons, w, "filtered: <none - filter off or not seeded>");
+		} else {
+		    double off = Math.hypot(f.x - raw.x, f.y - raw.y);
+		    dumpf(cons, w, "filtered: (%.2f, %.2f)  vel (%.2f, %.2f)",
+			  f.x, f.y, camfilter.dbgvx(), camfilter.dbgvy());
+		    dumpf(cons, w, "offset:   %.2f (%.1f tiles)%s", off, off / tilesz.x,
+			  (off > 50) ? "  <-- beyond leash, this is the bug" : "");
+		}
+		dumpf(cons, w, "camera:   %s", (camera == null) ? "<none>" : camera.stats());
+	    } finally {
+		if(w != null)
+		    w.close();
+	    }
+	});
+	/* KamiClient: for the "world came apart" reports - layers drawn at wrong
+	 * offsets from each other, clicks all going one direction, flavour objects
+	 * stuck to the camera. Nothing throws, so there's no crash log; this prints
+	 * the three coordinate systems that have to agree, so an affected user's
+	 * output says which one drifted.
+	 *
+	 * What to look for:
+	 *  - player rc vs placed: a gap means Gob.Placed cached a stale placement.
+	 *    Nothing marks placement dirty when the map updates under a standing
+	 *    gob, so this is the prime suspect.
+	 *  - grid ul vs the tile it should hold: a mismatch means the map grid
+	 *    itself is keyed wrong, which would break clicks too.
+	 *  - stale count: how many visible gobs are drawn away from where they are.
+	 *    A handful is normal churn; a lot of them is the bug. */
+	cmdmap.put("mapdump", (cons, args) -> {
+	    PrintWriter w = dumpfile(cons, "mapdump");
+	    try {
+		Gob pl = player();
+		dumpf(cons, w, "plgob %d, view cc %s", plgob, cc);
+		if(pl == null) {
+		    dumpf(cons, w, "no player gob");
+		} else {
+		    Coord3f prc = pl.getc();
+		    Coord3f ppl = pl.placed.dbgplacedc();
+		    dumpf(cons, w, "player rc     %s", prc);
+		    dumpf(cons, w, "player placed %s%s", ppl,
+			  pl.placed.dbgdirty() ? " (dirty)" : "");
+		    if((ppl != null) && (prc != null))
+			dumpf(cons, w, "player drift  %.2f", Math.hypot(ppl.x - prc.x, ppl.y - prc.y));
+		    Coord ptc = new Coord2d(prc).floor(tilesz);
+		    try {
+			MCache.Grid g = ui.sess.glob.map.getgridt(ptc);
+			dumpf(cons, w, "grid id %d ul %s, tile %s -> off %s",
+			      g.id, g.ul, ptc, ptc.sub(g.ul));
+		    } catch(Loading l) {
+			dumpf(cons, w, "grid: <loading: %s>", l.getMessage());
+		    }
+		}
+		/* Sweep the visible gobs for stale placements. */
+		int n = 0, stale = 0;
+		double worst = 0;
+		Gob worstg = null;
+		OCache oc = ui.sess.glob.oc;
+		synchronized(oc) {
+		    for(Gob g : oc) {
+			Coord3f rc, pc;
+			try {
+			    rc = g.getc();
+			} catch(Loading l) {
+			    continue;
+			}
+			pc = g.placed.dbgplacedc();
+			if((rc == null) || (pc == null))
+			    continue;
+			n++;
+			double d = Math.hypot(pc.x - rc.x, pc.y - rc.y);
+			if(d > 1.0) {
+			    stale++;
+			    if(d > worst) {worst = d; worstg = g;}
+			}
+		    }
+		}
+		dumpf(cons, w, "gobs %d, placed away from rc %d", n, stale);
+		if(worstg != null)
+		    dumpf(cons, w, "worst %.2f: %s (%s)", worst, worstg.resid(), worstg.rc);
+	    } finally {
+		if(w != null)
+		    w.close();
+	    }
+	});
+	/* KamiClient: the other half of :mapdump. Marks every gob's placement
+	 * stale so it recomputes next tick. If running this un-breaks a world
+	 * that has come apart, the bug is a missed placement invalidation and
+	 * not anything in the map data itself - which is the single most useful
+	 * thing an affected user can tell us. */
+	/* KamiClient: the big hammer - drop every cached grid so the client
+	 * re-requests the lot and rebuilds terrain, plots and flavour objects
+	 * from scratch. Same path the flat-terrain toggle uses, and the same
+	 * effect as walking in and out of a zone, which is what people have
+	 * been doing by hand to unstick a world that came apart. */
+	cmdmap.put("rebuildview", (cons, args) -> {
+	    ui.sess.glob.map.trimall();
+	    cons.out.println("dropped all cached map grids - they will reload from the server");
+	});
+	cmdmap.put("replace", (cons, args) -> {
+	    OCache oc = ui.sess.glob.oc;
+	    int n = 0;
+	    synchronized(oc) {
+		for(Gob g : oc) {
+		    g.placed.dirty = true;
+		    n++;
+		}
+	    }
+	    cons.out.printf("marked %d gobs for replacement%n", n);
 	});
 	cmdmap.put("whyload", (cons, args) -> {
 	    Loading l = lastload;

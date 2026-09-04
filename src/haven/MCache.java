@@ -905,10 +905,25 @@ public class MCache implements MapSource {
 	public void fill(Message msg) {
 	    int ver = msg.uint8();
 	    if(ver == 1) {
+		/* KamiClient: 8ef9d0322 made this invalidate only when tiles or z
+		 * changed, to skip rebuilding cuts for no-op updates. But subfill
+		 * also writes the grid id and the plot overlays, and neither was
+		 * being compared - so a grid update carrying only plots left every
+		 * cut holding stale geometry while the world around it moved on.
+		 * That's the crop fractions and property lines sitting away from
+		 * the tiles they belong to, and the flavour objects staying put:
+		 * invalidate() rebuilds fo as well as the mesh.
+		 *
+		 * Compare everything subfill can touch, not just two of them. */
 		int[] prevTiles = tiles.clone();
 		float[] prevZ = z.clone();
+		long previd = id;
+		Indir<Resource>[] prevols = this.ols;
+		boolean[][] prevol = this.ol;
 		subfill(msg);
-		if(!Arrays.equals(tiles, prevTiles) || !Arrays.equals(z, prevZ))
+		if(!Arrays.equals(tiles, prevTiles) || !Arrays.equals(z, prevZ) ||
+		   (id != previd) || !Arrays.equals(this.ols, prevols) ||
+		   !Arrays.deepEquals(this.ol, prevol))
 		    invalidate();
 	    } else {
 		throw(new RuntimeException("Unknown map data version " + ver));

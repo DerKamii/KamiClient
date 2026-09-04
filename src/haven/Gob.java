@@ -1334,6 +1334,16 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	public Pipe.Op placement() {
 	    return(new Placement());
 	}
+
+	/* For :mapdump - the position this gob is actually being drawn at,
+	 * which is the cached one, not the live getc(). A gap between the two
+	 * means the placement went stale. */
+	Coord3f dbgplacedc() {
+	    Placement p = this.cur;
+	    return((p == null) ? null : p.oc);
+	}
+
+	boolean dbgdirty() {return(dirty);}
 	
 	public void autotick(double dt) {
 	    if(!dirty && moving == null)

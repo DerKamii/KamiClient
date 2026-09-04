@@ -691,16 +691,6 @@ public class RenderTree implements RenderList.Adapter, Disposable {
 		DepInfo pst = this.dstate;
 		try {
 		    upddstate(mkdstate(cstate, ostate));
-		} catch(Loading e) {
-		    /* Loading is ordinary control flow, not a failed state
-		     * transition. setdstate() has already applied the new
-		     * state by the time a client update can throw this, so
-		     * the slot is consistent; only a renderer was left
-		     * un-notified, and it re-resolves once the resource
-		     * finishes loading. Rolling back here would discard
-		     * valid state, and the rollback itself can throw
-		     * Loading again, turning a slow texture into a fatal
-		     * "Unexpected non-local exit". */
 		} catch(RuntimeException e) {
 		    try {
 			upddstate(pst);

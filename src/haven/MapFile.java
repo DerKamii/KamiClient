@@ -58,6 +58,10 @@ public class MapFile {
     public IDPool markerids = new IDPool(0, Long.MAX_VALUE);
     public final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Random rnd = new Random();
+    /* KamiClient: set when load() had to stop early on a damaged index. Read by
+     * GameUI to tell the player once they are actually in the game, since load
+     * happens on the loader thread before there is any UI to tell. */
+    public String damagedindex = null;
 
     public MapFile(ResCache store, String filename) {
 	this.store = store;
@@ -105,13 +109,29 @@ public class MapFile {
 	} catch(FileNotFoundException e) {
 	    return(file);
 	}
+	int expected = 0;
 	try(StreamMessage data = new StreamMessage(fp)) {
 	    int ver = data.uint8();
 	    if(ver == 1) {
 		for(int i = 0, no = data.int32(); i < no; i++)
 		    file.knownsegs.add(data.int64());
-		for(int i = 0, no = data.int32(); i < no; i++) {
-		    Marker mark = file.loadmarker(data);
+		expected = data.int32();
+		for(int i = 0; i < expected; i++) {
+		    /* KamiClient: an interrupted write leaves the index truncated
+		     * mid-marker, and this used to throw the whole load away - which
+		     * kills the mapview widget and with it the game, over what is
+		     * usually a single unreadable marker at the tail. Keep what parsed
+		     * and stop at the damage: the records are not framed, so once a
+		     * read fails the stream position is unknown and there is no way to
+		     * resynchronise onto the next one. */
+		    Marker mark;
+		    try {
+			mark = file.loadmarker(data);
+		    } catch(Message.BinError e) {
+			file.damagedindex = String.format("recovered %d of %d markers (%s)", i, expected, e);
+			new Warning(e, "mapfile index damaged: " + file.damagedindex).issue();
+			break;
+		    }
 		    file.markers.add(mark);
 		    if((mark instanceof me.ender.minimap.SMarker) && (((me.ender.minimap.SMarker)mark).oid.bits != 0))
 			file.smarkers.put(((me.ender.minimap.SMarker)mark).oid, (me.ender.minimap.SMarker)mark);
@@ -122,8 +142,28 @@ public class MapFile {
 	} catch(Message.BinError e) {
 	    throw(new IOException(String.format("error when loading index: %s", e), e));
 	}
+	if(file.damagedindex != null)
+	    file.backupindex();
 	loadCustomMarkers(file);
 	return(file);
+    }
+
+    /* KamiClient: copy the damaged index aside before anything overwrites it.
+     * Loading a partial index does not touch the file, but the next save() rewrites
+     * it wholesale from memory, so the unreadable tail would vanish silently a few
+     * minutes into normal play. This keeps the original bytes recoverable without
+     * interrupting the player with a dialog they cannot act on at login. */
+    private void backupindex() {
+	try(InputStream in = sfetch("index")) {
+	    try(OutputStream out = sstore("index.bak")) {
+		/* Not transferTo: this tree compiles at release 8. */
+		byte[] buf = new byte[8192];
+		for(int n = in.read(buf); n >= 0; n = in.read(buf))
+		    out.write(buf, 0, n);
+	    }
+	} catch(IOException e) {
+	    new Warning(e, "could not back up damaged mapfile index").issue();
+	}
     }
 
     private void save() {

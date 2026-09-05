@@ -1329,6 +1329,13 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
 		     * existing mapfile with a new one is better. */
 		    throw(new RuntimeException("failed to load mapfile", e));
 		}
+		if(file.damagedindex != null) {
+		    /* KamiClient: load() happens before there is any UI to tell, so say
+		     * it here instead. The original file is kept as index.bak because the
+		     * next save() rewrites the index from memory and would otherwise drop
+		     * the unreadable part for good. */
+		    error("Your map index was damaged: " + file.damagedindex + ". The original is kept as index.bak.");
+		}
 		mmap = blpanel.add(new CornerMap(UI.scale(new Coord(133, 133)), file), minimapc);
 		mmap.lower();
 		mapfile = new MapWnd2(file, map, Utils.getprefc("wndsz-map", UI.scale(new Coord(700, 500))), "Map");

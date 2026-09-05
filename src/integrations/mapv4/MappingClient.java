@@ -370,11 +370,18 @@ public class MappingClient {
 	public void run() {
 	    if(mapfile.lock.readLock().tryLock()) {
 		try {
+		    /* KamiClient: segments.get() returns null for a segment whose file
+		     * is missing or empty -- that is the cache's documented answer, not
+		     * an error -- and a marker can outlive its segment when the two get
+		     * out of step, which an interrupted write will do. Skip those
+		     * markers instead of NPEing out of the whole extraction. */
 		    List<MarkerData> markers = mapfile.markers.stream().map(m -> {
+			MapFile.Segment seg = mapfile.segments.get(m.seg);
+			if(seg == null)
+			    return null;
 			Coord mgc = new Coord(Math.floorDiv(m.tc.x, 100), Math.floorDiv(m.tc.y, 100));
-			Indir<MapFile.Grid> indirGrid = mapfile.segments.get(m.seg).grid(mgc);
-			return new MarkerData(m, indirGrid);
-		    }).collect(Collectors.toList());
+			return new MarkerData(m, seg.grid(mgc));
+		    }).filter(Objects::nonNull).collect(Collectors.toList());
 
 		    if(!submit(new ProcessMapper(mapfile, markers, genus), 15, TimeUnit.SECONDS))
 			warn("Automap: could not queue marker processing.");

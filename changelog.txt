@@ -1,6 +1,7 @@
 $size[14]{$u{update on 05.09.2026:}
 * I think the world coming apart is finally fixed for real this time. It was a crash fix that corrupted the state instead of crashing, reverted that. It's been quiet since, where before there were several reports a day
 * Fixed a crash while objects were being removed from the world
+* Shift-click transfer in the list inventory goes back to only moving things out of your main inventory. If you liked it the other way, there's a "Focused Inventory Shift Transfer" box in Options -> UI
 `
 $size[14]{$u{update on 03.09.2026 v4:}
 * The world coming apart should be gone for good - map updates now always rebuild the terrain, the way the vanilla client does. This undoes an optimization of mine from April that skipped the rebuild when it thought nothing had changed, and was wrong about that more often than I realized

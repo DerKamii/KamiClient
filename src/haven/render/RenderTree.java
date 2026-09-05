@@ -615,8 +615,16 @@ public class RenderTree implements RenderList.Adapter, Disposable {
 
 	private void upddstate(DepInfo nst) {
 	    DepInfo pst = setdstate(nst);
-		if(pst == null) {
-		throw new IllegalStateException(String.format("upddstate: pst is null for '%s'", path()));
+	    if(pst == null) {
+		/* KamiClient: a null dstate is how removech() marks a removed slot, so
+		 * getting one here means the slot went away between chstate's pidx check
+		 * and now - the ordinary remove-race, which callers already handle. This
+		 * used to throw IllegalStateException, which nothing catches: it escaped
+		 * as a hard error and, worse, left dstate null, so the NPE actually
+		 * landed later in istate() reading ds.def. SlotRemoved is what the same
+		 * condition throws over in SlotPipe.get, and what MapView's add/remove
+		 * paths already swallow as harmless. */
+		throw(new SlotRemoved(this));
 	    }
 	    int[] defch = nst.defdiff(pst);
 	    if(defch == null) {
@@ -778,6 +786,15 @@ public class RenderTree implements RenderList.Adapter, Disposable {
 		} else {
 		    Inheritance pi = parent.istate();
 		    DepInfo ds = dstate();
+		    if(ds == null) {
+			/* KamiClient: a null dstate means removech() has taken this slot,
+			 * so there is no state to inherit. Throw the same thing
+			 * SlotPipe.get does for the same condition - PView's 2D pass and
+			 * MapView's add/remove already catch it as a harmless remove-race.
+			 * NOT the old "return(istate)" (see below): returning null here is
+			 * what poisoned the tree, throwing is what the callers expect. */
+			throw(new SlotRemoved(this));
+		    }
 		    /* KamiClient: there used to be a "if(ds == null) return(istate);" here,
 		     * inherited from an ender merge. istate is null at that point - we are
 		     * inside if(istate == null) - so it handed a null Inheritance back to

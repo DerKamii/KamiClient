@@ -737,11 +737,22 @@ public class ExtInventory extends Widget {
     }
     
     private Object[] getTransferTargets() {
+	/* KamiClient: ender made shift-click transfer work out of any list inventory,
+	 * which also made the destination depend on window stacking - i.e. on whichever
+	 * inventory you clicked last. Off by default; when off, transfer only works out
+	 * of the main inventory and the main inventory is never a target, which is the
+	 * old predictable behaviour. Z-order sorting is kept either way. */
+	if(!CFG.UI_FOCUSED_INV_SHIFT_TRANSFER.get() && (inv != ui.gui.maininv))
+	    return null;
 	// KamiClient: topmost window first, skip anything hidden, and never target ourselves.
 	List<Widget> widgets = ui.gui.children();
 	List<Widget> inventories = ui.EXT_INVENTORIES.stream()
 	    .filter(Widget::tvisible)
 	    .filter(w -> w != this)
+	    /* KamiClient: with the option off the main inventory is not a target, so
+	     * shift-click always means "out of my pack" and never "into it". Filtered
+	     * here rather than in UI.addInventory so the toggle works without a relog. */
+	    .filter(w -> CFG.UI_FOCUSED_INV_SHIFT_TRANSFER.get() || (w != ui.gui.maininvext))
 	    .sorted((w1, w2) -> {
 		Window p1 = w1.getparent(Window.class);
 		Window p2 = w2.getparent(Window.class);

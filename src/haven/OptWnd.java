@@ -1496,7 +1496,10 @@ public class OptWnd extends WindowX {
 	
 	y += STEP;
 	panel.add(new CFGBox("Unpack stacks in list inventory", CFG.UI_STACK_EXT_INV_UNPACK, "Show stacked items 'unpacked' in extra inventory's list"), x, y);
-    
+
+	y += STEP;
+	panel.add(new CFGBox("Focused Inventory Shift Transfer", CFG.UI_FOCUSED_INV_SHIFT_TRANSFER, "In the list inventory only: shift-click transfers out of whichever inventory you last clicked, into the topmost other one. Off: transfers only out of your main inventory, and never into it"), x, y);
+
 	//second row
 	my = Math.max(my, y);
 	x += UI.scale(265);

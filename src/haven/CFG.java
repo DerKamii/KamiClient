@@ -156,6 +156,10 @@ public class CFG<T> {
     /**Unpack stacks into single items for extra inventory's list*/
     public static final CFG<Integer> UI_EXT_INV_MIN_ROWS = new CFG<>("ui.stack.ext_inv_min_rows", 3);
     public static final CFG<Boolean> UI_STACK_EXT_INV_UNPACK = new CFG<>("ui.stack.ext_inv_unpack", true);
+    /**Shift-click transfer out of any list inventory, targeting the topmost window
+     * (ender's behaviour). Off: transfer only out of the main inventory, and never
+     * into it.*/
+    public static final CFG<Boolean> UI_FOCUSED_INV_SHIFT_TRANSFER = new CFG<>("ui.focused_inv_shift_transfer", false);
     
     public static final CFG<Boolean> ALCHEMY_LIMIT_RECIPE_SAVE = new CFG<>("alchemy.limit_recipe_saving", true);
     public static final CFG<Boolean> ALCHEMY_AUTO_PROCESS = new CFG<>("alchemy.auto_process", false);

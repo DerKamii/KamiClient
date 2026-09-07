@@ -451,9 +451,38 @@ public class MapWnd extends WindowX implements Console.Directory {
 	}
 
 	public void mark(Location loc, boolean onmap) {
-	    Marker nm = new PMarker(file, loc.seg.id, loc.tc, "New marker", BuddyWnd.gc[new Random().nextInt(BuddyWnd.gc.length)], onmap);
+	    mark(loc, onmap, null);
+	}
+
+	/* KamiClient: if you dropped the marker on top of something in the world, name it
+	 * after that thing instead of "New marker" - click a bee dungeon, get "Bee Dungeon".
+	 * Falls back to the old name when you clicked bare ground or the res has no
+	 * tooltip, so placing a marker on nothing behaves exactly as before. */
+	public void mark(Location loc, boolean onmap, String name) {
+	    if(name == null || name.isEmpty())
+		name = "New marker";
+	    Marker nm = new PMarker(file, loc.seg.id, loc.tc, name, BuddyWnd.gc[new Random().nextInt(BuddyWnd.gc.length)], onmap);
 	    file.add(nm);
 	    focus(nm);
+	}
+
+	private String clickedName(ClickData inf) {
+	    if(inf == null)
+		return null;
+	    try {
+		Gob gob = Gob.from(inf.ci);
+		if(gob == null)
+		    return null;
+		Resource res = gob.getres();
+		if(res == null)
+		    return null;
+		String nm = me.ender.ClientUtils.prettyResName(res);
+		return "???".equals(nm) ? null : nm;
+	    } catch(Loading l) {
+		/* Res not in yet - not worth blocking the marker over, just use the
+		 * default name. */
+		return null;
+	    }
 	}
 
 	private boolean ungrab() {
@@ -464,14 +493,17 @@ public class MapWnd extends WindowX implements Console.Directory {
 	    return(true);
 	}
 
-	public class FindMark extends MapView.Maptest {
+	/* KamiClient: was a Maptest, which only hit-tests terrain and throws the clicked
+	 * object away. Hittest gives us the gob under the cursor as well, so the marker can
+	 * take its name. */
+	public class FindMark extends MapView.Hittest {
 	    private FindMark(MapView mv, Coord c) {mv.super(c);}
 
-	    protected void hit(Coord pc, Coord2d mc) {
+	    protected void hit(Coord pc, Coord2d mc, ClickData inf) {
 		Location sloc = view.sessloc;
 		if(sloc != null) {
 		    Location loc = new Location(sloc.seg, sloc.tc.add(mc.floor(tilesz)));
-		    mark(loc, true);
+		    mark(loc, true, clickedName(inf));
 		}
 		ungrab();
 	    }

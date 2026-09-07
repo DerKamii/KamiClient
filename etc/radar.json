@@ -33,6 +33,8 @@
   {"match": "gfx/terobjs/vehicle/wreckingball", "icon": "paginae/bld/wball", "visible": true},
   {"match": "gfx/terobjs/road/milestone-stone-e", "icon": "radar/milestone-stone-e", "visible": true},
   {"match": "gfx/terobjs/road/milestone-stone-m", "icon": "radar/milestone-stone-m", "visible": true},
+  {"match": "gfx/terobjs/road/milestone-wood-e", "icon": "radar/milestone-wood-e", "visible": true},
+  {"match": "gfx/terobjs/road/milestone-wood-m", "icon": "radar/milestone-wood-m", "visible": true},
   {"match": "gfx/terobjs/items/arrow", "icon": "gfx/invobjs/arrow", "visible": true},
   {"match": "gfx/kritter/midgeswarm/midgeswarm", "icon": "radar/midgeswarm", "visible": true}
 ]

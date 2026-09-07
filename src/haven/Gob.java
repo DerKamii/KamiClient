@@ -939,7 +939,15 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     
     private void setattr(Class<? extends GAttrib> ac, GAttrib a) {
 	GAttrib prev;
-	synchronized (attr) {
+	/* KamiClient: setupmods is a plain ArrayList that ctick iterates in GobState,
+	 * under synchronized(gob) - so mutating it needs that same lock, not just the
+	 * attr one. Vanilla has no lock here at all and gets away with it because every
+	 * caller already holds the gob; our added entry points (addDmg, clearDmg,
+	 * addCombatInfo, highlight) do not, so a setattr could land while a parallel
+	 * ctick worker was mid-iteration and blow up with a ConcurrentModification.
+	 * Ordering is gob -> attr; the other two attr sites are leaf reads. */
+	synchronized (this) {
+	  synchronized (attr) {
 	    attrSnapshot = null;
 	    prev = attr.remove(ac);
 	    if(prev != null) {
@@ -978,6 +986,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    } else if(ac == GobHealth.class) {
 		status.update(StatusType.info);
 	    }
+	  }
 	}
 	if(ac == Moving.class) {updateMovingInfo(a, prev);}
     }

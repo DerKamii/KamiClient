@@ -32,10 +32,7 @@ public class QuestCondition implements Comparable<QuestCondition> {
 	this.questTitle = questTitle;
 	this.gui = gui;
 
-	Matcher matcher = pat.matcher(description);
-	if(matcher.find()) {
-	    this.questGiver = matcher.group(2);
-	}
+	this.questGiver = parseQuestGiver(description);
 
 	int i = description.lastIndexOf('(');
 	searchDescription = i > 0 ? description.substring(0, i - 1) : description;
@@ -48,6 +45,19 @@ public class QuestCondition implements Comparable<QuestCondition> {
 	this.isEndpoint = isEndpoint;
 	this.isLast = isLast;
 	this.description = description;
+
+	/* KamiClient: re-read the quest giver out of the new text. Conditions are matched
+	 * by id + description-without-counter, so one of these objects gets reused as the
+	 * objective changes - and questGiver used to be parsed once in the constructor and
+	 * never again. A quest that moved you from Gerberga to Gerberg kept pointing at
+	 * Gerberga forever, because both the name and the marker were stuck on the first
+	 * value they ever had. */
+	String giver = parseQuestGiver(description);
+	if(!Objects.equals(giver, questGiver)) {
+	    removeMarker();
+	    questGiver = giver;
+	    questGiverMarker = null;
+	}
 
 	addMarker();
     }
@@ -121,6 +131,12 @@ public class QuestCondition implements Comparable<QuestCondition> {
     }
 
     private boolean isCredo() {return gui.chrwdg != null && gui.chrwdg.skill != null && gui.chrwdg.skill.credos != null && gui.chrwdg.skill.credos.pqid == questId;}
+
+    private static String parseQuestGiver(String description)
+    {
+	Matcher matcher = pat.matcher(description);
+	return matcher.find() ? matcher.group(2) : "";
+    }
 
     private void addMarker()
     {

@@ -1331,11 +1331,21 @@ public class MapWnd extends WindowX implements Console.Directory {
     public Coord2d findMarkerPosition(String name) {
 	Location sessloc = view.sessloc;
 	if(sessloc == null || name == null) {return null;}
+	//KamiClient: an exact name always wins. Substring matching alone sends you to Gerberga
+	//when the quest wanted Gerberg, and whichever marker the map happened to hand us first won.
+	SMarker fuzzy = null;
 	for (Map.Entry<UID, SMarker> e : file.smarkers.entrySet()) {
 	    SMarker m = e.getValue();
-	    if(m.seg == sessloc.seg.id && m.nm.contains(name)) {
+	    if(m.seg != sessloc.seg.id || m.nm == null) {continue;}
+	    if(m.nm.equals(name)) {
 		return m.tc.sub(sessloc.tc).mul(tilesz);
 	    }
+	    if(fuzzy == null && m.nm.contains(name)) {
+		fuzzy = m;
+	    }
+	}
+	if(fuzzy != null) {
+	    return fuzzy.tc.sub(sessloc.tc).mul(tilesz);
 	}
 	return null;
     }

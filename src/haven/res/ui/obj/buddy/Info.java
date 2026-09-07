@@ -9,7 +9,9 @@ import java.awt.Color;
 @FromResource(name = "ui/obj/buddy", version = 4)
 public class Info extends GAttrib implements RenderTree.Node, PView.Render2D {
     public final List<InfoPart> parts = new ArrayList<>();
-    private Tex rend = null;
+    //KamiClient: ctick and the widget messages call dirty() off the UI thread, so this gets
+    //nulled out from under draw(). Volatile + a single read below, or we NPE mid-frame.
+    private volatile Tex rend = null;
     private boolean dirty;
     private double seen = 0;
     private boolean auto;
@@ -37,6 +39,7 @@ public class Info extends GAttrib implements RenderTree.Node, PView.Render2D {
 	    }
 	    rend = cmp.sz.equals(Coord.z) ? null : new TexI(cmp.compose());
 	}
+	Tex rend = this.rend;
 	if((rend != null) && sc.isect(Coord.z, g.sz())) {
 	    double now = Utils.rtime();
 	    if(seen == 0)

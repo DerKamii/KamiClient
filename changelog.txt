@@ -5,6 +5,7 @@ $size[14]{$u{update on 07.09.2026:}
 * Fixed a crash when an object changed while the world was being ticked
 * Placing a new marker on top of something in the world names it after that thing, instead of "New marker"
 * Wooden milestones and crossroad signs now have minimap icons, like the stone ones already did
+* Locking the compact map now also stops you dragging the map itself, so a stray click in a fight can't leave it behind
 `
 $size[14]{$u{update on 05.09.2026:}
 * I think the world coming apart is finally fixed for real this time. It was a crash fix that corrupted the state instead of crashing, reverted that. It's been quiet since, where before there were several reports a day

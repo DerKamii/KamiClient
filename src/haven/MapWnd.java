@@ -351,6 +351,22 @@ public class MapWnd extends WindowX implements Console.Directory {
 	    big = true;
 	}
 
+	/* KamiClient: the lock used to only stop you moving and resizing the window, but you
+	 * could still pan the map inside it - and panning clears follow, so one stray click
+	 * during a fight leaves the map stranded where you were. Locked means locked.
+	 *
+	 * Blocking the pan in mousemove rather than via dragp(): dragp() only gets consulted
+	 * after mousedown has already decided whether to consume the click, and returning
+	 * false there lets the click fall through unconsumed, so we'd never see the matching
+	 * mouseup - which is what actually handles marker and icon clicks. Here the grab is
+	 * still taken and everything clickable keeps working; only the pan is skipped.
+	 * MiniMap.mousemove does nothing else, and hover/tooltips go through mousehover. */
+	public void mousemove(MouseMoveEvent ev) {
+	    if(compactLocked())
+		return;
+	    super.mousemove(ev);
+	}
+
 	public void drawgrid(GOut g, Coord ul, DisplayGrid disp) {
 	    super.drawgrid(g, ul, disp);
 	    for(String tag : overlays) {

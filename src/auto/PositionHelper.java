@@ -21,7 +21,13 @@ public class PositionHelper {
     }
     
     static double distanceToPlayer(Gob gob) {
-	Gob p = gob.glob.oc.getgob(gob.glob.sess.ui.gui.plid);
+	//KamiClient: the player gob can be missing from the cache for a moment - during a combat
+	//relation update, on load, while it's being replaced. Callers all use this as a range check,
+	//so answer "infinitely far" and let them skip instead of taking the client down.
+	GameUI gui = gob.glob.sess.ui.gui;
+	if(gui == null) {return Double.MAX_VALUE;}
+	Gob p = gob.glob.oc.getgob(gui.plid);
+	if(p == null) {return Double.MAX_VALUE;}
 	return p.rc.dist(gob.rc);
     }
     

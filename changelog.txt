@@ -1,3 +1,9 @@
+$size[14]{$u{update on 07.09.2026:}
+* The quest arrow points at the right quest giver again when two of them have near-identical names
+* Fixed a crash in combat when a creature was removed while re-aggroing
+* Fixed a crash when someone's name tag changed while it was being drawn
+* Fixed a crash when an object changed while the world was being ticked
+`
 $size[14]{$u{update on 05.09.2026:}
 * I think the world coming apart is finally fixed for real this time. It was a crash fix that corrupted the state instead of crashing, reverted that. It's been quiet since, where before there were several reports a day
 * Fixed a crash while objects were being removed from the world

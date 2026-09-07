@@ -504,8 +504,9 @@ public class LoginScreen extends Widget {
 		    CFG.SEND_CRASH_REPORTS.set(CFG.CRASH_EXCONLY);
 		    crashask.destroy();
 		}
-	    }, 0, y).settip("Only the error and where it happened. Nothing about your " +
-			    "machine or your build - harder for me to place, but it still helps.");
+	    }, 0, y).settip("Only the error, where it happened, and which client build " +
+			    "you are on. Nothing about your machine - harder for me to " +
+			    "place, but it still helps.");
 	y += UI.scale(24);
 	crashask.add(new Button(UI.scale(340), "Don't send anything") {
 		public void click() {

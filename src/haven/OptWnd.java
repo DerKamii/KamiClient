@@ -1363,11 +1363,12 @@ public class OptWnd extends WindowX {
 	};
 	Widget prev = grp.add("Don't send anything", new Coord(x, y));
 	prev = grp.add("Just the error", prev.pos("bl").adds(0, 4));
-	prev.settip("Only the error and where it happened - nothing about your machine. " +
-		    "Harder for me to place, but it still helps.", true);
+	prev.settip("Only the error, where it happened, and which client build you are " +
+		    "on - nothing about your machine. Harder for me to place, but it " +
+		    "still helps.", true);
 	prev = grp.add("Full report", prev.pos("bl").adds(0, 4));
-	prev.settip("Also your Java version, operating system, graphics card and client " +
-		    "build. No account details, no chat, nothing you typed.", true);
+	prev.settip("Also your Java version, operating system and graphics card. " +
+		    "No account details, no chat, nothing you typed.", true);
 	int cur = CFG.SEND_CRASH_REPORTS.get();
 	grp.check((cur < 0) ? CFG.CRASH_NONE : cur);
 	done[0] = true;

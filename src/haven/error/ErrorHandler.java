@@ -40,6 +40,11 @@ public class ErrorHandler extends ThreadGroup {
 	"os.arch",
 	"os.version",
     };
+    /* KamiClient: the props that go out even on "exception only" - which build this
+     * came from, and nothing else. Identifies the jar, never the machine or the user. */
+    private static final String[] exconlyprops = {
+	"jar.version",
+    };
     private final ThreadGroup initial;
     private Map<String, Object> props = new HashMap<String, Object>();
     private Reporter reporter;
@@ -107,14 +112,23 @@ public class ErrorHandler extends ThreadGroup {
 	    /* KamiClient: on "exception only" the props go no further than this
 	     * machine. The trace is what makes a report useful; the props just make
 	     * it quicker to place, so they are the part worth making optional. */
+	    Map<String, String> props = new HashMap<>();
 	    if(haven.CFG.SEND_CRASH_REPORTS.get() >= haven.CFG.CRASH_FULL) {
-		Map<String, String> props = new HashMap<>();
 		for(Map.Entry<String, Object> e : r.props.entrySet())
 		    props.put(e.getKey(), String.valueOf(e.getValue()));
-		root.put("props", props);
 	    } else {
-		root.put("props", new HashMap<String, String>());
+		/* ...except the build the report came from, which we send either way.
+		 * A trace without it is close to useless - line numbers move between
+		 * builds, and half the reports we get are already fixed in a newer one.
+		 * It says nothing about the machine or the player, so it costs the
+		 * user no privacy to include it. */
+		for(String key : exconlyprops) {
+		    Object val = r.props.get(key);
+		    if(val != null)
+			props.put(key, String.valueOf(val));
+		}
 	    }
+	    root.put("props", props);
 	    return(new com.google.gson.Gson().toJson(root));
 	}
 

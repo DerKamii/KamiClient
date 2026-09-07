@@ -1,5 +1,5 @@
 $size[14]{$u{update on 07.09.2026:}
-* The quest arrow points at the right quest giver again when two of them have near-identical names
+* The quest arrow and marker highlight follow the quest when it sends you to a different quest giver, instead of staying stuck on the previous one
 * Fixed a crash in combat when a creature was removed while re-aggroing
 * Fixed a crash when someone's name tag changed while it was being drawn
 * Fixed a crash when an object changed while the world was being ticked

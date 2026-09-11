@@ -110,9 +110,9 @@ public class TrackWnd extends WindowX implements DTarget {
 	if(res == null) {
 	    GItem.setAlchemyFilter(null);
 	} else if(trackEffects) {
-	    GItem.setAlchemyFilter(new EffectFilter(AlchemyData.ingredient(res, genus), AlchemyData.testedEffects(res, genus), AlchemyData.combos(res, genus)));
+	    GItem.setAlchemyFilter(new EffectFilter(res, AlchemyData.ingredient(res, genus), AlchemyData.testedEffects(res, genus), AlchemyData.combos(res, genus)));
 	} else {
-	    GItem.setAlchemyFilter(new ComboFilter(AlchemyData.ingredient(res, genus), AlchemyData.testedEffects(res, genus), AlchemyData.combos(res, genus)));
+	    GItem.setAlchemyFilter(new ComboFilter(res, AlchemyData.ingredient(res, genus), AlchemyData.testedEffects(res, genus), AlchemyData.combos(res, genus)));
 	}
 	ItemHelpers.invalidateIngredientTooltips(ui);
     }

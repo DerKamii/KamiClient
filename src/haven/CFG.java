@@ -162,7 +162,8 @@ public class CFG<T> {
     public static final CFG<Boolean> UI_FOCUSED_INV_SHIFT_TRANSFER = new CFG<>("ui.focused_inv_shift_transfer", false);
     
     public static final CFG<Boolean> ALCHEMY_LIMIT_RECIPE_SAVE = new CFG<>("alchemy.limit_recipe_saving", true);
-    public static final CFG<Boolean> ALCHEMY_AUTO_PROCESS = new CFG<>("alchemy.auto_process", false);
+    public static final CFG<Boolean> ALCHEMY_AUTO_PROCESS = new CFG<>("alchemy.auto_process", true);
+    public static final CFG<Boolean> ALCHEMY_SHOW_GRINDS = new CFG<>("alchemy.show_grinds", false);
     public static final CFG<Boolean> ALCHEMY_DEEP_EFFECT_TRACK = new CFG<>("alchemy.deep_effect_track", false);
     public static final CFG<Integer> ALCHEMY_LAST_TAB = new CFG<>("alchemy.last_lab", 0);
     

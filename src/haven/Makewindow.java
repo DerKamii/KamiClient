@@ -53,6 +53,133 @@ public class Makewindow extends Widget {
     public static final Text.Foundry nmf = new Text.Foundry(Text.serif, 20).aa(true);
     private static double softcap = 0;
     private static Tex softTex = null;
+
+    public static Makewindow activeChoosingWindow = null;
+    public static int activeChoosingSlot = -1;
+    public static String lastChosenItemRes = null;
+    public static String lastChosenRecipe = null;
+    public static long lastChosenTime = 0;
+
+    public static String pendingCheckRes = null;
+    public static String pendingCheckRecipe = null;
+    public static long pendingCheckTime = 0;
+    public static int pendingCheckSlot = -1;
+
+    public static boolean isHerbalGrindRecipe(String rcpnm) {
+	if(rcpnm == null) return false;
+	String lower = rcpnm.toLowerCase();
+	return lower.contains("herbal") || lower.contains("grind") || lower.contains("помол") || lower.contains("гару") || lower.contains("研磨");
+    }
+
+    public static boolean isMineralCalcinationRecipe(String rcpnm) {
+	if(rcpnm == null) return false;
+	String lower = rcpnm.toLowerCase();
+	return lower.contains("mineral") || lower.contains("calcination") || lower.contains("прокалка") || lower.contains("소성") || lower.contains("煅烧");
+    }
+
+    public static Makewindow findActiveMakewindow(UI ui) {
+	if(activeChoosingWindow != null) {
+	    return activeChoosingWindow;
+	}
+	if(ui != null) {
+	    if(ui.gui != null) {
+		Makewindow w = ui.gui.getchild(Makewindow.class);
+		if(w != null) return w;
+	    }
+	    if(ui.root != null) {
+		Makewindow w = ui.root.getchild(Makewindow.class);
+		if(w != null) return w;
+	    }
+	}
+	return null;
+    }
+
+    public static void setChosenItem(String res, Makewindow win) {
+	if(res != null) {
+	    lastChosenItemRes = res;
+	    if(win != null && win.rcpnm != null) {
+		lastChosenRecipe = win.rcpnm;
+	    }
+	    lastChosenTime = System.currentTimeMillis();
+
+	    if(pendingCheckRes != null && !pendingCheckRes.equals(res)) {
+		String prevRes = pendingCheckRes;
+		String prevRecipe = pendingCheckRecipe;
+		pendingCheckRes = null;
+		pendingCheckRecipe = null;
+		UI ui = (win != null) ? win.ui : null;
+		String genus = (ui != null && ui.gui != null) ? ui.gui.genus : ((ui != null && ui.sess != null && ui.sess.user != null) ? ui.sess.user.genus : null);
+		if(isHerbalGrindRecipe(prevRecipe)) {
+		    me.ender.alchemy.AlchemyData.updateCraftableStatus(prevRes, "herbalgrind", false, genus);
+		} else if(isMineralCalcinationRecipe(prevRecipe)) {
+		    me.ender.alchemy.AlchemyData.updateCraftableStatus(prevRes, "mineralcalcination", false, genus);
+		}
+	    }
+
+	    if(pendingCheckRes == null) {
+		pendingCheckRes = res;
+		pendingCheckRecipe = (win != null) ? win.rcpnm : lastChosenRecipe;
+		pendingCheckTime = System.currentTimeMillis();
+		pendingCheckSlot = activeChoosingSlot;
+	    }
+	}
+    }
+
+    public static void cancelChoosing() {
+	activeChoosingSlot = -1;
+	activeChoosingWindow = null;
+    }
+
+    public static void checkRejectionTimeout(UI ui) {
+	if(pendingCheckRes != null) {
+	    long elapsed = System.currentTimeMillis() - pendingCheckTime;
+	    if(elapsed > 800) {
+		String res = pendingCheckRes;
+		String rcpnm = pendingCheckRecipe;
+		int slot = pendingCheckSlot;
+		pendingCheckRes = null;
+		pendingCheckRecipe = null;
+		lastChosenItemRes = null;
+		lastChosenRecipe = null;
+		if(rcpnm == null) {
+		    Makewindow win = findActiveMakewindow(ui);
+		    if(win != null) {
+			rcpnm = win.rcpnm;
+		    }
+		}
+		String genus = (ui != null && ui.gui != null) ? ui.gui.genus : ((ui != null && ui.sess != null && ui.sess.user != null) ? ui.sess.user.genus : null);
+		if(isHerbalGrindRecipe(rcpnm)) {
+		    me.ender.alchemy.AlchemyData.updateCraftableStatus(res, "herbalgrind", false, genus);
+		} else if(isMineralCalcinationRecipe(rcpnm)) {
+		    me.ender.alchemy.AlchemyData.updateCraftableStatus(res, "mineralcalcination", false, genus);
+		}
+	    }
+	}
+    }
+
+    public static void checkCraftRejection(UI ui) {
+	String res = (pendingCheckRes != null) ? pendingCheckRes : lastChosenItemRes;
+	String rcpnm = (pendingCheckRecipe != null) ? pendingCheckRecipe : lastChosenRecipe;
+	if(rcpnm == null) {
+	    Makewindow win = findActiveMakewindow(ui);
+	    if(win != null) {
+		rcpnm = win.rcpnm;
+	    }
+	}
+	long elapsed = System.currentTimeMillis() - ((pendingCheckTime > 0) ? pendingCheckTime : lastChosenTime);
+	if(res != null && rcpnm != null && elapsed < 10000) {
+	    String genus = (ui != null && ui.gui != null) ? ui.gui.genus : ((ui != null && ui.sess != null && ui.sess.user != null) ? ui.sess.user.genus : null);
+	    if(isHerbalGrindRecipe(rcpnm)) {
+		me.ender.alchemy.AlchemyData.updateCraftableStatus(res, "herbalgrind", false, genus);
+	    } else if(isMineralCalcinationRecipe(rcpnm)) {
+		me.ender.alchemy.AlchemyData.updateCraftableStatus(res, "mineralcalcination", false, genus);
+	    }
+	    pendingCheckRes = null;
+	    pendingCheckRecipe = null;
+	    lastChosenItemRes = null;
+	    lastChosenRecipe = null;
+	}
+    }
     
     @RName("make")
     public static class $_ implements Factory {
@@ -187,6 +314,21 @@ public class Makewindow extends Widget {
 
     public void uimsg(String msg, Object... args) {
 	if(msg == "inpop") {
+	    String res = (pendingCheckRes != null) ? pendingCheckRes : lastChosenItemRes;
+	    if(rcpnm != null && res != null) {
+		String genus = (ui != null && ui.gui != null) ? ui.gui.genus : ((ui != null && ui.sess != null && ui.sess.user != null) ? ui.sess.user.genus : null);
+		if(isHerbalGrindRecipe(rcpnm)) {
+		    me.ender.alchemy.AlchemyData.updateCraftableStatus(res, "herbalgrind", true, genus);
+		} else if(isMineralCalcinationRecipe(rcpnm)) {
+		    me.ender.alchemy.AlchemyData.updateCraftableStatus(res, "mineralcalcination", true, genus);
+		}
+		pendingCheckRes = null;
+		pendingCheckRecipe = null;
+		lastChosenItemRes = null;
+		lastChosenRecipe = null;
+		activeChoosingSlot = -1;
+		activeChoosingWindow = null;
+	    }
 	    List<Spec> inputs;
 	    if(INT.is(args, 0)) {
 		inputs = Arrays.asList(this.inputs.stream().map(w -> w.spec).toArray(Spec[]::new));
@@ -367,6 +509,8 @@ public class Makewindow extends Widget {
 
 	public boolean mousedown(MouseDownEvent ev) {
 	    if(ev.b == 1) {
+		activeChoosingWindow = Makewindow.this;
+		activeChoosingSlot = idx;
 		Makewindow.this.wdgmsg("choose", idx, ui.modflags());
 		return(true);
 	    } else if(ev.b == 3) {
@@ -393,6 +537,26 @@ public class Makewindow extends Widget {
 		}
 		cc = null;
 	    }
+	}
+
+	@Override
+	public boolean drop(Drop ev) {
+	    if(ev.src != null && ev.src.item != null) {
+		activeChoosingWindow = Makewindow.this;
+		activeChoosingSlot = idx;
+		setChosenItem(ev.src.item.resname(), Makewindow.this);
+	    }
+	    return DTarget.super.drop(ev);
+	}
+
+	@Override
+	public boolean iteminteract(Interact ev) {
+	    if(ev.src != null && ev.src.item != null) {
+		activeChoosingWindow = Makewindow.this;
+		activeChoosingSlot = idx;
+		setChosenItem(ev.src.item.resname(), Makewindow.this);
+	    }
+	    return DTarget.super.iteminteract(ev);
 	}
 
 	public boolean drop(Coord cc, Coord ul) {
@@ -582,5 +746,21 @@ public class Makewindow extends Widget {
 	} else {
 	    Actions.craftCount(this, count);
 	}
+    }
+
+    @Override
+    public void tick(double dt) {
+	super.tick(dt);
+	checkRejectionTimeout(ui);
+    }
+
+    @Override
+    public void destroy() {
+	checkRejectionTimeout(ui);
+	if(activeChoosingWindow == this) {
+	    activeChoosingWindow = null;
+	    activeChoosingSlot = -1;
+	}
+	super.destroy();
     }
 }

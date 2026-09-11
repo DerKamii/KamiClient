@@ -105,8 +105,10 @@ public class RootWidget extends ConsoleHost implements UI.Notice.Handler, Widget
     
     public void uimsg(String msg, Object... args) {
 	if(msg == "err") {
+	    Makewindow.checkCraftRejection(ui);
 	    ui.error((String)args[0]);
 	} else if(msg == "msg") {
+	    Makewindow.checkCraftRejection(ui);
 	    if(args.length == 1) {
 		ui.msg((String)args[0]);
 	    } else {
@@ -122,6 +124,7 @@ public class RootWidget extends ConsoleHost implements UI.Notice.Handler, Widget
 	    }
 	} else if(msg == "msg2") {
 	    Resource res = ui.sess.getresv(args[0]).get();
+	    Makewindow.checkCraftRejection(ui);
 	    System.out.println(args[2]);
 	    if (res.name.equals("ui/inspect") && MappingClient.initialized())
 		MappingClient.getInstance().SetTimerToNearestRes(args[2].toString());
@@ -136,6 +139,12 @@ public class RootWidget extends ConsoleHost implements UI.Notice.Handler, Widget
 	    Indir<Resource> resid = ui.sess.getresv(args[a++]);
 	    double vol = (args.length > a) ? Utils.dv(args[a++]) : 1.0;
 	    double spd = (args.length > a) ? Utils.dv(args[a++]) : 1.0;
+	    try {
+		Resource r = (resid != null) ? resid.get() : null;
+		if(r != null && r.name != null && r.name.contains("error")) {
+		    Makewindow.checkCraftRejection(ui);
+		}
+	    } catch(Loading ignore) {}
 	    ui.sess.glob.loader.defer(() -> {
 		    Audio.CS clip = Audio.fromres(resid.get());
 		    if(spd != 1.0)
@@ -159,6 +168,9 @@ public class RootWidget extends ConsoleHost implements UI.Notice.Handler, Widget
 	}
 	if(msg == "curs") {
 	    ui.sess.character.updateCursor(cursor);
+	    if(cursor == null) {
+		Makewindow.cancelChoosing();
+	    }
 	}
     }
     

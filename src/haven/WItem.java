@@ -124,6 +124,9 @@ public class WItem extends Widget implements DTarget {
 	List<ItemInfo> info = item.info();
 	if(info.size() < 1)
 	    return(null);
+	try {
+	    me.ender.alchemy.AlchemyData.autoProcess(item);
+	} catch(Loading ignore) {}
 	if(info != ttinfo) {
 	    shorttip = longtip = null;
 	    ttinfo = info;
@@ -433,6 +436,10 @@ public class WItem extends Widget implements DTarget {
     public void clearLongTip() {longtip = null;}
     
     public boolean mousedown(MouseDownEvent ev) {
+	Makewindow win = Makewindow.findActiveMakewindow(ui);
+	if(win != null && win.activeChoosingSlot >= 0 && ev.b == 1) {
+	    Makewindow.setChosenItem(item.resname(), win);
+	}
 	if(checkXfer(ev.b)) {
 	    return true;
 	} else if(ev.b == 1) {
@@ -461,10 +468,18 @@ public class WItem extends Widget implements DTarget {
     }
     
     public void take() {
+	Makewindow win = Makewindow.findActiveMakewindow(ui);
+	if(win != null && win.activeChoosingSlot >= 0) {
+	    Makewindow.setChosenItem(item.resname(), win);
+	}
 	item.wdgmsg("take", sz.div(2), 0);
     }
     
     public void itemact(int modflags) {
+	Makewindow win = Makewindow.findActiveMakewindow(ui);
+	if(win != null && win.activeChoosingSlot >= 0) {
+	    Makewindow.setChosenItem(item.resname(), win);
+	}
 	item.wdgmsg("itemact", modflags);
     }
     
@@ -562,6 +577,10 @@ public class WItem extends Widget implements DTarget {
     }
     
     public boolean iteminteract(DTarget.Interact ev) {
+	Makewindow win = Makewindow.findActiveMakewindow(ui);
+	if(win != null && win.activeChoosingSlot >= 0) {
+	    Makewindow.setChosenItem(item.resname(), win);
+	}
 	item.wdgmsg("itemact", ui.modflags());
 	return(true);
     }
